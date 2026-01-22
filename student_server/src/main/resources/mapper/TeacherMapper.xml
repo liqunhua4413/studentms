@@ -31,12 +31,13 @@
     <update id="updateById">
         UPDATE studentms.t SET
                                tname = #{teacher.tname},
-                               password = #{teacher.password}
+                               password = #{teacher.password},
+                               role = #{teacher.role}
         WHERE tid = #{teacher.tid};
     </update>
 
     <insert id="save">
-        INSERT INTO studentms.t (tname, password) VALUES (#{teacher.tname}, #{teacher.password})
+        INSERT INTO studentms.t (tname, password, role) VALUES (#{teacher.tname}, #{teacher.password}, #{teacher.role})
     </insert>
 
     <delete id="deleteById">

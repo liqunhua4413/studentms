@@ -29,12 +29,15 @@
     <update id="updateById">
         UPDATE studentms.c SET
                                cname = #{course.cname},
-                               ccredit = #{course.ccredit}
+                               ccredit = #{course.ccredit},
+                               major_id = #{course.majorId},
+                               department_id = #{course.departmentId}
         WHERE cid = #{course.cid};
     </update>
 
     <insert id="insertCourse">
-        INSERT INTO studentms.c (cname, ccredit) VALUES (#{course.cname}, #{course.ccredit})
+        INSERT INTO studentms.c (cname, ccredit, major_id, department_id) 
+        VALUES (#{course.cname}, #{course.ccredit}, #{course.majorId}, #{course.departmentId})
     </insert>
 
     <delete id="deleteById">

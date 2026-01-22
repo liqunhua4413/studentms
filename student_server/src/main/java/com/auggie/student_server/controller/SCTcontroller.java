@@ -80,6 +80,8 @@ public class SCTcontroller {
         return sctService.deleteById(sid, cid, tid, term);
     }
 
-
-
+    @PostMapping("/reexamination")
+    public List<SCTInfo> getReexaminationList(@RequestBody Map<String, String> map) {
+        return sctService.getReexaminationList(map);
+    }
 }

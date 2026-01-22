@@ -20,4 +20,8 @@ public class Student {
     private Integer sid;
     private String sname;
     private String password;
+    private Integer classId;
+    private String gradeLevel;
+    private Integer majorId;
+    private Integer departmentId;
 }

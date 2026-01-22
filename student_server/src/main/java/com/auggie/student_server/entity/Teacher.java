@@ -20,4 +20,5 @@ public class Teacher {
     private Integer tid;
     private String tname;
     private String password;
+    private String role;  // admin 或 teacher
 }

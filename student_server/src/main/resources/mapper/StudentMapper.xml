@@ -31,12 +31,17 @@
     <update id="updateById">
         UPDATE studentms.s SET
         sname = #{student.sname},
-        password = #{student.password}
+        password = #{student.password},
+        class_id = #{student.classId},
+        grade_level = #{student.gradeLevel},
+        major_id = #{student.majorId},
+        department_id = #{student.departmentId}
         WHERE sid = #{student.sid};
     </update>
 
     <insert id="save">
-        INSERT INTO studentms.s (sname, password) VALUES (#{student.sname}, #{student.password})
+        INSERT INTO studentms.s (sname, password, class_id, grade_level, major_id, department_id) 
+        VALUES (#{student.sname}, #{student.password}, #{student.classId}, #{student.gradeLevel}, #{student.majorId}, #{student.departmentId})
     </insert>
 
     <delete id="deleteById">

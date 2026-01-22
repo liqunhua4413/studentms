@@ -98,7 +98,10 @@ export default {
 
                   console.log('name: ' + name + ' ' + that.ruleForm.type + ' ' + resp.data.tid)
 
-                  if (that.ruleForm.type === 'admin' && name === 'admin') {
+                  // 使用 role 字段判断角色
+                  const role = resp.data.role || 'teacher';
+                  
+                  if (that.ruleForm.type === 'admin' && role === 'admin') {
                     that.$message({
                       showClose: true,
                       message: '登陆成功，欢迎 ' + name + '!',
@@ -106,7 +109,7 @@ export default {
                     });
                     that.$router.push('/admin')
                   }
-                  else if(that.ruleForm.type === 'teacher' && name !== 'admin') {
+                  else if(that.ruleForm.type === 'teacher' && role === 'teacher') {
                     that.$message({
                       showClose: true,
                       message: '登陆成功，欢迎 ' + name + '!',
@@ -117,7 +120,7 @@ export default {
                   else {
                     that.$message({
                       showClose: true,
-                      message: 'admin 登陆失败，检查登陆类型',
+                      message: '登录失败，角色不匹配',
                       type: 'error'
                     });
                   }

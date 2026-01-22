@@ -25,4 +25,10 @@ public class SCTInfo {
     private String cname;
     private Float grade;
     private String term;
+    private Float usualGrade;
+    private Float finalGrade;
+    private Float totalGrade;
+    private Integer classId;
+    private Integer majorId;
+    private Integer departmentId;
 }

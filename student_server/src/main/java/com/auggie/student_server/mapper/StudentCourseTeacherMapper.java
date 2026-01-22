@@ -34,7 +34,10 @@ public interface StudentCourseTeacherMapper {
                                       @Param("tFuzzy") Integer tFuzzy,
                                       @Param("lowBound") Integer lowBound,
                                       @Param("highBound") Integer highBound,
-                                      @Param("term") String term);
+                                      @Param("term") String term,
+                                      @Param("classId") Integer classId,
+                                      @Param("majorId") Integer majorId,
+                                      @Param("departmentId") Integer departmentId);
 
     @Select("SELECT DISTINCT sct.term FROM studentms.sct sct")
     public List<String> findAllTerm();
@@ -42,7 +45,8 @@ public interface StudentCourseTeacherMapper {
     @Select("SELECT * FROM studentms.sct WHERE sid = #{sct.sid} AND cid = #{sct.cid} AND tid = #{sct.tid} AND term = #{sct.term}")
     public List<StudentCourseTeacher> findBySCT(@Param("sct") StudentCourseTeacher studentCourseTeacher);
 
-    @Insert("INSERT INTO studentms.sct (sid, cid, tid, term) VALUES (#{s.sid}, #{s.cid}, #{s.tid}, #{s.term})")
+    @Insert("INSERT INTO studentms.sct (sid, cid, tid, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id) " +
+            "VALUES (#{s.sid}, #{s.cid}, #{s.tid}, #{s.term}, #{s.usualGrade}, #{s.finalGrade}, #{s.totalGrade}, #{s.classId}, #{s.majorId}, #{s.departmentId})")
     public boolean insert(@Param("s")StudentCourseTeacher studentCourseTeacher);
 
     @Update("UPDATE studentms.sct SET sct.grade = #{grade} WHERE sct.sid = #{sid} AND sct.tid = #{tid} AND sct.cid = #{cid} AND sct.term = #{term}")
@@ -51,6 +55,8 @@ public interface StudentCourseTeacherMapper {
                               @Param("tid") Integer tid,
                               @Param("term") String term,
                               @Param("grade") Integer grade);
+
+    public boolean batchInsert(@Param("list") List<StudentCourseTeacher> list);
 
     @Delete("DELETE FROM studentms.sct WHERE sid = #{sct.sid} AND tid = #{sct.tid} AND cid = #{sct.cid}")
     public boolean deleteBySCT(@Param("sct") StudentCourseTeacher sct);

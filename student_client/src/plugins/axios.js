@@ -19,7 +19,19 @@ const _axios = axios.create(config);
 
 _axios.interceptors.request.use(
   function(config) {
-    // Do something before request is sent
+    // 从 sessionStorage 获取用户信息，设置到请求头
+    const type = sessionStorage.getItem("type");
+    const name = sessionStorage.getItem("name");
+    
+    // 如果是 admin，设置 Operator 请求头
+    if (type === "admin" && name === "admin") {
+      config.headers["Operator"] = "admin";
+    } else if (type === "teacher" && name) {
+      config.headers["Operator"] = name;
+    } else if (type === "student" && name) {
+      config.headers["Operator"] = name;
+    }
+    
     return config;
   },
   function(error) {

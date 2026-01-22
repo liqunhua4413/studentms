@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.WordPaperMapper">
+    <select id="findAll" resultType="WordPaper">
+        SELECT * FROM studentms.word_papers ORDER BY upload_time DESC
+    </select>
+
+    <select id="findById" resultType="WordPaper">
+        SELECT * FROM studentms.word_papers WHERE id = #{id}
+    </select>
+
+    <select id="findBySearch" resultType="WordPaper">
+        SELECT * FROM studentms.word_papers
+        <where>
+            <if test="fileName != null and fileName != ''">
+                file_name LIKE CONCAT('%', #{fileName}, '%')
+            </if>
+            <if test="uploadBy != null and uploadBy != ''">
+                AND upload_by LIKE CONCAT('%', #{uploadBy}, '%')
+            </if>
+        </where>
+        ORDER BY upload_time DESC
+    </select>
+
+    <insert id="save">
+        INSERT INTO studentms.word_papers (file_name, file_path, upload_by, upload_time)
+        VALUES (#{paper.fileName}, #{paper.filePath}, #{paper.uploadBy}, #{paper.uploadTime})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.word_papers WHERE id = #{id}
+    </delete>
+</mapper>

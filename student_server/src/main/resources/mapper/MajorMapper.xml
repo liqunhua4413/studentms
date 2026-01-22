@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.MajorMapper">
+    <select id="findAll" resultType="Major">
+        SELECT * FROM studentms.major ORDER BY id
+    </select>
+
+    <select id="findById" resultType="Major">
+        SELECT * FROM studentms.major WHERE id = #{id}
+    </select>
+
+    <select id="findBySearch" resultType="Major">
+        SELECT * FROM studentms.major
+        <where>
+            <if test="name != null and name != ''">
+                name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="departmentId != null">
+                AND department_id = #{departmentId}
+            </if>
+        </where>
+        ORDER BY id
+    </select>
+
+    <select id="findByDepartmentId" resultType="Major">
+        SELECT * FROM studentms.major WHERE department_id = #{departmentId} ORDER BY id
+    </select>
+
+    <update id="updateById">
+        UPDATE studentms.major SET
+        name = #{major.name},
+        department_id = #{major.departmentId}
+        WHERE id = #{major.id}
+    </update>
+
+    <insert id="save">
+        INSERT INTO studentms.major (name, department_id) VALUES (#{major.name}, #{major.departmentId})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.major WHERE id = #{id}
+    </delete>
+</mapper>

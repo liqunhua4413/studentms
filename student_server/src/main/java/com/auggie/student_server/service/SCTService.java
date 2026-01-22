@@ -57,7 +57,8 @@ public class SCTService {
                 sid, null, 0,
                 cid, null, 0,
                 tid, null, 0,
-                null, null, term).get(0);
+                null, null, term,
+                null, null, null).get(0);
     }
 
     public boolean updateById(Integer sid, Integer cid, Integer tid, String term, Integer grade) {
@@ -127,11 +128,43 @@ public class SCTService {
             }
         }
 
+        Integer classId = null;
+        Integer majorId = null;
+        Integer departmentId = null;
+
+        if (map.containsKey("classId")) {
+            try {
+                classId = Integer.parseInt(map.get("classId"));
+            } catch (Exception e) {
+            }
+        }
+        if (map.containsKey("majorId")) {
+            try {
+                majorId = Integer.parseInt(map.get("majorId"));
+            } catch (Exception e) {
+            }
+        }
+        if (map.containsKey("departmentId")) {
+            try {
+                departmentId = Integer.parseInt(map.get("departmentId"));
+            } catch (Exception e) {
+            }
+        }
+
         System.out.println("SCT 查询：" + map);
         return studentCourseTeacherMapper.findBySearch(
                 sid, sname, sFuzzy,
                 cid, cname, cFuzzy,
                 tid, tname, tFuzzy,
-                lowBound, highBound, term);
+                lowBound, highBound, term,
+                classId, majorId, departmentId);
+    }
+
+    /**
+     * 获取补考学生列表（总成绩 < 60）
+     */
+    public List<SCTInfo> getReexaminationList(Map<String, String> map) {
+        map.put("highBound", "59");
+        return findBySearch(map);
     }
 }

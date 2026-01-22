@@ -21,6 +21,12 @@ public class StudentCourseTeacher {
     private Integer sid;
     private Integer cid;
     private Integer tid;
-    private Float grade;
+    private Float grade;  // 保留原有字段，兼容旧数据
     private String term;
+    private Float usualGrade;   // 平时成绩
+    private Float finalGrade;   // 期末成绩
+    private Float totalGrade;   // 总成绩
+    private Integer classId;    // 班级ID
+    private Integer majorId;    // 专业ID
+    private Integer departmentId; // 系ID
 }

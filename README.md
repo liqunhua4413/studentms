@@ -22,8 +22,13 @@ docker-compose up
 ### 方法二：手动部署
 1. **导入数据库**
    ```bash
-   mysql -u root -p studentms < studentms.sql
+   # 推荐：使用完整初始化脚本（包含所有升级后的表结构）
+   mysql -u root -p < mysql/studentms_complete.sql
+   
+   # 或使用原始脚本（仅基础表）
+   mysql -u root -p < mysql/studentms.sql
    ```
+   > 详细说明请参考 `Doc/database_setup.md`
 2. **启动前端**
    ```bash
    cd student_client

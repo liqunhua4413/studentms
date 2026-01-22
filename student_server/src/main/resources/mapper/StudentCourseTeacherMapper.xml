@@ -11,7 +11,8 @@
     </select>
 
     <select id="findBySearch" resultType="SCTInfo">
-        SELECT c.cid, c.cname, t.tid, t.tname, s.sid, s.sname, sct.grade, sct.term
+        SELECT c.cid, c.cname, t.tid, t.tname, s.sid, s.sname, sct.grade, sct.term,
+               sct.usual_grade, sct.final_grade, sct.total_grade, sct.class_id, sct.major_id, sct.department_id
         FROM studentms.sct sct INNER JOIN studentms.s s ON sct.sid = s.sid
                 INNER JOIN studentms.t t ON sct.tid = t.tid
                 INNER JOIN studentms.c c ON sct.cid = c.cid
@@ -52,12 +53,29 @@
             <if test="term != null">
                 AND sct.term = #{term}
             </if>
+            <if test="classId != null">
+                AND sct.class_id = #{classId}
+            </if>
+            <if test="majorId != null">
+                AND sct.major_id = #{majorId}
+            </if>
+            <if test="departmentId != null">
+                AND sct.department_id = #{departmentId}
+            </if>
             <if test="lowBound != null">
-                AND sct.grade >= #{lowBound}
+                AND (sct.grade >= #{lowBound} OR sct.total_grade >= #{lowBound})
             </if>
             <if test="highBound != null">
-                AND #{highBound} >= sct.grade
+                AND (#{highBound} >= sct.grade OR #{highBound} >= sct.total_grade)
             </if>
         </where>
     </select>
+
+    <insert id="batchInsert">
+        INSERT INTO studentms.sct (sid, cid, tid, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sid}, #{item.cid}, #{item.tid}, #{item.term}, #{item.usualGrade}, #{item.finalGrade}, #{item.totalGrade}, #{item.classId}, #{item.majorId}, #{item.departmentId})
+        </foreach>
+    </insert>
 </mapper>

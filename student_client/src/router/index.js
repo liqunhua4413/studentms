@@ -38,6 +38,27 @@ import teacherQueryGradeCourse from "@/views/Teacher/teacherGradeCourseManage/te
 import teacherGradeCourseList from "@/views/Teacher/teacherGradeCourseManage/teacherGradeCourseList";
 import teacherEditorGradeCourse from "@/views/Teacher/teacherGradeCourseManage/teacherEditorGradeCourse";
 import updateInfo from "@/components/updateInfo";
+import departmentManage from "@/views/Admin/departmentManage/index";
+import departmentList from "@/views/Admin/departmentManage/departmentList";
+import addDepartment from "@/views/Admin/departmentManage/addDepartment";
+import editorDepartment from "@/views/Admin/departmentManage/editorDepartment";
+import queryDepartment from "@/views/Admin/departmentManage/queryDepartment";
+import majorManage from "@/views/Admin/majorManage/index";
+import majorList from "@/views/Admin/majorManage/majorList";
+import addMajor from "@/views/Admin/majorManage/addMajor";
+import editorMajor from "@/views/Admin/majorManage/editorMajor";
+import queryMajor from "@/views/Admin/majorManage/queryMajor";
+import classManage from "@/views/Admin/classManage/index";
+import classList from "@/views/Admin/classManage/classList";
+import addClass from "@/views/Admin/classManage/addClass";
+import editorClass from "@/views/Admin/classManage/editorClass";
+import queryClass from "@/views/Admin/classManage/queryClass";
+import gradeManage from "@/views/Admin/gradeManage/index";
+import uploadGrade from "@/views/Admin/gradeManage/uploadGrade";
+import queryGrade from "@/views/Admin/gradeManage/queryGrade";
+import wordPaperManage from "@/views/Admin/wordPaperManage/index";
+import wordPaperList from "@/views/Admin/wordPaperManage/wordPaperList";
+import operationLogManage from "@/views/Admin/operationLogManage/index";
 
 Vue.use(VueRouter)
 
@@ -208,6 +229,171 @@ const routes = [
             path: '/editorGradeCourse',
             name: '编辑',
             component: editorGradeCourse,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/departmentManage',
+        name: '学院管理',
+        component: departmentManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addDepartment',
+            name: '添加学院',
+            component: addDepartment,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/departmentList',
+            name: '学院列表',
+            component: departmentList,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorDepartment',
+            name: '编辑学院',
+            component: editorDepartment,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryDepartment',
+            name: '搜索学院',
+            component: queryDepartment,
+            meta: {requireAuth: true},
+            children: [
+              {
+                path: '/queryDepartment/departmentList',
+                component: departmentList,
+                meta: {requireAuth: true}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        path: '/majorManage',
+        name: '专业管理',
+        component: majorManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addMajor',
+            name: '添加专业',
+            component: addMajor,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/majorList',
+            name: '专业列表',
+            component: majorList,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorMajor',
+            name: '编辑专业',
+            component: editorMajor,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryMajor',
+            name: '搜索专业',
+            component: queryMajor,
+            meta: {requireAuth: true},
+            children: [
+              {
+                path: '/queryMajor/majorList',
+                component: majorList,
+                meta: {requireAuth: true}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        path: '/classManage',
+        name: '班级管理',
+        component: classManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addClass',
+            name: '添加班级',
+            component: addClass,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/classList',
+            name: '班级列表',
+            component: classList,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorClass',
+            name: '编辑班级',
+            component: editorClass,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryClass',
+            name: '搜索班级',
+            component: queryClass,
+            meta: {requireAuth: true},
+            children: [
+              {
+                path: '/queryClass/classList',
+                component: classList,
+                meta: {requireAuth: true}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        path: '/gradeManage',
+        name: '成绩管理',
+        component: gradeManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/uploadGrade',
+            name: '成绩上传',
+            component: uploadGrade,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryGrade',
+            name: '成绩查询',
+            component: queryGrade,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/wordPaperManage',
+        name: 'Word文件管理',
+        component: wordPaperManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/wordPaperList',
+            name: '文件列表',
+            component: wordPaperList,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/operationLogManage',
+        name: '操作日志',
+        component: operationLogManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/operationLogManage',
+            name: '日志查看',
+            component: operationLogManage,
             meta: {requireAuth: true}
           }
         ]

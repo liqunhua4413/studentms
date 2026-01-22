@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.OperationLogMapper">
+    <select id="findAll" resultType="OperationLog">
+        SELECT * FROM studentms.operation_log ORDER BY create_time DESC
+    </select>
+
+    <select id="findById" resultType="OperationLog">
+        SELECT * FROM studentms.operation_log WHERE id = #{id}
+    </select>
+
+    <select id="findBySearch" resultType="OperationLog">
+        SELECT * FROM studentms.operation_log
+        <where>
+            <if test="operator != null and operator != ''">
+                operator LIKE CONCAT('%', #{operator}, '%')
+            </if>
+            <if test="operationType != null and operationType != ''">
+                AND operation_type = #{operationType}
+            </if>
+            <if test="targetTable != null and targetTable != ''">
+                AND target_table = #{targetTable}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="save">
+        INSERT INTO studentms.operation_log (operator, operation_type, target_table, target_id, content, create_time)
+        VALUES (#{log.operator}, #{log.operationType}, #{log.targetTable}, #{log.targetId}, #{log.content}, #{log.createTime})
+    </insert>
+</mapper>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.DepartmentMapper">
+    <select id="findAll" resultType="Department">
+        SELECT * FROM studentms.department ORDER BY id
+    </select>
+
+    <select id="findById" resultType="Department">
+        SELECT * FROM studentms.department WHERE id = #{id}
+    </select>
+
+    <select id="findBySearch" resultType="Department">
+        SELECT * FROM studentms.department
+        <where>
+            <if test="name != null and name != ''">
+                name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        ORDER BY id
+    </select>
+
+    <update id="updateById">
+        UPDATE studentms.department SET
+        name = #{department.name}
+        WHERE id = #{department.id}
+    </update>
+
+    <insert id="save">
+        INSERT INTO studentms.department (name) VALUES (#{department.name})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.department WHERE id = #{id}
+    </delete>
+</mapper>
