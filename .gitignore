@@ -1,0 +1,45 @@
+# =============================
+# Node / Vue 前端
+# =============================
+student_client/node_modules/
+student_client/dist/
+student_client/build/
+student_client/.env*
+
+# =============================
+# Java / Spring Boot 后端
+# =============================
+student_server/target/
+student_server/*.log
+student_server/*.class
+student_server/*.jar
+student_server/*.war
+student_server/*.iml
+student_server/.idea/
+student_server/.env*
+student_server/application-*.yml
+
+# =============================
+# Cursor 编辑器
+# =============================
+*.cursorignore
+*.cursorrules
+.cursorignore
+.cursorrules
+
+# =============================
+# OS / IDE 通用
+# =============================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# =============================
+# 临时 / 备份文件
+# =============================
+*.swp
+*.tmp
+*.bak
+*.backup
