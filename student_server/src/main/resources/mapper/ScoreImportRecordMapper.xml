@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.ScoreImportRecordMapper">
+
+    <insert id="save">
+        INSERT INTO studentms.score_import_record
+        (file_name, term, course_id, teacher_id, operator, status, message, created_at)
+        VALUES
+        (#{record.fileName}, #{record.term}, #{record.courseId}, #{record.teacherId},
+         #{record.operator}, #{record.status}, #{record.message}, #{record.createdAt})
+    </insert>
+
+</mapper>
+

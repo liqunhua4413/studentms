@@ -33,7 +33,8 @@ public class GradeController {
     private SCTService sctService;
 
     @PostMapping("/upload")
-    public String uploadExcel(@RequestParam("file") MultipartFile file) {
+    public String uploadExcel(@RequestParam("file") MultipartFile file,
+                              @RequestAttribute(value = "operator", required = false) String operator) {
         if (file.isEmpty()) {
             return "文件为空，请选择文件";
         }
@@ -41,7 +42,10 @@ public class GradeController {
         if (originalFilename == null || (!originalFilename.endsWith(".xlsx") && !originalFilename.endsWith(".xls"))) {
             return "文件格式错误，请上传 Excel 文件（.xlsx 或 .xls）";
         }
-        return gradeService.uploadExcel(file);
+        if (operator == null || operator.isEmpty()) {
+            operator = "unknown";
+        }
+        return gradeService.uploadExcel(file, operator);
     }
 
     @PostMapping("/query")

@@ -1,10 +1,10 @@
 package com.auggie.student_server.controller;
 
-import com.auggie.student_server.entity.Student;
 import com.auggie.student_server.entity.Teacher;
 import com.auggie.student_server.service.TeacherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -62,5 +62,20 @@ public class TeacherController {
     public boolean updateTeacher(@RequestBody Teacher teacher) {
         System.out.println("更新 " + teacher);
         return teacherService.updateById(teacher);
+    }
+
+    /**
+     * 教师批量导入（Excel）
+     */
+    @PostMapping("/import")
+    public String importTeachers(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return "文件为空，请选择文件";
+        }
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || (!originalFilename.endsWith(".xlsx") && !originalFilename.endsWith(".xls"))) {
+            return "文件格式错误，请上传 Excel 文件（.xlsx 或 .xls）";
+        }
+        return teacherService.importFromExcel(file);
     }
 }

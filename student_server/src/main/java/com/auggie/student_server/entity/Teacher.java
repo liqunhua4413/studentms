@@ -18,7 +18,9 @@ import org.apache.ibatis.type.Alias;
 @Alias("Teacher")
 public class Teacher {
     private Integer tid;
+    private String teacherNo;
     private String tname;
     private String password;
-    private String role;  // admin 或 teacher
+    private String role;  // admin / teacher / dean
+    private Integer departmentId;
 }

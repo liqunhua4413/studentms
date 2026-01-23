@@ -7,11 +7,14 @@ import studentManage from '../views/Admin/studentManage/index'
 import addStudent from "@/views/Admin/studentManage/addStudent";
 import studentList from "@/views/Admin/studentManage/studentList";
 import editorStudent from "@/views/Admin/studentManage/editorStudent";
+import importStudent from "@/views/Admin/studentManage/importStudent";
 import teacherManage from "@/views/Admin/teacherManage/index"
 import addTeacher from "@/views/Admin/teacherManage/addTeacher";
 import editorTeacher from "@/views/Admin/teacherManage/editorTeacher";
+import importTeacher from "@/views/Admin/teacherManage/importTeacher";
 import courseManage from "@/views/Admin/courseManage/index";
 import addCourse from "@/views/Admin/courseManage/addCourse";
+import importCourse from "@/views/Admin/courseManage/importCourse";
 import teacher from "@/views/Teacher/index";
 import queryStudent from "@/views/Admin/studentManage/queryStudent";
 import queryTeacher from "@/views/Admin/teacherManage/queryTeacher";
@@ -43,16 +46,19 @@ import departmentList from "@/views/Admin/departmentManage/departmentList";
 import addDepartment from "@/views/Admin/departmentManage/addDepartment";
 import editorDepartment from "@/views/Admin/departmentManage/editorDepartment";
 import queryDepartment from "@/views/Admin/departmentManage/queryDepartment";
+import importDepartment from "@/views/Admin/departmentManage/importDepartment";
 import majorManage from "@/views/Admin/majorManage/index";
 import majorList from "@/views/Admin/majorManage/majorList";
 import addMajor from "@/views/Admin/majorManage/addMajor";
 import editorMajor from "@/views/Admin/majorManage/editorMajor";
 import queryMajor from "@/views/Admin/majorManage/queryMajor";
+import importMajor from "@/views/Admin/majorManage/importMajor";
 import classManage from "@/views/Admin/classManage/index";
 import classList from "@/views/Admin/classManage/classList";
 import addClass from "@/views/Admin/classManage/addClass";
 import editorClass from "@/views/Admin/classManage/editorClass";
 import queryClass from "@/views/Admin/classManage/queryClass";
+import importClass from "@/views/Admin/classManage/importClass";
 import gradeManage from "@/views/Admin/gradeManage/index";
 import uploadGrade from "@/views/Admin/gradeManage/uploadGrade";
 import queryGrade from "@/views/Admin/gradeManage/queryGrade";
@@ -111,6 +117,12 @@ const routes = [
             meta: {requireAuth: true}
           },
           {
+            path: '/importStudent',
+            name: '学生批量导入',
+            component: importStudent,
+            meta: {requireAuth: true}
+          },
+          {
             path: '/studentList',
             name: '学生列表',
             component: studentList,
@@ -150,6 +162,12 @@ const routes = [
             meta: {requireAuth: true}
           },
           {
+            path: '/importTeacher',
+            name: '教师批量导入',
+            component: importTeacher,
+            meta: {requireAuth: true}
+          },
+          {
             path: '/queryTeacher',
             name: '教师列表',
             component: queryTeacher,
@@ -175,6 +193,12 @@ const routes = [
             path: '/addCourse',
             name: '添加课程',
             component: addCourse,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importCourse',
+            name: '课程批量导入',
+            component: importCourse,
             meta: {requireAuth: true}
           },
           {
@@ -246,6 +270,12 @@ const routes = [
             meta: {requireAuth: true}
           },
           {
+            path: '/importDepartment',
+            name: '学院批量导入',
+            component: importDepartment,
+            meta: {requireAuth: true}
+          },
+          {
             path: '/departmentList',
             name: '学院列表',
             component: departmentList,
@@ -285,6 +315,12 @@ const routes = [
             meta: {requireAuth: true}
           },
           {
+            path: '/importMajor',
+            name: '专业批量导入',
+            component: importMajor,
+            meta: {requireAuth: true}
+          },
+          {
             path: '/majorList',
             name: '专业列表',
             component: majorList,
@@ -321,6 +357,12 @@ const routes = [
             path: '/addClass',
             name: '添加班级',
             component: addClass,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importClass',
+            name: '班级批量导入',
+            component: importClass,
             meta: {requireAuth: true}
           },
           {

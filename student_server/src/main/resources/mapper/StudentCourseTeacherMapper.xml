@@ -5,17 +5,17 @@
 <mapper namespace="com.auggie.student_server.mapper.StudentCourseTeacherMapper">
     <select id="findByStudentId" resultType="CourseTeacherInfo">
         SELECT c.cid, c.cname, t.tid, t.tname, sct.grade, c.ccredit
-        FROM studentms.sct sct INNER JOIN studentms.t t ON sct.tid = t.tid
-                INNER JOIN studentms.c c ON sct.cid = c.cid
+        FROM studentms.score sct INNER JOIN studentms.teacher t ON sct.tid = t.tid
+                INNER JOIN studentms.course c ON sct.cid = c.cid
         WHERE sct.sid = #{sid} AND sct.term = #{term}
     </select>
 
     <select id="findBySearch" resultType="SCTInfo">
         SELECT c.cid, c.cname, t.tid, t.tname, s.sid, s.sname, sct.grade, sct.term,
                sct.usual_grade, sct.final_grade, sct.total_grade, sct.class_id, sct.major_id, sct.department_id
-        FROM studentms.sct sct INNER JOIN studentms.s s ON sct.sid = s.sid
-                INNER JOIN studentms.t t ON sct.tid = t.tid
-                INNER JOIN studentms.c c ON sct.cid = c.cid
+        FROM studentms.score sct INNER JOIN studentms.student s ON sct.sid = s.sid
+                INNER JOIN studentms.teacher t ON sct.tid = t.tid
+                INNER JOIN studentms.course c ON sct.cid = c.cid
         <where>
             <if test="sid != null">
                 s.sid = #{sid}
@@ -72,7 +72,7 @@
     </select>
 
     <insert id="batchInsert">
-        INSERT INTO studentms.sct (sid, cid, tid, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id)
+        INSERT INTO studentms.score (sid, cid, tid, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.sid}, #{item.cid}, #{item.tid}, #{item.term}, #{item.usualGrade}, #{item.finalGrade}, #{item.totalGrade}, #{item.classId}, #{item.majorId}, #{item.departmentId})

@@ -4,6 +4,7 @@ import com.auggie.student_server.entity.Course;
 import com.auggie.student_server.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,21 @@ public class CourseController {
     public boolean updateCourse(@RequestBody Course course) {
         System.out.println("正在修改课程: " + course);
         return courseService.updateById(course);
+    }
+
+    /**
+     * 课程批量导入（Excel）
+     */
+    @PostMapping("/import")
+    public String importCourses(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return "文件为空，请选择文件";
+        }
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || (!originalFilename.endsWith(".xlsx") && !originalFilename.endsWith(".xls"))) {
+            return "文件格式错误，请上传 Excel 文件（.xlsx 或 .xls）";
+        }
+        return courseService.importFromExcel(file);
     }
 
 }

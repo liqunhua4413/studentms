@@ -4,8 +4,13 @@ import com.auggie.student_server.entity.Class;
 import com.auggie.student_server.mapper.ClassMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.util.List;
+import java.io.InputStream;
 
 /**
  * @Auther: auggie
@@ -45,5 +50,94 @@ public class ClassService {
 
     public boolean deleteById(Integer id) {
         return classMapper.deleteById(id);
+    }
+
+    /**
+     * 批量导入班级（Excel）
+     * 模板列顺序：班级名称、年级、专业ID、学院ID
+     */
+    public String importFromExcel(MultipartFile file) {
+        try {
+            InputStream inputStream = file.getInputStream();
+            Workbook workbook = new XSSFWorkbook(inputStream);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            int successCount = 0;
+            int failCount = 0;
+            StringBuilder errorMsg = new StringBuilder();
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+                try {
+                    String name = getStringValue(row.getCell(0));
+                    String gradeLevel = getStringValue(row.getCell(1));
+                    Integer majorId = getIntValue(row.getCell(2));
+                    Integer departmentId = getIntValue(row.getCell(3));
+
+                    if (name == null || name.isEmpty() || majorId == null || departmentId == null) {
+                        continue;
+                    }
+
+                    Class clazz = new Class();
+                    clazz.setName(name);
+                    clazz.setGradeLevel(gradeLevel);
+                    clazz.setMajorId(majorId);
+                    clazz.setDepartmentId(departmentId);
+
+                    boolean ok = classMapper.save(clazz);
+                    if (ok) successCount++;
+                    else {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：数据库插入失败\n");
+                    }
+                } catch (Exception e) {
+                    failCount++;
+                    errorMsg.append("第").append(i + 1).append("行：").append(e.getMessage()).append("\n");
+                }
+            }
+
+            workbook.close();
+            inputStream.close();
+            return String.format("班级导入完成！成功：%d 条，失败：%d 条\n%s",
+                    successCount, failCount, errorMsg.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "班级导入失败：" + e.getMessage();
+        }
+    }
+
+    private String getStringValue(Cell cell) {
+        if (cell == null) return null;
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getDateCellValue().toString();
+                } else {
+                    return String.valueOf((long) cell.getNumericCellValue());
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return null;
+        }
+    }
+
+    private Integer getIntValue(Cell cell) {
+        if (cell == null) return null;
+        switch (cell.getCellType()) {
+            case NUMERIC:
+                return (int) cell.getNumericCellValue();
+            case STRING:
+                try {
+                    return Integer.parseInt(cell.getStringCellValue().trim());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            default:
+                return null;
+        }
     }
 }

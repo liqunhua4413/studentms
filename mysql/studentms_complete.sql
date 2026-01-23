@@ -1,202 +1,201 @@
--- 学生成绩管理系统完整数据库初始化脚本
--- 包含基础表和升级后的所有表结构
--- 执行前请备份数据库（如果已有数据）
+-- 学生成绩管理系统完整数据库初始化脚本（最终稳定版）
+-- 兼容 studentms 旧项目 + 新规范扩展
+-- 执行前请备份数据库
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 删除并创建数据库
 DROP DATABASE IF EXISTS studentms;
 CREATE DATABASE studentms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE studentms;
 
--- ============================================
--- 基础表结构
--- ============================================
+-- =========================
+-- 基础维度表
+-- =========================
 
--- 课程表
-DROP TABLE IF EXISTS `c`;
-CREATE TABLE `c` (
-  `cid` int(11) NOT NULL AUTO_INCREMENT,
-  `cname` varchar(30) NOT NULL,
-  `ccredit` tinyint(4) DEFAULT NULL,
-  `major_id` int(11) DEFAULT NULL COMMENT '专业ID',
-  `department_id` int(11) DEFAULT NULL COMMENT '学院ID',
-  PRIMARY KEY (`cid`),
-  KEY `idx_course_major` (`major_id`),
-  KEY `idx_course_department` (`department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `department`;
+CREATE TABLE `department` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+  `name` VARCHAR(100) NOT NULL COMMENT '学院名称',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学院表';
 
--- 教师表（包含 admin 和 teacher，通过 role 字段区分）
-DROP TABLE IF EXISTS `t`;
-CREATE TABLE `t` (
-  `tid` int(11) NOT NULL AUTO_INCREMENT,
-  `tname` varchar(30) NOT NULL,
-  `password` varchar(30) NOT NULL,
-  `role` varchar(20) DEFAULT 'teacher' COMMENT '角色：admin 或 teacher',
-  PRIMARY KEY (`tid`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `major`;
+CREATE TABLE `major` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `department_id` INT NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_major_department FOREIGN KEY (department_id) REFERENCES department(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专业表';
 
--- 学生表
-DROP TABLE IF EXISTS `s`;
-CREATE TABLE `s` (
-  `sid` int(11) NOT NULL AUTO_INCREMENT,
-  `sname` varchar(30) NOT NULL,
-  `password` varchar(30) NOT NULL,
-  `class_id` int(11) DEFAULT NULL COMMENT '班级ID',
-  `grade_level` varchar(10) DEFAULT NULL COMMENT '年级',
-  `major_id` int(11) DEFAULT NULL COMMENT '专业ID',
-  `department_id` int(11) DEFAULT NULL COMMENT '学院ID',
-  PRIMARY KEY (`sid`),
-  KEY `idx_student_class` (`class_id`),
-  KEY `idx_student_major` (`major_id`),
-  KEY `idx_student_department` (`department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `class`;
+CREATE TABLE `class` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `grade_level` VARCHAR(10),
+  `major_id` INT NOT NULL,
+  `department_id` INT NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_class_major FOREIGN KEY (major_id) REFERENCES major(id),
+  CONSTRAINT fk_class_department FOREIGN KEY (department_id) REFERENCES department(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='班级表';
 
--- 课程教师关联表
-DROP TABLE IF EXISTS `ct`;
-CREATE TABLE `ct` (
-  `ctid` int(11) NOT NULL AUTO_INCREMENT,
-  `cid` int(11) DEFAULT NULL,
-  `tid` int(11) DEFAULT NULL,
-  `term` varchar(30) NOT NULL,
-  PRIMARY KEY (`ctid`),
-  KEY `cid` (`cid`),
-  KEY `tid` (`tid`),
-  CONSTRAINT `ct_ibfk_1` FOREIGN KEY (`cid`) REFERENCES `c` (`cid`),
-  CONSTRAINT `ct_ibfk_2` FOREIGN KEY (`tid`) REFERENCES `t` (`tid`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
+-- =========================
+-- 核心用户表
+-- =========================
 
--- 学生课程成绩表
-DROP TABLE IF EXISTS `sct`;
-CREATE TABLE `sct` (
-  `sctid` int(11) NOT NULL AUTO_INCREMENT,
-  `sid` int(11) DEFAULT NULL,
-  `cid` int(11) DEFAULT NULL,
-  `tid` int(11) DEFAULT NULL,
-  `grade` float DEFAULT NULL COMMENT '总成绩（兼容旧数据）',
-  `term` varchar(30) DEFAULT NULL,
-  `usual_grade` float DEFAULT NULL COMMENT '平时成绩',
-  `final_grade` float DEFAULT NULL COMMENT '期末成绩',
-  `total_grade` float DEFAULT NULL COMMENT '总成绩',
-  `class_id` int(11) DEFAULT NULL COMMENT '班级ID',
-  `major_id` int(11) DEFAULT NULL COMMENT '专业ID',
-  `department_id` int(11) DEFAULT NULL COMMENT '学院ID',
-  PRIMARY KEY (`sctid`),
-  KEY `sid` (`sid`),
-  KEY `tid` (`tid`),
-  KEY `cid` (`cid`),
-  KEY `idx_sct_class` (`class_id`),
-  KEY `idx_sct_major` (`major_id`),
-  KEY `idx_sct_department` (`department_id`),
-  CONSTRAINT `sct_ibfk_1` FOREIGN KEY (`sid`) REFERENCES `s` (`sid`),
-  CONSTRAINT `sct_ibfk_2` FOREIGN KEY (`tid`) REFERENCES `t` (`tid`),
-  CONSTRAINT `sct_ibfk_3` FOREIGN KEY (`cid`) REFERENCES `c` (`cid`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `student`;
+CREATE TABLE `student` (
+  `sid` INT AUTO_INCREMENT PRIMARY KEY,
+  `student_no` VARCHAR(50) NOT NULL UNIQUE,
+  `sname` VARCHAR(50) NOT NULL,
+  `password` VARCHAR(100) NOT NULL,
+  `class_id` INT DEFAULT NULL,
+  `grade_level` VARCHAR(10),
+  `major_id` INT DEFAULT NULL,
+  `department_id` INT DEFAULT NULL,
+  CONSTRAINT fk_student_class FOREIGN KEY (class_id) REFERENCES class(id),
+  CONSTRAINT fk_student_major FOREIGN KEY (major_id) REFERENCES major(id),
+  CONSTRAINT fk_student_department FOREIGN KEY (department_id) REFERENCES department(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生表';
 
--- ============================================
--- 升级后的新表
--- ============================================
+DROP TABLE IF EXISTS `teacher`;
+CREATE TABLE `teacher` (
+  `tid` INT AUTO_INCREMENT PRIMARY KEY,
+  `teacher_no` VARCHAR(50) NOT NULL UNIQUE,
+  `tname` VARCHAR(50) NOT NULL,
+  `password` VARCHAR(100) NOT NULL,
+  `role` VARCHAR(20) NOT NULL DEFAULT 'teacher',
+  `department_id` INT DEFAULT NULL,
+  CONSTRAINT fk_teacher_department FOREIGN KEY (department_id) REFERENCES department(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='教师表';
 
--- 学院表
-CREATE TABLE IF NOT EXISTS `department` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(100) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- =========================
+-- 教学业务表
+-- =========================
 
--- 专业表
-CREATE TABLE IF NOT EXISTS `major` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(100) NOT NULL,
-    `department_id` INT,
-    FOREIGN KEY (`department_id`) REFERENCES `department`(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `course`;
+CREATE TABLE `course` (
+  `cid` INT AUTO_INCREMENT PRIMARY KEY,
+  `cname` VARCHAR(100) NOT NULL,
+  `ccredit` TINYINT DEFAULT NULL,
+  `major_id` INT DEFAULT NULL,
+  `department_id` INT DEFAULT NULL,
+  CONSTRAINT fk_course_major FOREIGN KEY (major_id) REFERENCES major(id),
+  CONSTRAINT fk_course_department FOREIGN KEY (department_id) REFERENCES department(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='课程表';
 
--- 班级表
-CREATE TABLE IF NOT EXISTS `class` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(100) NOT NULL,
-    `major_id` INT,
-    `department_id` INT,
-    FOREIGN KEY (`major_id`) REFERENCES `major`(`id`),
-    FOREIGN KEY (`department_id`) REFERENCES `department`(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `course_open`;
+CREATE TABLE `course_open` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `course_id` INT NOT NULL,
+  `teacher_id` INT NOT NULL,
+  `class_id` INT NOT NULL,
+  `term` VARCHAR(30) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_open_course FOREIGN KEY (course_id) REFERENCES course(cid),
+  CONSTRAINT fk_open_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(tid),
+  CONSTRAINT fk_open_class FOREIGN KEY (class_id) REFERENCES class(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='开课表';
 
--- Word 文件表
-CREATE TABLE IF NOT EXISTS `word_papers` (
-    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `file_name` VARCHAR(255) NOT NULL,
-    `file_path` VARCHAR(500) NOT NULL,
-    `upload_by` VARCHAR(50),
-    `upload_time` DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `score`;
+CREATE TABLE `score` (
+  `sctid` INT AUTO_INCREMENT PRIMARY KEY,
+  `sid` INT DEFAULT NULL,
+  `cid` INT DEFAULT NULL,
+  `tid` INT DEFAULT NULL,
+  `grade` FLOAT DEFAULT NULL,
+  `term` VARCHAR(30),
+  `usual_grade` FLOAT,
+  `final_grade` FLOAT,
+  `total_grade` FLOAT,
+  `class_id` INT,
+  `major_id` INT,
+  `department_id` INT,
+  CONSTRAINT fk_score_student FOREIGN KEY (sid) REFERENCES student(sid),
+  CONSTRAINT fk_score_teacher FOREIGN KEY (tid) REFERENCES teacher(tid),
+  CONSTRAINT fk_score_course FOREIGN KEY (cid) REFERENCES course(cid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成绩表';
 
--- 操作日志表
-CREATE TABLE IF NOT EXISTS `operation_log` (
-    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `operator` VARCHAR(50),
-    `operation_type` VARCHAR(50),
-    `target_table` VARCHAR(50),
-    `target_id` BIGINT,
-    `content` TEXT,
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    KEY `idx_operation_log_operator` (`operator`),
-    KEY `idx_operation_log_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `score_import_record`;
+CREATE TABLE `score_import_record` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `file_name` VARCHAR(255) NOT NULL,
+  `term` VARCHAR(30) NOT NULL,
+  `course_id` INT,
+  `teacher_id` INT,
+  `operator` VARCHAR(50) NOT NULL,
+  `status` VARCHAR(20) DEFAULT 'SUCCESS',
+  `message` TEXT,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_import_course FOREIGN KEY (course_id) REFERENCES course(cid),
+  CONSTRAINT fk_import_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(tid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成绩导入记录表';
 
--- ============================================
+DROP TABLE IF EXISTS `exam_paper_analysis`;
+CREATE TABLE `exam_paper_analysis` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `course_open_id` INT,
+  `file_name` VARCHAR(255) NOT NULL,
+  `file_path` VARCHAR(500) NOT NULL,
+  `upload_by` VARCHAR(50) NOT NULL,
+  `uploader_role` VARCHAR(20) NOT NULL,
+  `upload_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_exam_open FOREIGN KEY (course_open_id) REFERENCES course_open(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='试卷分析表';
+
+DROP TABLE IF EXISTS `operation_log`;
+CREATE TABLE `operation_log` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `operator` VARCHAR(50),
+  `operation_type` VARCHAR(50),
+  `target_table` VARCHAR(50),
+  `target_id` BIGINT,
+  `content` TEXT,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
+
+-- =========================
 -- 初始化数据
--- ============================================
+-- =========================
 
--- 插入课程数据
-INSERT INTO `c` (`cid`, `cname`, `ccredit`) VALUES
-(7, '数据结构', 6),
-(8, '组合数学', 3),
-(9, '计算机网络', 5),
-(10, '计算机组成原理', 5),
-(11, 'RJC教你做选课系统', 10);
+INSERT INTO department(name) VALUES
+('计算机工程学院'),('机电工程学院'),('财经管理学院'),('艺术设计学院'),('基础教学部');
 
--- 插入教师数据（注意：admin 用户的 role 设置为 'admin'）
-INSERT INTO `t` (`tid`, `tname`, `password`, `role`) VALUES
-(4, '李玉民', '123', 'teacher'),
-(6, 'admin', '123', 'admin'),
-(13, '张三', '123', 'teacher');
+INSERT INTO major(name,department_id) VALUES
+('软件技术',1),('大数据技术',1),('机电一体化',2),('会计',3),('视觉传达设计',4);
 
--- 插入学生数据
-INSERT INTO `s` (`sid`, `sname`, `password`) VALUES
-(1, '阮健乘', '1234'),
-(2, '张四', '123'),
-(3, '李四', '1234'),
-(4, '彭昊辉', '123456'),
-(6, '林春霞', '123'),
-(7, '董一超', '12345'),
-(8, '董超', '123'),
-(9, '张千', '10086'),
-(10, '李万', '10085'),
-(14, '薇尔莉特', '123'),
-(21, '庄亮', '123'),
-(22, '钟平', '1234'),
-(23, '李煜豪', '123');
+INSERT INTO class(name,grade_level,major_id,department_id) VALUES
+('23软件1班','2023',1,1),('23软件2班','2023',1,1),('23大数据1班','2023',2,1),
+('23机电1班','2023',3,2),('23会计1班','2023',4,3);
 
--- 插入课程教师关联数据
-INSERT INTO `ct` (`ctid`, `cid`, `tid`, `term`) VALUES
-(5, 8, 4, '22-春季学期'),
-(6, 7, 4, '22-春季学期'),
-(7, 10, 13, '22-春季学期'),
-(8, 9, 13, '22-春季学期'),
-(9, 11, 4, '22-春季学期');
+INSERT INTO course(cname,ccredit,major_id,department_id) VALUES
+('数据结构',4,1,1),('数据库原理',4,1,1),('计算机网络',3,2,1),
+('机电控制基础',4,3,2),('基础会计',3,4,3);
 
--- 插入学生课程成绩数据
-INSERT INTO `sct` (`sctid`, `sid`, `cid`, `tid`, `grade`, `term`) VALUES
-(10, 2, 8, 4, 1, '22-春季学期'),
-(11, 2, 10, 13, NULL, '22-春季学期'),
-(12, 2, 7, 4, NULL, '22-春季学期'),
-(13, 4, 8, 4, 10, '22-春季学期'),
-(14, 4, 7, 4, NULL, '22-春季学期'),
-(15, 4, 10, 13, NULL, '22-春季学期');
+INSERT INTO teacher(teacher_no,tname,password,role,department_id) VALUES
+('A0001','系统管理员','123456','admin',1),
+('D0101','计算机工程学院院长','123456','dean',1),
+('D0201','机电工程学院院长','123456','dean',2),
+('D0301','财经管理学院院长','123456','dean',3),
+('D0401','艺术设计学院院长','123456','dean',4),
+('D0501','基础教学部主任','123456','dean',5),
+('T1001','张三','123456','teacher',1),
+('T1002','李四','123456','teacher',1),
+('T2001','王五','123456','teacher',2),
+('T3001','赵六','123456','teacher',3),
+('T4001','钱七','123456','teacher',4);
 
--- ============================================
--- 完成
--- ============================================
+INSERT INTO student(student_no,sname,password,class_id,grade_level,major_id,department_id) VALUES
+('S230001','学生一','123456',1,'2023',1,1),
+('S230002','学生二','123456',1,'2023',1,1),
+('S230003','学生三','123456',2,'2023',1,1),
+('S230004','学生四','123456',3,'2023',2,1),
+('S230005','学生五','123456',4,'2023',3,2);
 
 SET FOREIGN_KEY_CHECKS = 1;

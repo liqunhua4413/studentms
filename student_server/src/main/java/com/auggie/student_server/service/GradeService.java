@@ -1,10 +1,12 @@
 package com.auggie.student_server.service;
 
 import com.auggie.student_server.entity.StudentCourseTeacher;
+import com.auggie.student_server.entity.ScoreImportRecord;
 import com.auggie.student_server.mapper.StudentCourseTeacherMapper;
 import com.auggie.student_server.mapper.StudentMapper;
 import com.auggie.student_server.mapper.CourseMapper;
 import com.auggie.student_server.mapper.TeacherMapper;
+import com.auggie.student_server.mapper.ScoreImportRecordMapper;
 import com.auggie.student_server.entity.Student;
 import com.auggie.student_server.entity.Course;
 import com.auggie.student_server.entity.Teacher;
@@ -35,12 +37,14 @@ public class GradeService {
     private CourseMapper courseMapper;
     @Autowired
     private TeacherMapper teacherMapper;
+    @Autowired
+    private ScoreImportRecordMapper scoreImportRecordMapper;
 
     /**
      * 解析 Excel 文件并批量插入成绩
      * Excel 格式：学号、学生姓名、课程名、教师姓名、平时成绩、期末成绩、总成绩、学期、班级、专业、系
      */
-    public String uploadExcel(MultipartFile file) {
+    public String uploadExcel(MultipartFile file, String operator) {
         try {
             InputStream inputStream = file.getInputStream();
             Workbook workbook = new XSSFWorkbook(inputStream);
@@ -50,6 +54,10 @@ public class GradeService {
             int successCount = 0;
             int failCount = 0;
             StringBuilder errorMsg = new StringBuilder();
+
+            String termForRecord = null;
+            Integer courseIdForRecord = null;
+            Integer teacherIdForRecord = null;
 
             // 从第二行开始读取（第一行是表头）
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
@@ -92,6 +100,9 @@ public class GradeService {
                     // 读取学期
                     Cell cell7 = row.getCell(7);
                     String term = getStringValue(cell7);
+                    if (termForRecord == null && term != null && !term.isEmpty()) {
+                        termForRecord = term;
+                    }
 
                     // 读取班级ID
                     Cell cell8 = row.getCell(8);
@@ -121,6 +132,9 @@ public class GradeService {
                         continue;
                     }
                     Integer cid = courses.get(0).getCid();
+                    if (courseIdForRecord == null) {
+                        courseIdForRecord = cid;
+                    }
 
                     // 查找教师ID
                     List<Teacher> teachers = teacherMapper.findBySearch(null, tname, 1);
@@ -130,6 +144,9 @@ public class GradeService {
                         continue;
                     }
                     Integer tid = teachers.get(0).getTid();
+                    if (teacherIdForRecord == null) {
+                        teacherIdForRecord = tid;
+                    }
 
                     sct.setSid(sid);
                     sct.setCid(cid);
@@ -157,6 +174,18 @@ public class GradeService {
 
             workbook.close();
             inputStream.close();
+
+            // 记录导入结果
+            ScoreImportRecord record = new ScoreImportRecord();
+            record.setFileName(file.getOriginalFilename());
+            record.setTerm(termForRecord);
+            record.setCourseId(courseIdForRecord);
+            record.setTeacherId(teacherIdForRecord);
+            record.setOperator(operator);
+            record.setStatus(failCount == 0 ? "SUCCESS" : (successCount == 0 ? "FAILED" : "PARTIAL"));
+            record.setMessage(String.format("成功：%d 条，失败：%d 条\n%s", successCount, failCount, errorMsg.toString()));
+            record.setCreatedAt(java.time.LocalDateTime.now());
+            scoreImportRecordMapper.save(record);
 
             return String.format("上传完成！成功：%d 条，失败：%d 条\n%s", successCount, failCount, errorMsg.toString());
         } catch (Exception e) {

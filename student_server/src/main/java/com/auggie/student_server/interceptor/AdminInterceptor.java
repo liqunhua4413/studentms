@@ -50,8 +50,11 @@ public class AdminInterceptor implements HandlerInterceptor {
         String[] adminPaths = {
             "/department", "/major", "/class",
             "/grade/upload", "/grade/reexamination/export",
-            "/paper/upload", "/paper/deleteById",
-            "/operationLog"
+            "/paper/deleteById",
+            "/operationLog",
+            "/student/import", "/teacher/import",
+            "/department/import", "/major/import", "/class/import", "/course/import",
+            "/init/clearTestData", "/init/importBaseData"
         };
 
         boolean needAdmin = false;

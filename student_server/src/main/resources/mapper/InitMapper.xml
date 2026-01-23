@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.InitMapper">
+
+    <!-- 一键清空测试数据（保留表结构） -->
+    <update id="clearTestData">
+        DELETE FROM studentms.score;
+        DELETE FROM studentms.score_import_record;
+        DELETE FROM studentms.exam_paper_analysis;
+        DELETE FROM studentms.course_open;
+        DELETE FROM studentms.student;
+        DELETE FROM studentms.teacher WHERE role != 'admin';
+        DELETE FROM studentms.class;
+        DELETE FROM studentms.major;
+        DELETE FROM studentms.department;
+    </update>
+
+    <!-- 重新插入初始数据（与 studentms_complete.sql 保持一致的简化版本） -->
+    <update id="insertInitialData">
+        INSERT INTO studentms.department (name) VALUES
+        ('计算机工程学院'),
+        ('机电工程学院'),
+        ('财经管理学院'),
+        ('艺术设计学院'),
+        ('基础教学部');
+
+        INSERT INTO studentms.major (name, department_id) VALUES
+        ('软件技术', 1),
+        ('大数据技术', 1),
+        ('机电一体化', 2),
+        ('会计', 3),
+        ('视觉传达设计', 4);
+
+        INSERT INTO studentms.class (name, grade_level, major_id, department_id) VALUES
+        ('23软件1班', '2023', 1, 1),
+        ('23软件2班', '2023', 1, 1),
+        ('23大数据1班', '2023', 2, 1),
+        ('23机电1班', '2023', 3, 2),
+        ('23会计1班', '2023', 4, 3);
+
+        INSERT INTO studentms.course (cname, ccredit, major_id, department_id) VALUES
+        ('数据结构', 4, 1, 1),
+        ('数据库原理', 4, 1, 1),
+        ('计算机网络', 3, 2, 1),
+        ('机电控制基础', 4, 3, 2),
+        ('基础会计', 3, 4, 3);
+
+        INSERT INTO studentms.teacher (teacher_no, tname, password, role, department_id) VALUES
+        ('A0001', '系统管理员', '123456', 'admin', 1),
+        ('D0101', '计算机工程学院院长', '123456', 'dean', 1),
+        ('D0201', '机电工程学院院长', '123456', 'dean', 2),
+        ('D0301', '财经管理学院院长', '123456', 'dean', 3),
+        ('D0401', '艺术设计学院院长', '123456', 'dean', 4),
+        ('D0501', '基础教学部主任', '123456', 'dean', 5),
+        ('T1001', '张三', '123456', 'teacher', 1),
+        ('T1002', '李四', '123456', 'teacher', 1),
+        ('T2001', '王五', '123456', 'teacher', 2),
+        ('T3001', '赵六', '123456', 'teacher', 3),
+        ('T4001', '钱七', '123456', 'teacher', 4);
+
+        INSERT INTO studentms.student (student_no, sname, password, class_id, grade_level, major_id, department_id) VALUES
+        ('S230001', '学生一', '123456', 1, '2023', 1, 1),
+        ('S230002', '学生二', '123456', 1, '2023', 1, 1),
+        ('S230003', '学生三', '123456', 2, '2023', 1, 1),
+        ('S230004', '学生四', '123456', 3, '2023', 2, 1),
+        ('S230005', '学生五', '123456', 4, '2023', 3, 2);
+    </update>
+
+</mapper>
+

@@ -18,6 +18,7 @@ import org.apache.ibatis.type.Alias;
 @Alias("Student")
 public class Student {
     private Integer sid;
+    private String studentNo;
     private String sname;
     private String password;
     private Integer classId;

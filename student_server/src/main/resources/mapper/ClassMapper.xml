@@ -34,14 +34,15 @@
     <update id="updateById">
         UPDATE studentms.class SET
         name = #{class.name},
+        grade_level = #{class.gradeLevel},
         major_id = #{class.majorId},
         department_id = #{class.departmentId}
         WHERE id = #{class.id}
     </update>
 
     <insert id="save">
-        INSERT INTO studentms.class (name, major_id, department_id) 
-        VALUES (#{class.name}, #{class.majorId}, #{class.departmentId})
+        INSERT INTO studentms.class (name, grade_level, major_id, department_id) 
+        VALUES (#{class.name}, #{class.gradeLevel}, #{class.majorId}, #{class.departmentId})
     </insert>
 
     <delete id="deleteById">

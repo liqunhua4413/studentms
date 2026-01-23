@@ -4,15 +4,32 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.auggie.student_server.mapper.WordPaperMapper">
     <select id="findAll" resultType="WordPaper">
-        SELECT * FROM studentms.word_papers ORDER BY upload_time DESC
+        SELECT id,
+               file_name  AS fileName,
+               file_path  AS filePath,
+               upload_by  AS uploadBy,
+               upload_time AS uploadTime
+        FROM studentms.exam_paper_analysis
+        ORDER BY upload_time DESC
     </select>
 
     <select id="findById" resultType="WordPaper">
-        SELECT * FROM studentms.word_papers WHERE id = #{id}
+        SELECT id,
+               file_name  AS fileName,
+               file_path  AS filePath,
+               upload_by  AS uploadBy,
+               upload_time AS uploadTime
+        FROM studentms.exam_paper_analysis
+        WHERE id = #{id}
     </select>
 
     <select id="findBySearch" resultType="WordPaper">
-        SELECT * FROM studentms.word_papers
+        SELECT id,
+               file_name  AS fileName,
+               file_path  AS filePath,
+               upload_by  AS uploadBy,
+               upload_time AS uploadTime
+        FROM studentms.exam_paper_analysis
         <where>
             <if test="fileName != null and fileName != ''">
                 file_name LIKE CONCAT('%', #{fileName}, '%')
@@ -25,11 +42,11 @@
     </select>
 
     <insert id="save">
-        INSERT INTO studentms.word_papers (file_name, file_path, upload_by, upload_time)
-        VALUES (#{paper.fileName}, #{paper.filePath}, #{paper.uploadBy}, #{paper.uploadTime})
+        INSERT INTO studentms.exam_paper_analysis (file_name, file_path, upload_by, uploader_role, upload_time)
+        VALUES (#{paper.fileName}, #{paper.filePath}, #{paper.uploadBy}, 'teacher', #{paper.uploadTime})
     </insert>
 
     <delete id="deleteById">
-        DELETE FROM studentms.word_papers WHERE id = #{id}
+        DELETE FROM studentms.exam_paper_analysis WHERE id = #{id}
     </delete>
 </mapper>

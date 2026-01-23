@@ -19,6 +19,7 @@ import org.apache.ibatis.type.Alias;
 public class Class {
     private Integer id;
     private String name;
+    private String gradeLevel;
     private Integer majorId;
     private Integer departmentId;
 }

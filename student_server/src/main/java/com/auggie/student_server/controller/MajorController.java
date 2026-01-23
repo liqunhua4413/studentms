@@ -4,6 +4,7 @@ import com.auggie.student_server.entity.Major;
 import com.auggie.student_server.service.MajorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -58,5 +59,20 @@ public class MajorController {
     public boolean updateMajor(@RequestBody Major major) {
         System.out.println("更新 " + major);
         return majorService.updateById(major);
+    }
+
+    /**
+     * 专业批量导入（Excel）
+     */
+    @PostMapping("/import")
+    public String importMajors(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return "文件为空，请选择文件";
+        }
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || (!originalFilename.endsWith(".xlsx") && !originalFilename.endsWith(".xls"))) {
+            return "文件格式错误，请上传 Excel 文件（.xlsx 或 .xls）";
+        }
+        return majorService.importFromExcel(file);
     }
 }
