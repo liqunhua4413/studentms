@@ -7,7 +7,7 @@
         SELECT * FROM studentms.course
         <where>
             <if test="cid != null">
-                cid = #{cid}
+                id = #{cid}
             </if>
             <if test="cname != null">
                 <if test="fuzzy == 0">
@@ -32,7 +32,7 @@
                                ccredit = #{course.ccredit},
                                major_id = #{course.majorId},
                                department_id = #{course.departmentId}
-        WHERE cid = #{course.cid};
+        WHERE id = #{course.id};
     </update>
 
     <insert id="insertCourse">
@@ -41,6 +41,6 @@
     </insert>
 
     <delete id="deleteById">
-        DELETE FROM studentms.course WHERE cid = #{cid}
+        DELETE FROM studentms.course WHERE id = #{cid}
     </delete>
 </mapper>

@@ -59,6 +59,7 @@ import addClass from "@/views/Admin/classManage/addClass";
 import editorClass from "@/views/Admin/classManage/editorClass";
 import queryClass from "@/views/Admin/classManage/queryClass";
 import importClass from "@/views/Admin/classManage/importClass";
+import importCourseTeacher from "@/views/Admin/selectCourseManage/importCourseTeacher";
 import gradeManage from "@/views/Admin/gradeManage/index";
 import uploadGrade from "@/views/Admin/gradeManage/uploadGrade";
 import queryGrade from "@/views/Admin/gradeManage/queryGrade";
@@ -234,25 +235,11 @@ const routes = [
             name: '开课管理',
             component: queryCourseTeacher,
             meta: {requireAuth: true},
-          }
-        ]
-      },
-      {
-        name: 'admin 学生成绩管理',
-        path: "/gradeCourseManage",
-        component: studentManage,
-        meta: {requireAuth: true},
-        children: [
-          {
-            path: '/queryGradeCourse',
-            name: '学生成绩查询',
-            component: queryGradeCourse,
-            meta: {requireAuth: true},
           },
           {
-            path: '/editorGradeCourse',
-            name: '编辑',
-            component: editorGradeCourse,
+            path: '/importCourseTeacher',
+            name: '批量导入',
+            component: importCourseTeacher,
             meta: {requireAuth: true}
           }
         ]
@@ -409,12 +396,18 @@ const routes = [
             name: '成绩查询',
             component: queryGrade,
             meta: {requireAuth: true}
+          },
+          {
+            path: '/editorGradeCourse',
+            name: '编辑成绩',
+            component: editorGradeCourse,
+            meta: {requireAuth: true}
           }
         ]
       },
       {
         path: '/wordPaperManage',
-        name: 'Word文件管理',
+        name: '试卷分析',
         component: wordPaperManage,
         meta: {requireAuth: true},
         children: [
@@ -433,7 +426,92 @@ const routes = [
         meta: {requireAuth: true},
         children: [
           {
-            path: '/operationLogManage',
+            path: '/operationLogList',
+            name: '日志查看',
+            component: operationLogManage,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/otherFunctions',
+        name: '系统维护',
+        component: () => import('@/views/Admin/otherFunctions/index'),
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/dataMaintenance',
+            name: '数据清空/生成',
+            component: () => import('@/views/Admin/otherFunctions/index'),
+            meta: {requireAuth: true}
+          }
+        ]
+      }
+    ]
+  },
+  {
+    path: '/dean',
+    name: 'dean',
+    component: admin, // 使用 admin 的布局
+    redirect: '/deanHome',
+    meta: {requireAuth: true},
+    children: [
+      {
+        path: '/deanHome',
+        name: 'Hi! Dean',
+        component: adminHome,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/deanHome',
+            name: '院长主页',
+            component: adminHome,
+            meta: {requireAuth: true},
+          }
+        ]
+      },
+      {
+        path: '/deanGradeManage',
+        name: '成绩管理',
+        component: gradeManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/deanUploadGrade',
+            name: '成绩上传',
+            component: uploadGrade,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/deanQueryGrade',
+            name: '成绩查询',
+            component: queryGrade,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/deanWordPaperManage',
+        name: '试卷分析',
+        component: wordPaperManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/deanWordPaperList',
+            name: '文件列表',
+            component: wordPaperList,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/deanOperationLogManage',
+        name: '操作日志',
+        component: operationLogManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/deanOperationLogList',
             name: '日志查看',
             component: operationLogManage,
             meta: {requireAuth: true}
@@ -489,12 +567,13 @@ const routes = [
             component: myOfferCourse,
             meta: {requireAuth: true}
           },
-          {
-            path: '/offerCourse',
-            name: '开设课程',
-            component: offerCourse,
-            meta: {requireAuth: true}
-          },
+          // 教师不能开设课程，只有管理员可以
+          // {
+          //   path: '/offerCourse',
+          //   name: '开设课程',
+          //   component: offerCourse,
+          //   meta: {requireAuth: true}
+          // },
         ]
       },
       {
@@ -510,9 +589,15 @@ const routes = [
             meta: {requireAuth: true}
           },
           {
-            path: '/teacherEditorGradeCourse',
-            name: '编辑成绩',
-            component: teacherEditorGradeCourse,
+            path: '/teacherUploadGrade',
+            name: '上传成绩单',
+            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadGrade'),
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/teacherUploadWordPaper',
+            name: '上传试卷分析',
+            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadWordPaper'),
             meta: {requireAuth: true}
           }
         ]

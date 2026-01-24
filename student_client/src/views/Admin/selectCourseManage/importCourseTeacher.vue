@@ -15,7 +15,7 @@
       <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
       <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载模板</el-button>
       <div slot="tip" class="el-upload__tip">
-        模板列顺序：学生姓名、初始密码、班级ID、年级、专业ID、学院ID。仅管理员可操作。
+        模板列顺序：课程ID、教师ID、开课学期。仅管理员可操作。
       </div>
     </el-upload>
     <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">
@@ -33,7 +33,7 @@
 export default {
   data() {
     return {
-      uploadUrl: '/api/student/import',
+      uploadUrl: '/api/courseTeacher/import',
       fileList: [],
       uploadResult: ''
     }
@@ -51,7 +51,7 @@ export default {
       }
       return true;
     },
-    handleSuccess(response, file) {
+    handleSuccess(response) {
       if (typeof response === 'string') {
         this.uploadResult = response;
       } else {
@@ -62,20 +62,20 @@ export default {
         type: 'success'
       });
     },
-    handleError(err, file) {
+    handleError(err) {
       this.uploadResult = '上传失败：' + (err.message || '未知错误');
       this.$message.error('上传失败！');
     },
     downloadTemplate() {
       const that = this
-      axios.get('/student/template', {
+      axios.get('/courseTeacher/template', {
         responseType: 'blob'
       }).then(function (resp) {
         const blob = new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = '学生批量导入模板.xlsx'
+        link.download = '开课表批量导入模板.xlsx'
         link.click()
         window.URL.revokeObjectURL(url)
         that.$message({
@@ -95,4 +95,3 @@ export default {
   margin: 20px 0;
 }
 </style>
-

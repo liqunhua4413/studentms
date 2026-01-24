@@ -4,6 +4,7 @@
         class="upload-demo"
         ref="upload"
         :action="uploadUrl"
+        :data="{uploadBy: uploadBy}"
         :on-success="handleSuccess"
         :on-error="handleError"
         :before-upload="beforeUpload"
@@ -13,9 +14,12 @@
         accept=".xlsx,.xls">
       <el-button slot="trigger" size="small" type="primary">选择文件</el-button>
       <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
-      <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载模板</el-button>
+      <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载成绩单模板</el-button>
       <div slot="tip" class="el-upload__tip">
-        模板列顺序：学生姓名、初始密码、班级ID、年级、专业ID、学院ID。仅管理员可操作。
+        <p>支持多文件上传，只能上传 Excel 文件（.xlsx, .xls）</p>
+        <p>格式要求：第2行课程元信息，第3行教学信息，第4行表头，第5-73行学生数据</p>
+        <p>请下载模板查看详细格式要求</p>
+        <p style="color: red;">注意：教师只能上传成绩，不能修改已录入的成绩</p>
       </div>
     </el-upload>
     <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">
@@ -33,9 +37,10 @@
 export default {
   data() {
     return {
-      uploadUrl: '/api/student/import',
+      uploadUrl: '/api/grade/upload',
       fileList: [],
-      uploadResult: ''
+      uploadResult: '',
+      uploadBy: sessionStorage.getItem('name') || 'teacher'
     }
   },
   methods: {
@@ -43,8 +48,8 @@ export default {
       this.$refs.upload.submit();
     },
     beforeUpload(file) {
-      const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-          file.type === 'application/vnd.ms-excel';
+      const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                      file.type === 'application/vnd.ms-excel';
       if (!isExcel) {
         this.$message.error('只能上传 Excel 文件！');
         return false;
@@ -53,29 +58,32 @@ export default {
     },
     handleSuccess(response, file) {
       if (typeof response === 'string') {
-        this.uploadResult = response;
+        this.uploadResult = (this.uploadResult ? this.uploadResult + '\n' : '') + 
+                           file.name + ': ' + response;
       } else {
-        this.uploadResult = response.message || '上传成功！';
+        this.uploadResult = (this.uploadResult ? this.uploadResult + '\n' : '') + 
+                           file.name + ': ' + (response.message || '上传成功！');
       }
       this.$message({
-        message: '上传完成！',
+        message: file.name + ' 上传完成！',
         type: 'success'
       });
     },
     handleError(err, file) {
-      this.uploadResult = '上传失败：' + (err.message || '未知错误');
-      this.$message.error('上传失败！');
+      this.uploadResult = (this.uploadResult ? this.uploadResult + '\n' : '') + 
+                         file.name + ': 上传失败：' + (err.message || '未知错误');
+      this.$message.error(file.name + ' 上传失败！');
     },
     downloadTemplate() {
       const that = this
-      axios.get('/student/template', {
+      axios.get('/grade/template', {
         responseType: 'blob'
       }).then(function (resp) {
         const blob = new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = '学生批量导入模板.xlsx'
+        link.download = '成绩单批量导入模板.xlsx'
         link.click()
         window.URL.revokeObjectURL(url)
         that.$message({
@@ -95,4 +103,3 @@ export default {
   margin: 20px 0;
 }
 </style>
-

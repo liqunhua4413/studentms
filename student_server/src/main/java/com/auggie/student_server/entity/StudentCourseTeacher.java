@@ -17,10 +17,10 @@ import org.apache.ibatis.type.Alias;
 @AllArgsConstructor
 @Alias("StudentCourseTeacher")
 public class StudentCourseTeacher {
-    private Integer sctid;
-    private Integer sid;
-    private Integer cid;
-    private Integer tid;
+    private Integer id;
+    private Integer studentId;
+    private Integer courseId;
+    private Integer teacherId;
     private Float grade;  // 保留原有字段，兼容旧数据
     private String term;
     private Float usualGrade;   // 平时成绩

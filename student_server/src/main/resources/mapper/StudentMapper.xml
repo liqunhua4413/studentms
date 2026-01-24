@@ -8,14 +8,18 @@
     </select>
 
     <select id="findById" resultType="Student">
-        SELECT * FROM studentms.student WHERE sid = #{sid};
+        SELECT * FROM studentms.student WHERE id = #{sid};
+    </select>
+
+    <select id="findByStudentNo" resultType="Student">
+        SELECT * FROM studentms.student WHERE student_no = #{studentNo};
     </select>
 
     <select id="findBySearch" resultType="Student">
         SELECT * FROM studentms.student
         <where>
-            <if test="student.sid != null">
-                sid = #{student.sid}
+            <if test="student.id != null">
+                id = #{student.id}
             </if>
             <if test="student.sname != null">
                 <if test="fuzzy == 0">
@@ -37,7 +41,7 @@
         grade_level = #{student.gradeLevel},
         major_id = #{student.majorId},
         department_id = #{student.departmentId}
-        WHERE sid = #{student.sid};
+        WHERE id = #{student.id};
     </update>
 
     <insert id="save">
@@ -46,6 +50,6 @@
     </insert>
 
     <delete id="deleteById">
-        DELETE FROM studentms.student WHERE sid = #{sid}
+        DELETE FROM studentms.student WHERE id = #{sid}
     </delete>
 </mapper>

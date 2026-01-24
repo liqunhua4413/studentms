@@ -2,10 +2,16 @@ package com.auggie.student_server.controller;
 
 import com.auggie.student_server.entity.Course;
 import com.auggie.student_server.service.CourseService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +70,25 @@ public class CourseController {
             return "文件格式错误，请上传 Excel 文件（.xlsx 或 .xls）";
         }
         return courseService.importFromExcel(file);
+    }
+
+    /**
+     * 下载课程批量导入模板
+     */
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() throws IOException {
+        Workbook workbook = courseService.generateImportTemplate();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "课程批量导入模板.xlsx");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(outputStream.toByteArray());
     }
 
 }

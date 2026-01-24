@@ -12,12 +12,16 @@
           <el-input v-model="ruleForm.sname" :value="ruleForm.sname" :disabled="true"></el-input>
         </el-form-item>
         <el-form-item label="分数" prop="grade">
-          <el-input v-model.number="ruleForm.grade" :value="ruleForm.grade"></el-input>
+          <el-input v-model.number="ruleForm.grade" :value="ruleForm.grade" :disabled="true"></el-input>
         </el-form-item>
+        <el-alert
+            title="提示：教师不能修改成绩，只能通过上传成绩单的方式录入成绩"
+            type="warning"
+            :closable="false"
+            show-icon>
+        </el-alert>
         <el-form-item>
-          <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
-          <el-button @click="resetForm('ruleForm')">重置</el-button>
-          <el-button @click="test">test</el-button>
+          <el-button type="info" disabled>教师无权限修改成绩</el-button>
         </el-form-item>
       </el-form>
     </el-card>

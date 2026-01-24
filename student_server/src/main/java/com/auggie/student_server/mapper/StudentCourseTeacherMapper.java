@@ -39,17 +39,17 @@ public interface StudentCourseTeacherMapper {
                                       @Param("majorId") Integer majorId,
                                       @Param("departmentId") Integer departmentId);
 
-    @Select("SELECT DISTINCT sct.term FROM studentms.sct sct")
+    @Select("SELECT DISTINCT term FROM studentms.score")
     public List<String> findAllTerm();
 
-    @Select("SELECT * FROM studentms.sct WHERE sid = #{sct.sid} AND cid = #{sct.cid} AND tid = #{sct.tid} AND term = #{sct.term}")
+    @Select("SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId, grade, term, usual_grade AS usualGrade, final_grade AS finalGrade, total_grade AS totalGrade, class_id AS classId, major_id AS majorId, department_id AS departmentId FROM studentms.score WHERE student_id = #{sct.studentId} AND course_id = #{sct.courseId} AND teacher_id = #{sct.teacherId} AND term = #{sct.term}")
     public List<StudentCourseTeacher> findBySCT(@Param("sct") StudentCourseTeacher studentCourseTeacher);
 
-    @Insert("INSERT INTO studentms.sct (sid, cid, tid, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id) " +
-            "VALUES (#{s.sid}, #{s.cid}, #{s.tid}, #{s.term}, #{s.usualGrade}, #{s.finalGrade}, #{s.totalGrade}, #{s.classId}, #{s.majorId}, #{s.departmentId})")
+    @Insert("INSERT INTO studentms.score (student_id, course_id, teacher_id, grade, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id) " +
+            "VALUES (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.grade}, #{s.term}, #{s.usualGrade}, #{s.finalGrade}, #{s.totalGrade}, #{s.classId}, #{s.majorId}, #{s.departmentId})")
     public boolean insert(@Param("s")StudentCourseTeacher studentCourseTeacher);
 
-    @Update("UPDATE studentms.sct SET sct.grade = #{grade} WHERE sct.sid = #{sid} AND sct.tid = #{tid} AND sct.cid = #{cid} AND sct.term = #{term}")
+    @Update("UPDATE studentms.score SET grade = #{grade}, total_grade = #{grade} WHERE student_id = #{sid} AND teacher_id = #{tid} AND course_id = #{cid} AND term = #{term}")
     public boolean updateById(@Param("sid") Integer sid,
                               @Param("cid") Integer cid,
                               @Param("tid") Integer tid,
@@ -58,6 +58,6 @@ public interface StudentCourseTeacherMapper {
 
     public boolean batchInsert(@Param("list") List<StudentCourseTeacher> list);
 
-    @Delete("DELETE FROM studentms.sct WHERE sid = #{sct.sid} AND tid = #{sct.tid} AND cid = #{sct.cid}")
+    @Delete("DELETE FROM studentms.score WHERE student_id = #{sct.studentId} AND teacher_id = #{sct.teacherId} AND course_id = #{sct.courseId}")
     public boolean deleteBySCT(@Param("sct") StudentCourseTeacher sct);
 }

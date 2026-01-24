@@ -43,7 +43,7 @@ public class StudentService {
 
     public List<Student> findBySearch(Integer sid, String sname, Integer fuzzy) {
         Student student = new Student();
-        student.setSid(sid);
+        student.setId(sid);
         student.setSname(sname);
         fuzzy = (fuzzy == null) ? 0 : fuzzy;
 
@@ -58,6 +58,10 @@ public class StudentService {
 
     public Student findById(Integer sid) {
         return studentMapper.findById(sid);
+    }
+
+    public Student findByStudentNo(String studentNo) {
+        return studentMapper.findByStudentNo(studentNo);
     }
 
     public boolean updateById(Student student) {
@@ -195,5 +199,32 @@ public class StudentService {
             default:
                 return null;
         }
+    }
+
+    /**
+     * 生成学生批量导入模板
+     */
+    public Workbook generateImportTemplate() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("学生导入模板");
+
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"学生姓名", "初始密码", "班级ID", "年级", "专业ID", "学院ID"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 添加示例数据
+        Row exampleRow = sheet.createRow(1);
+        exampleRow.createCell(0).setCellValue("张三");
+        exampleRow.createCell(1).setCellValue("123456");
+        exampleRow.createCell(2).setCellValue(1);
+        exampleRow.createCell(3).setCellValue("2023级");
+        exampleRow.createCell(4).setCellValue(1);
+        exampleRow.createCell(5).setCellValue(1);
+
+        return workbook;
     }
 }

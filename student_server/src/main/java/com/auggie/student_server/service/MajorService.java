@@ -133,4 +133,27 @@ public class MajorService {
                 return null;
         }
     }
+
+    /**
+     * 生成专业批量导入模板
+     */
+    public Workbook generateImportTemplate() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("专业导入模板");
+
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"专业名称", "所属学院ID"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 添加示例数据
+        Row exampleRow = sheet.createRow(1);
+        exampleRow.createCell(0).setCellValue("计算机科学与技术");
+        exampleRow.createCell(1).setCellValue(1);
+
+        return workbook;
+    }
 }

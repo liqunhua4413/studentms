@@ -10,11 +10,16 @@
         :before-upload="beforeUpload"
         :file-list="fileList"
         :auto-upload="false"
-        :limit="1"
+        :multiple="true"
         accept=".xlsx,.xls">
       <el-button slot="trigger" size="small" type="primary">选择文件</el-button>
       <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
-      <div slot="tip" class="el-upload__tip">只能上传 Excel 文件（.xlsx, .xls），格式：学号、学生姓名、课程名、教师姓名、平时成绩、期末成绩、总成绩、学期、班级ID、专业ID、系ID</div>
+      <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载成绩单模板</el-button>
+      <div slot="tip" class="el-upload__tip">
+        <p>只能上传 Excel 文件（.xlsx, .xls）</p>
+        <p>格式要求：第2行课程元信息，第3行教学信息，第4行表头，第5-73行学生数据</p>
+        <p>请下载模板查看详细格式要求</p>
+      </div>
     </el-upload>
     <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">
       <el-alert
@@ -34,7 +39,7 @@ export default {
       uploadUrl: '/api/grade/upload',
       fileList: [],
       uploadResult: '',
-      uploadBy: 'admin'
+      uploadBy: sessionStorage.getItem('name') || 'admin'
     }
   },
   methods: {
@@ -64,6 +69,26 @@ export default {
     handleError(err, file) {
       this.uploadResult = '上传失败：' + (err.message || '未知错误');
       this.$message.error('上传失败！');
+    },
+    downloadTemplate() {
+      const that = this
+      axios.get('/grade/template', {
+        responseType: 'blob'
+      }).then(function (resp) {
+        const blob = new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = '成绩单批量导入模板.xlsx'
+        link.click()
+        window.URL.revokeObjectURL(url)
+        that.$message({
+          message: '模板下载成功！',
+          type: 'success'
+        });
+      }).catch(function (error) {
+        that.$message.error('模板下载失败！');
+      })
     }
   }
 }

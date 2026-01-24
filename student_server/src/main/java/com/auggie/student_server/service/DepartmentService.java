@@ -111,4 +111,26 @@ public class DepartmentService {
                 return null;
         }
     }
+
+    /**
+     * 生成学院批量导入模板
+     */
+    public Workbook generateImportTemplate() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("学院导入模板");
+
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"学院名称"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 添加示例数据
+        Row exampleRow = sheet.createRow(1);
+        exampleRow.createCell(0).setCellValue("计算机学院");
+
+        return workbook;
+    }
 }

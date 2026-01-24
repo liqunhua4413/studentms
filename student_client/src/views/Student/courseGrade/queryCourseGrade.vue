@@ -3,6 +3,7 @@
     <el-form >
       <el-form-item label="选择学期">
         <el-select v-model="term" placeholder="请选择学期">
+          <el-option label="所有学期" value="all"></el-option>
           <el-option v-for="(item, index) in termList" :key="index" :label="item" :value="item"></el-option>
         </el-select>
       </el-form-item>
@@ -93,23 +94,51 @@ export default {
       handler(newTerm, oldTerm) {
         const sid = sessionStorage.getItem('sid')
         const that = this
-        axios.get('/SCT/findBySid/' + sid + '/' + newTerm).then(function (resp) {
-          that.tmpList = resp.data
-          that.total = resp.data.length
-          let start = 0, end = that.pageSize
-          let length = that.tmpList.length
-          let ans = (end < length) ? end : length
-          that.tableData = that.tmpList.slice(start, end)
-          let totalScore = 0
-          for (let i = 0; i < that.total; i++) {
-            totalScore += that.tmpList[i].ccredit
-            that.avg += that.tmpList[i].ccredit * that.tmpList[i].grade
-          }
-          if (totalScore === 0)
+        if (newTerm === 'all') {
+          // 查询所有学期
+          axios.get('/SCT/findBySid/' + sid).then(function (resp) {
+            that.tmpList = resp.data || []
+            that.total = that.tmpList.length
+            let start = 0, end = that.pageSize
+            let length = that.tmpList.length
+            let ans = (end < length) ? end : length
+            that.tableData = that.tmpList.slice(start, ans)
+            let totalScore = 0
             that.avg = 0
-          else
-            that.avg /= totalScore
-        })
+            for (let i = 0; i < that.total; i++) {
+              if (that.tmpList[i].grade != null) {
+                totalScore += that.tmpList[i].ccredit
+                that.avg += that.tmpList[i].ccredit * that.tmpList[i].grade
+              }
+            }
+            if (totalScore === 0)
+              that.avg = 0
+            else
+              that.avg /= totalScore
+          })
+        } else {
+          // 查询指定学期
+          axios.get('/SCT/findBySid/' + sid + '/' + newTerm).then(function (resp) {
+            that.tmpList = resp.data || []
+            that.total = that.tmpList.length
+            let start = 0, end = that.pageSize
+            let length = that.tmpList.length
+            let ans = (end < length) ? end : length
+            that.tableData = that.tmpList.slice(start, ans)
+            let totalScore = 0
+            that.avg = 0
+            for (let i = 0; i < that.total; i++) {
+              if (that.tmpList[i].grade != null) {
+                totalScore += that.tmpList[i].ccredit
+                that.avg += that.tmpList[i].ccredit * that.tmpList[i].grade
+              }
+            }
+            if (totalScore === 0)
+              that.avg = 0
+            else
+              that.avg /= totalScore
+          })
+        }
       },
       immediate: true
     }

@@ -140,4 +140,29 @@ public class ClassService {
                 return null;
         }
     }
+
+    /**
+     * 生成班级批量导入模板
+     */
+    public Workbook generateImportTemplate() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("班级导入模板");
+
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"班级名称", "年级", "专业ID", "学院ID"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 添加示例数据
+        Row exampleRow = sheet.createRow(1);
+        exampleRow.createCell(0).setCellValue("计算机1班");
+        exampleRow.createCell(1).setCellValue("2023级");
+        exampleRow.createCell(2).setCellValue(1);
+        exampleRow.createCell(3).setCellValue(1);
+
+        return workbook;
+    }
 }

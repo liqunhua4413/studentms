@@ -35,18 +35,11 @@ public class OperationLogAspect {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
-                // 优先从 request 属性中获取（由拦截器设置）
                 String operator = (String) request.getAttribute("operator");
                 if (operator != null && !operator.isEmpty() && !"unknown".equals(operator)) {
                     return operator;
                 }
-                // 从请求头获取
                 operator = request.getHeader("Operator");
-                if (operator != null && !operator.isEmpty()) {
-                    return operator;
-                }
-                // 从请求参数获取
-                operator = request.getParameter("operator");
                 if (operator != null && !operator.isEmpty()) {
                     return operator;
                 }
@@ -57,12 +50,15 @@ public class OperationLogAspect {
         return "system";
     }
 
-    // 拦截所有 Service 层的 save、updateById、deleteById 方法
+    // 拦截所有重要的 Service 层方法
     @Pointcut("execution(* com.auggie.student_server.service.*.save(..)) || " +
-              "execution(* com.auggie.student_server.service.*.updateById(..)) || " +
-              "execution(* com.auggie.student_server.service.*.deleteById(..)) || " +
-              "execution(* com.auggie.student_server.service.*.insert(..)) || " +
-              "execution(* com.auggie.student_server.service.*.batchInsert(..))")
+              "execution(* com.auggie.student_server.service.*.update*(..)) || " +
+              "execution(* com.auggie.student_server.service.*.delete*(..)) || " +
+              "execution(* com.auggie.student_server.service.*.insert*(..)) || " +
+              "execution(* com.auggie.student_server.service.*.batchInsert(..)) || " +
+              "execution(* com.auggie.student_server.service.*.upload*(..)) || " +
+              "execution(* com.auggie.student_server.service.*.clearTestData(..)) || " +
+              "execution(* com.auggie.student_server.service.*.insertInitialData(..))")
     public void operationPointcut() {
     }
 
@@ -75,82 +71,72 @@ public class OperationLogAspect {
 
             // 确定操作类型
             String operationType = "UNKNOWN";
-            if (methodName.contains("save") || methodName.contains("insert")) {
+            if (methodName.contains("save") || methodName.contains("insert") || methodName.contains("upload")) {
                 operationType = "INSERT";
             } else if (methodName.contains("update")) {
                 operationType = "UPDATE";
-            } else if (methodName.contains("delete")) {
+            } else if (methodName.contains("delete") || methodName.contains("clear")) {
                 operationType = "DELETE";
             }
 
-            // 确定目标表（从 Service 类名推断）
+            // 确定目标表
             String targetTable = className.replace("Service", "").toLowerCase();
             if (targetTable.contains("student")) {
-                targetTable = "s";
+                targetTable = "student";
             } else if (targetTable.contains("course")) {
-                targetTable = "c";
+                targetTable = "course";
             } else if (targetTable.contains("teacher")) {
-                targetTable = "t";
-            } else if (targetTable.contains("department")) {
-                targetTable = "department";
-            } else if (targetTable.contains("major")) {
-                targetTable = "major";
-            } else if (targetTable.contains("class")) {
-                targetTable = "class";
-            } else if (targetTable.contains("wordpaper")) {
-                targetTable = "word_papers";
+                targetTable = "teacher";
+            } else if (targetTable.contains("wordpaper") || targetTable.contains("paper")) {
+                targetTable = "exam_paper_analysis";
+            } else if (targetTable.contains("init")) {
+                targetTable = "all_tables";
             }
 
             // 获取目标ID
             Long targetId = null;
             if (args.length > 0) {
-                Object arg = args[0];
-                if (arg != null) {
-                    // 尝试从对象中获取ID
-                    try {
-                        Method getIdMethod = arg.getClass().getMethod("getSid");
-                        targetId = ((Integer) getIdMethod.invoke(arg)).longValue();
-                    } catch (Exception e) {
-                        try {
-                            Method getIdMethod = arg.getClass().getMethod("getCid");
-                            targetId = ((Integer) getIdMethod.invoke(arg)).longValue();
-                        } catch (Exception e2) {
-                            try {
-                                Method getIdMethod = arg.getClass().getMethod("getTid");
-                                targetId = ((Integer) getIdMethod.invoke(arg)).longValue();
-                            } catch (Exception e3) {
-                                try {
-                                    Method getIdMethod = arg.getClass().getMethod("getId");
-                                    Object idObj = getIdMethod.invoke(arg);
-                                    if (idObj instanceof Long) {
-                                        targetId = (Long) idObj;
-                                    } else if (idObj instanceof Integer) {
-                                        targetId = ((Integer) idObj).longValue();
-                                    }
-                                } catch (Exception e4) {
-                                    // 如果第一个参数是 Integer（deleteById 的情况）
-                                    if (arg instanceof Integer) {
-                                        targetId = ((Integer) arg).longValue();
-                                    } else if (arg instanceof Long) {
-                                        targetId = (Long) arg;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                targetId = extractId(args[0]);
+            }
+            if (targetId == null && result != null) {
+                targetId = extractId(result);
             }
 
             // 构建内容
-            String content = String.format("执行 %s 操作，方法：%s.%s，参数：%s", 
-                    operationType, className, methodName, Arrays.toString(args));
+            String content = String.format("执行 %s 操作，方法：%s.%s", operationType, className, methodName);
+            if (methodName.contains("upload")) {
+                content += "，文件名: " + (result != null ? result.toString() : "未知");
+            }
 
-            // 记录日志（从请求中获取操作者）
+            // 记录日志
             String operator = getCurrentOperator();
             operationLogService.recordOperation(operator, operationType, targetTable, targetId, content);
         } catch (Exception e) {
-            // 记录日志失败不应该影响业务逻辑
             e.printStackTrace();
         }
+    }
+
+    private Long extractId(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Integer) return ((Integer) obj).longValue();
+        if (obj instanceof Long) return (Long) obj;
+        
+        try {
+            // 尝试多个可能的 ID 方法名
+            String[] methodNames = {"getId", "getSid", "getTid", "getCid"};
+            for (String mName : methodNames) {
+                try {
+                    Method method = obj.getClass().getMethod(mName);
+                    Object idObj = method.invoke(obj);
+                    if (idObj instanceof Long) return (Long) idObj;
+                    if (idObj instanceof Integer) return ((Integer) idObj).longValue();
+                } catch (NoSuchMethodException e) {
+                    // 忽略，尝试下一个
+                }
+            }
+        } catch (Exception e) {
+            // 忽略
+        }
+        return null;
     }
 }

@@ -7,7 +7,7 @@
         :on-success="handleSuccess"
         :on-error="handleError"
         :before-upload="beforeUpload"
-        :limit="1"
+        :multiple="true"
         accept=".doc,.docx">
       <el-button slot="trigger" size="small" type="primary">上传 Word 文件</el-button>
       <div slot="tip" class="el-upload__tip">只能上传 Word 文件（.doc, .docx）</div>
@@ -82,14 +82,18 @@ export default {
       return true;
     },
     handleSuccess(response, file) {
-      this.$message({
-        message: '上传成功！',
-        type: 'success'
-      });
-      this.loadData();
+      if (response && response.id) {
+        this.$message({
+          message: '上传成功！',
+          type: 'success'
+        });
+        this.loadData();
+      } else {
+        this.$message.error('上传失败：' + (response.message || '未知错误'));
+      }
     },
     handleError(err, file) {
-      this.$message.error('上传失败！');
+      this.$message.error('上传失败：' + (err.message || '未知错误'));
     },
     submitForm(formName) {
       const that = this

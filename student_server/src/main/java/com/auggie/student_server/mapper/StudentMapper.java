@@ -23,6 +23,8 @@ public interface StudentMapper {
 
     public Student findById(@Param("sid") Integer sid);
 
+    public Student findByStudentNo(@Param("studentNo") String studentNo);
+
     public List<Student> findBySearch(@Param("student") Student student, @Param("fuzzy") Integer fuzzy);
 
 //    update

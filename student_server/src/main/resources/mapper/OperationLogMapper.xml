@@ -4,15 +4,21 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.auggie.student_server.mapper.OperationLogMapper">
     <select id="findAll" resultType="OperationLog">
-        SELECT * FROM studentms.operation_log ORDER BY create_time DESC
+        SELECT id, operator, operation_type AS operationType, target_table AS targetTable, 
+               target_id AS targetId, content, created_at AS createTime 
+        FROM studentms.operation_log ORDER BY created_at DESC
     </select>
 
     <select id="findById" resultType="OperationLog">
-        SELECT * FROM studentms.operation_log WHERE id = #{id}
+        SELECT id, operator, operation_type AS operationType, target_table AS targetTable, 
+               target_id AS targetId, content, created_at AS createTime 
+        FROM studentms.operation_log WHERE id = #{id}
     </select>
 
     <select id="findBySearch" resultType="OperationLog">
-        SELECT * FROM studentms.operation_log
+        SELECT id, operator, operation_type AS operationType, target_table AS targetTable, 
+               target_id AS targetId, content, created_at AS createTime 
+        FROM studentms.operation_log
         <where>
             <if test="operator != null and operator != ''">
                 operator LIKE CONCAT('%', #{operator}, '%')
@@ -24,17 +30,17 @@
                 AND target_table = #{targetTable}
             </if>
             <if test="startTime != null and startTime != ''">
-                AND create_time >= #{startTime}
+                AND created_at >= #{startTime}
             </if>
             <if test="endTime != null and endTime != ''">
-                AND create_time &lt;= #{endTime}
+                AND created_at &lt;= #{endTime}
             </if>
         </where>
-        ORDER BY create_time DESC
+        ORDER BY created_at DESC
     </select>
 
     <insert id="save">
-        INSERT INTO studentms.operation_log (operator, operation_type, target_table, target_id, content, create_time)
+        INSERT INTO studentms.operation_log (operator, operation_type, target_table, target_id, content, created_at)
         VALUES (#{log.operator}, #{log.operationType}, #{log.targetTable}, #{log.targetId}, #{log.content}, #{log.createTime})
     </insert>
 </mapper>

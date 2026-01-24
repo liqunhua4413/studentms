@@ -75,4 +75,23 @@ public class GradeController {
                 .headers(headers)
                 .body(outputStream.toByteArray());
     }
+
+    /**
+     * 下载成绩单批量导入模板
+     */
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() throws IOException {
+        Workbook workbook = gradeService.generateScoreTemplate();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        workbook.write(outputStream);
+        workbook.close();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "成绩单批量导入模板.xlsx");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(outputStream.toByteArray());
+    }
 }

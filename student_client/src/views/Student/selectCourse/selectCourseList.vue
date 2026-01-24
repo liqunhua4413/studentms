@@ -39,7 +39,7 @@
               title="确定选择该教师开设的课程？"
               @confirm="select(scope.row)"
           >
-            <el-button slot="reference" type="text" size="small">选择</el-button>
+            <el-button slot="reference" type="text" size="small" :disabled="true">选择</el-button>
           </el-popconfirm>
         </template>
       </el-table-column>

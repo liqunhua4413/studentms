@@ -22,7 +22,7 @@ import java.util.List;
 @Mapper
 public interface CourseTeacherMapper {
 
-    @Insert("INSERT INTO studentms.ct (cid, tid, term) VALUES (#{cid}, #{tid}, #{term})")
+    @Insert("INSERT INTO studentms.course_open (course_id, teacher_id, term) VALUES (#{cid}, #{tid}, #{term})")
     public boolean insertCourseTeacher(@Param("cid") Integer cid,
                                        @Param("tid") Integer tid,
                                        @Param("term") String term);
@@ -41,6 +41,6 @@ public interface CourseTeacherMapper {
                                                          @Param("cname") String cname,
                                                          @Param("cFuzzy") Integer cFuzzy);
 
-    @Delete("DELETE FROM studentms.ct WHERE cid = #{c.cid} AND tid = #{c.tid}")
+    @Delete("DELETE FROM studentms.course_open WHERE course_id = #{c.courseId} AND teacher_id = #{c.teacherId}")
     public boolean deleteById(@Param("c") CourseTeacher courseTeacher);
 }

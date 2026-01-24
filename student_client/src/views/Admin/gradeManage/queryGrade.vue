@@ -83,6 +83,21 @@
       <el-table-column prop="finalGrade" label="期末成绩" width="100"></el-table-column>
       <el-table-column prop="totalGrade" label="总成绩" width="100"></el-table-column>
       <el-table-column prop="term" label="学期" width="120"></el-table-column>
+      <el-table-column label="操作" width="150">
+        <template slot-scope="scope">
+          <el-button @click="editor(scope.row)" type="text" size="small">编辑</el-button>
+          <el-popconfirm
+              confirm-button-text='删除'
+              cancel-button-text='取消'
+              icon="el-icon-info"
+              icon-color="red"
+              title="确定删除该成绩记录吗？"
+              @confirm="deleteGrade(scope.row)"
+          >
+            <el-button slot="reference" type="text" size="small" style="color: red; margin-left: 10px;">删除</el-button>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
     </el-table>
   </div>
 </template>
@@ -166,6 +181,34 @@ export default {
         });
       }).catch(function (error) {
         that.$message.error('导出失败！');
+      })
+    },
+    editor(row) {
+      this.$router.push({
+        path: '/editorGradeCourse',
+        query: {
+          cid: row.courseId || row.cid,
+          tid: row.teacherId || row.tid,
+          sid: row.studentId || row.sid,
+          term: row.term
+        }
+      })
+    },
+    deleteGrade(row) {
+      const that = this
+      const sid = row.studentId || row.sid
+      const cid = row.courseId || row.cid
+      const tid = row.teacherId || row.tid
+      const term = row.term
+      axios.get("/SCT/deleteById/" + sid + '/' + cid + '/' + tid + '/' + term).then(function (resp) {
+        if (resp.data === true) {
+          that.$message.success('删除成功');
+          that.submitForm('ruleForm'); // 重新查询
+        } else {
+          that.$message.error('删除失败');
+        }
+      }).catch(function (error) {
+        that.$message.error('删除出错，存在依赖');
       })
     }
   },

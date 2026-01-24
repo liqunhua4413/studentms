@@ -4,13 +4,13 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.auggie.student_server.mapper.CourseTeacherMapper">
     <select id="findBySearch" resultType="CourseTeacher">
-        SELECT * FROM studentms.ct
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term FROM studentms.course_open
         <where>
             <if test="cid != null">
-                cid = #{cid}
+                course_id = #{cid}
             </if>
             <if test="tid != null">
-                AND tid = #{tid}
+                AND teacher_id = #{tid}
             </if>
             <if test="term != null">
                 AND term = #{term}
@@ -19,18 +19,18 @@
     </select>
 
     <select id="findMyCourse" resultType="Course">
-        SELECT c.cid, c.cname, c.ccredit
-        FROM studentms.c c INNER JOIN studentms.ct ct ON c.cid = ct.cid
-        WHERE ct.tid = #{tid} AND ct.term = #{term}
+        SELECT c.id, c.cname, c.ccredit
+        FROM studentms.course c INNER JOIN studentms.course_open ct ON c.id = ct.course_id
+        WHERE ct.teacher_id = #{tid} AND ct.term = #{term}
     </select>
 
     <select id="findCourseTeacherInfo" resultType="CourseTeacherInfo">
-        SELECT c.cid, c.cname, t.tid, t.tname, c.ccredit
-        FROM studentms.c c INNER JOIN studentms.ct ct ON c.cid = ct.cid
-                INNER JOIN studentms.t ON ct.tid = t.tid
+        SELECT c.id AS course_id, c.cname, t.id AS teacher_id, t.tname, c.ccredit
+        FROM studentms.course c INNER JOIN studentms.course_open ct ON c.id = ct.course_id
+                INNER JOIN studentms.teacher t ON ct.teacher_id = t.id
         <where>
             <if test="tid != null">
-                t.tid = #{tid}
+                t.id = #{tid}
             </if>
             <if test="tname != null">
                 <if test="tFuzzy == 0">
@@ -41,7 +41,7 @@
                 </if>
             </if>
             <if test="cid != null">
-                AND c.cid = #{cid}
+                AND c.id = #{cid}
             </if>
             <if test="cname != null">
                 <if test="cFuzzy == 0">

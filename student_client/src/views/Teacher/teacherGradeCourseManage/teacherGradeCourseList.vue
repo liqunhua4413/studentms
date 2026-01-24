@@ -37,13 +37,7 @@
           label="学期"
           width="100">
       </el-table-column>
-      <el-table-column
-          label="操作"
-          width="100">
-        <template slot-scope="scope">
-          <el-button @click="editor(scope.row)" type="text" size="small">编辑</el-button>
-        </template>
-      </el-table-column>
+      <!-- 教师不能修改成绩，只能上传 -->
     </el-table>
     <p>
       平均成绩：{{ avg }}

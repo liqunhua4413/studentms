@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * @Auther: auggie
  * @Date: 2024/01/01
- * @Description: AdminInterceptor - Admin 权限拦截器
+ * @Description: AdminInterceptor - 权限拦截器
  * @Version 1.0.0
  */
 
@@ -24,7 +24,7 @@ public class AdminInterceptor implements HandlerInterceptor {
         // 允许跨域
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Operator");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Operator, UserType");
 
         // 处理 OPTIONS 请求
         if ("OPTIONS".equals(request.getMethod())) {
@@ -32,48 +32,56 @@ public class AdminInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        // 获取操作者信息（从请求头获取）
+        // 获取操作者信息
         String operator = request.getHeader("Operator");
+        String userType = request.getHeader("UserType");
+        
         if (operator == null || operator.isEmpty()) {
             operator = request.getParameter("operator");
         }
+        if (userType == null || userType.isEmpty()) {
+            userType = request.getParameter("userType");
+        }
+        
         if (operator == null || operator.isEmpty()) {
             operator = "unknown";
         }
-        // 将操作者信息存储到 request 属性中，供后续使用
+        
+        // 将操作者信息存储到 request 属性中
         request.setAttribute("operator", operator);
+        request.setAttribute("userType", userType);
 
-        // 检查是否是 admin 操作
+        // 检查是否是 admin/dean 操作
         String requestURI = request.getRequestURI();
         
-        // 需要 admin 权限的路径
-        String[] adminPaths = {
+        // 需要管理员或院长权限的路径
+        String[] restrictedPaths = {
             "/department", "/major", "/class",
             "/grade/upload", "/grade/reexamination/export",
             "/paper/deleteById",
             "/operationLog",
             "/student/import", "/teacher/import",
             "/department/import", "/major/import", "/class/import", "/course/import",
-            "/init/clearTestData", "/init/importBaseData"
+            "/admin/clearAllData", "/admin/generateTestData"
         };
 
-        boolean needAdmin = false;
-        for (String path : adminPaths) {
+        boolean isRestricted = false;
+        for (String path : restrictedPaths) {
             if (requestURI.contains(path)) {
-                needAdmin = true;
+                isRestricted = true;
                 break;
             }
         }
 
-        if (needAdmin) {
-            // 检查操作者是否是 admin
-            // 这里简化处理，实际应该从 Session 或 Token 中获取用户角色
-            // 当前通过请求头或参数传递，前端需要在请求时设置
-            if (!"admin".equals(operator)) {
+        if (isRestricted) {
+            boolean isAuthorized = "admin".equals(operator) || "admin".equals(userType) || "dean".equals(userType);
+            
+            // 如果不是 admin 或 dean，则拦截
+            if (!isAuthorized) {
                 response.setContentType("application/json;charset=UTF-8");
                 Map<String, Object> result = new HashMap<>();
                 result.put("success", false);
-                result.put("message", "需要管理员权限");
+                result.put("message", "权限不足");
                 ObjectMapper mapper = new ObjectMapper();
                 response.getWriter().write(mapper.writeValueAsString(result));
                 return false;

@@ -28,7 +28,13 @@
           </el-form>
         </el-card>
         <el-card style="margin-top: 10px">
-          <select-course-list :rule-form="ruleForm"></select-course-list>
+          <el-alert
+              title="提示：学生没有选课权限，只能查询课表"
+              type="warning"
+              :closable="false"
+              show-icon>
+          </el-alert>
+          <select-course-list :rule-form="ruleForm" style="margin-top: 10px"></select-course-list>
         </el-card>
       </el-main>
     </el-container>

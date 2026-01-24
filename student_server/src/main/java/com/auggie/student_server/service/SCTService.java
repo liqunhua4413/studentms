@@ -45,9 +45,9 @@ public class SCTService {
 
     public boolean deleteById(Integer sid, Integer cid, Integer tid, String  term) {
         StudentCourseTeacher studentCourseTeacher = new StudentCourseTeacher();
-        studentCourseTeacher.setSid(sid);
-        studentCourseTeacher.setCid(cid);
-        studentCourseTeacher.setTid(tid);
+        studentCourseTeacher.setStudentId(sid);
+        studentCourseTeacher.setCourseId(cid);
+        studentCourseTeacher.setTeacherId(tid);
         studentCourseTeacher.setTerm(term);
         return studentCourseTeacherMapper.deleteBySCT(studentCourseTeacher);
     }

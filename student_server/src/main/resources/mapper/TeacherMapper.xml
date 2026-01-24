@@ -11,7 +11,7 @@
         SELECT * FROM studentms.teacher
         <where>
             <if test="tid != null">
-                tid = #{tid}
+                id = #{tid}
             </if>
             <if test="tname != null">
                 <if test="fuzzy == 0">
@@ -25,7 +25,11 @@
     </select>
 
     <select id="findById" resultType="Teacher">
-        SELECT * FROM studentms.teacher WHERE tid = #{tid};
+        SELECT * FROM studentms.teacher WHERE id = #{tid};
+    </select>
+
+    <select id="findByTeacherNo" resultType="Teacher">
+        SELECT * FROM studentms.teacher WHERE teacher_no = #{teacherNo};
     </select>
 
     <update id="updateById">
@@ -35,7 +39,7 @@
                                password = #{teacher.password},
                                role = #{teacher.role},
                                department_id = #{teacher.departmentId}
-        WHERE tid = #{teacher.tid};
+        WHERE id = #{teacher.id};
     </update>
 
     <insert id="save">
@@ -44,6 +48,6 @@
     </insert>
 
     <delete id="deleteById">
-        DELETE FROM studentms.teacher WHERE tid = #{tid}
+        DELETE FROM studentms.teacher WHERE id = #{tid}
     </delete>
 </mapper>

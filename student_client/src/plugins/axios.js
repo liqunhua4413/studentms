@@ -26,10 +26,13 @@ _axios.interceptors.request.use(
     // 如果是 admin，设置 Operator 请求头
     if (type === "admin" && name === "admin") {
       config.headers["Operator"] = "admin";
-    } else if (type === "teacher" && name) {
+      config.headers["UserType"] = "admin";
+    } else if ((type === "teacher" || type === "dean") && name) {
       config.headers["Operator"] = name;
+      config.headers["UserType"] = type;
     } else if (type === "student" && name) {
       config.headers["Operator"] = name;
+      config.headers["UserType"] = "student";
     }
     
     return config;

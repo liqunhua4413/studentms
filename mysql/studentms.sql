@@ -1,6 +1,7 @@
 -- 学生成绩管理系统完整数据库初始化脚本（最终稳定版）
 -- 兼容 studentms 旧项目 + 新规范扩展
 -- 执行前请备份数据库
+-- 主键统一使用 id 命名
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -50,7 +51,7 @@ CREATE TABLE `class` (
 
 DROP TABLE IF EXISTS `student`;
 CREATE TABLE `student` (
-  `sid` INT AUTO_INCREMENT PRIMARY KEY,
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
   `student_no` VARCHAR(50) NOT NULL UNIQUE,
   `sname` VARCHAR(50) NOT NULL,
   `password` VARCHAR(100) NOT NULL,
@@ -65,7 +66,7 @@ CREATE TABLE `student` (
 
 DROP TABLE IF EXISTS `teacher`;
 CREATE TABLE `teacher` (
-  `tid` INT AUTO_INCREMENT PRIMARY KEY,
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
   `teacher_no` VARCHAR(50) NOT NULL UNIQUE,
   `tname` VARCHAR(50) NOT NULL,
   `password` VARCHAR(100) NOT NULL,
@@ -80,7 +81,7 @@ CREATE TABLE `teacher` (
 
 DROP TABLE IF EXISTS `course`;
 CREATE TABLE `course` (
-  `cid` INT AUTO_INCREMENT PRIMARY KEY,
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
   `cname` VARCHAR(100) NOT NULL,
   `ccredit` TINYINT DEFAULT NULL,
   `major_id` INT DEFAULT NULL,
@@ -98,17 +99,17 @@ CREATE TABLE `course_open` (
   `term` VARCHAR(30) NOT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_open_course FOREIGN KEY (course_id) REFERENCES course(cid),
-  CONSTRAINT fk_open_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(tid),
+  CONSTRAINT fk_open_course FOREIGN KEY (course_id) REFERENCES course(id),
+  CONSTRAINT fk_open_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(id),
   CONSTRAINT fk_open_class FOREIGN KEY (class_id) REFERENCES class(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='开课表';
 
 DROP TABLE IF EXISTS `score`;
 CREATE TABLE `score` (
-  `sctid` INT AUTO_INCREMENT PRIMARY KEY,
-  `sid` INT DEFAULT NULL,
-  `cid` INT DEFAULT NULL,
-  `tid` INT DEFAULT NULL,
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `student_id` INT DEFAULT NULL,
+  `course_id` INT DEFAULT NULL,
+  `teacher_id` INT DEFAULT NULL,
   `grade` FLOAT DEFAULT NULL,
   `term` VARCHAR(30),
   `usual_grade` FLOAT,
@@ -117,9 +118,9 @@ CREATE TABLE `score` (
   `class_id` INT,
   `major_id` INT,
   `department_id` INT,
-  CONSTRAINT fk_score_student FOREIGN KEY (sid) REFERENCES student(sid),
-  CONSTRAINT fk_score_teacher FOREIGN KEY (tid) REFERENCES teacher(tid),
-  CONSTRAINT fk_score_course FOREIGN KEY (cid) REFERENCES course(cid)
+  CONSTRAINT fk_score_student FOREIGN KEY (student_id) REFERENCES student(id),
+  CONSTRAINT fk_score_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(id),
+  CONSTRAINT fk_score_course FOREIGN KEY (course_id) REFERENCES course(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成绩表';
 
 DROP TABLE IF EXISTS `score_import_record`;
@@ -133,8 +134,8 @@ CREATE TABLE `score_import_record` (
   `status` VARCHAR(20) DEFAULT 'SUCCESS',
   `message` TEXT,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_import_course FOREIGN KEY (course_id) REFERENCES course(cid),
-  CONSTRAINT fk_import_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(tid)
+  CONSTRAINT fk_import_course FOREIGN KEY (course_id) REFERENCES course(id),
+  CONSTRAINT fk_import_teacher FOREIGN KEY (teacher_id) REFERENCES teacher(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成绩导入记录表';
 
 DROP TABLE IF EXISTS `exam_paper_analysis`;

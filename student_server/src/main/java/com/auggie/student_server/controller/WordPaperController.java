@@ -31,9 +31,15 @@ public class WordPaperController {
     private WordPaperService wordPaperService;
 
     @PostMapping("/upload")
-    public WordPaper upload(@RequestParam("file") MultipartFile file,
-                           @RequestParam(value = "uploadBy", defaultValue = "admin") String uploadBy) throws IOException {
-        return wordPaperService.upload(file, uploadBy);
+    public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
+                           @RequestParam(value = "uploadBy", defaultValue = "admin") String uploadBy) {
+        try {
+            WordPaper paper = wordPaperService.upload(file, uploadBy);
+            return ResponseEntity.ok(paper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("上传失败: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}/download")

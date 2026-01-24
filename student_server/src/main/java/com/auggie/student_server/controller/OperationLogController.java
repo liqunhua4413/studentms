@@ -23,7 +23,12 @@ public class OperationLogController {
     private OperationLogService operationLogService;
 
     @GetMapping("/findAll")
-    public List<OperationLog> findAll() {
+    public List<OperationLog> findAll(@RequestAttribute(value = "operator", required = false) String currentOperator,
+                                      @RequestAttribute(value = "userType", required = false) String userType) {
+        // 权限控制：非 admin 用户只能查看自己的日志
+        if (!"admin".equals(userType)) {
+            return operationLogService.findBySearch(currentOperator, null, null, null, null);
+        }
         return operationLogService.findAll();
     }
 
@@ -33,8 +38,16 @@ public class OperationLogController {
     }
 
     @PostMapping("/findBySearch")
-    public List<OperationLog> findBySearch(@RequestBody Map<String, String> map) {
+    public List<OperationLog> findBySearch(@RequestBody Map<String, String> map,
+                                           @RequestAttribute(value = "operator", required = false) String currentOperator,
+                                           @RequestAttribute(value = "userType", required = false) String userType) {
         String operator = map.get("operator");
+        
+        // 权限控制：非 admin 用户只能查看自己的日志
+        if (!"admin".equals(userType)) {
+            operator = currentOperator;
+        }
+        
         String operationType = map.get("operationType");
         String targetTable = map.get("targetTable");
         String startTime = map.get("startTime");

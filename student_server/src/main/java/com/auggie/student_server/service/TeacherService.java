@@ -74,6 +74,10 @@ public class TeacherService {
         return teacherMapper.findById(tid);
     }
 
+    public Teacher findByTeacherNo(String teacherNo) {
+        return teacherMapper.findByTeacherNo(teacherNo);
+    }
+
     public boolean updateById(Teacher teacher) {
         return teacherMapper.updateById(teacher);
     }
@@ -185,5 +189,31 @@ public class TeacherService {
             default:
                 return null;
         }
+    }
+
+    /**
+     * 生成教师批量导入模板
+     */
+    public Workbook generateImportTemplate() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("教师导入模板");
+
+        // 创建表头
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"教师工号", "教师姓名", "初始密码", "角色(admin/teacher/dean)", "所属学院ID"};
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        // 添加示例数据
+        Row exampleRow = sheet.createRow(1);
+        exampleRow.createCell(0).setCellValue("T0001");
+        exampleRow.createCell(1).setCellValue("李老师");
+        exampleRow.createCell(2).setCellValue("123456");
+        exampleRow.createCell(3).setCellValue("teacher");
+        exampleRow.createCell(4).setCellValue(1);
+
+        return workbook;
     }
 }

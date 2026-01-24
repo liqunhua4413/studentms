@@ -23,6 +23,8 @@ public interface TeacherMapper {
 
     public Teacher findById(@Param("tid") Integer tid);
 
+    public Teacher findByTeacherNo(@Param("teacherNo") String teacherNo);
+
     public List<Teacher> findBySearch(@Param("tid") Integer tid, @Param("tname") String tname, @Param("fuzzy") Integer fuzzy);
 
     //    update
