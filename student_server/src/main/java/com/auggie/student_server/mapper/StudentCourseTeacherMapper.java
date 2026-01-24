@@ -37,7 +37,11 @@ public interface StudentCourseTeacherMapper {
                                       @Param("term") String term,
                                       @Param("classId") Integer classId,
                                       @Param("majorId") Integer majorId,
-                                      @Param("departmentId") Integer departmentId);
+                                      @Param("departmentId") Integer departmentId,
+                                      @Param("className") String className,
+                                      @Param("majorName") String majorName,
+                                      @Param("departmentName") String departmentName,
+                                      @Param("gradeLevel") String gradeLevel);
 
     @Select("SELECT DISTINCT term FROM studentms.score")
     public List<String> findAllTerm();
@@ -49,12 +53,22 @@ public interface StudentCourseTeacherMapper {
             "VALUES (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.grade}, #{s.term}, #{s.usualGrade}, #{s.finalGrade}, #{s.totalGrade}, #{s.classId}, #{s.majorId}, #{s.departmentId})")
     public boolean insert(@Param("s")StudentCourseTeacher studentCourseTeacher);
 
-    @Update("UPDATE studentms.score SET grade = #{grade}, total_grade = #{grade} WHERE student_id = #{sid} AND teacher_id = #{tid} AND course_id = #{cid} AND term = #{term}")
-    public boolean updateById(@Param("sid") Integer sid,
-                              @Param("cid") Integer cid,
-                              @Param("tid") Integer tid,
-                              @Param("term") String term,
-                              @Param("grade") Integer grade);
+    @Update("UPDATE studentms.score SET " +
+            "grade = #{s.totalGrade}, " +
+            "total_grade = #{s.totalGrade}, " +
+            "usual_grade = #{s.usualGrade}, " +
+            "final_grade = #{s.finalGrade}, " +
+            "course_name = (SELECT cname FROM studentms.course WHERE id = #{s.courseId}), " +
+            "teacher_name = (SELECT tname FROM studentms.teacher WHERE id = #{s.teacherId}), " +
+            "grade_level = #{s.gradeLevel}, " +
+            "major_name = (SELECT name FROM studentms.major WHERE id = #{s.majorId}), " +
+            "class_name = (SELECT name FROM studentms.class WHERE id = #{s.classId}), " +
+            "department_name = (SELECT name FROM studentms.department WHERE id = #{s.departmentId}), " +
+            "department_id = #{s.departmentId}, " +
+            "major_id = #{s.majorId}, " +
+            "class_id = #{s.classId} " +
+            "WHERE student_id = #{s.studentId} AND teacher_id = #{s.teacherId} AND course_id = #{s.courseId} AND term = #{s.term}")
+    public boolean updateGrade(@Param("s") StudentCourseTeacher s);
 
     public boolean batchInsert(@Param("list") List<StudentCourseTeacher> list);
 

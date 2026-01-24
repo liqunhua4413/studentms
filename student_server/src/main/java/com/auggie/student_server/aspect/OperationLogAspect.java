@@ -70,27 +70,45 @@ public class OperationLogAspect {
             Object[] args = joinPoint.getArgs();
 
             // 确定操作类型
-            String operationType = "UNKNOWN";
+            String operationType = "未知";
             if (methodName.contains("save") || methodName.contains("insert") || methodName.contains("upload")) {
-                operationType = "INSERT";
+                operationType = "新增";
             } else if (methodName.contains("update")) {
-                operationType = "UPDATE";
+                operationType = "编辑";
             } else if (methodName.contains("delete") || methodName.contains("clear")) {
-                operationType = "DELETE";
+                operationType = "删除";
             }
 
             // 确定目标表
             String targetTable = className.replace("Service", "").toLowerCase();
+            String targetModuleName = "未知模块";
             if (targetTable.contains("student")) {
+                targetModuleName = "学生管理";
                 targetTable = "student";
             } else if (targetTable.contains("course")) {
+                targetModuleName = "课程管理";
                 targetTable = "course";
             } else if (targetTable.contains("teacher")) {
+                targetModuleName = "教师管理";
                 targetTable = "teacher";
             } else if (targetTable.contains("wordpaper") || targetTable.contains("paper")) {
+                targetModuleName = "试卷分析";
                 targetTable = "exam_paper_analysis";
             } else if (targetTable.contains("init")) {
+                targetModuleName = "系统维护";
                 targetTable = "all_tables";
+            } else if (targetTable.contains("grade") || targetTable.contains("sct")) {
+                targetModuleName = "成绩管理";
+                targetTable = "score";
+            } else if (targetTable.contains("department")) {
+                targetModuleName = "学院管理";
+                targetTable = "department";
+            } else if (targetTable.contains("major")) {
+                targetModuleName = "专业管理";
+                targetTable = "major";
+            } else if (targetTable.contains("class")) {
+                targetModuleName = "班级管理";
+                targetTable = "class";
             }
 
             // 获取目标ID
@@ -103,9 +121,16 @@ public class OperationLogAspect {
             }
 
             // 构建内容
-            String content = String.format("执行 %s 操作，方法：%s.%s", operationType, className, methodName);
+            String content = String.format("执行 %s 操作，模块：%s", operationType, targetModuleName);
             if (methodName.contains("upload")) {
-                content += "，文件名: " + (result != null ? result.toString() : "未知");
+                content += "，结果: " + (result != null ? result.toString() : "未知");
+            } else if (args.length > 0) {
+                content += "，详情: " + args[0].toString();
+            }
+            if (methodName.contains("upload")) {
+                content += "，结果: " + (result != null ? result.toString() : "未知");
+            } else if (args.length > 0) {
+                content += "，详情: " + args[0].toString();
             }
 
             // 记录日志

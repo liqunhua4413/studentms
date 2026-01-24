@@ -29,4 +29,15 @@ public class StudentCourseTeacher {
     private Integer classId;    // 班级ID
     private Integer majorId;    // 专业ID
     private Integer departmentId; // 系ID
+    private String courseName;
+    private String courseCategory;
+    private String courseNature;
+    private String examMethod;
+    private String teacherName;
+    private Integer hours;
+    private Float credit;
+    private String gradeLevel;
+    private String majorName;
+    private String className;
+    private String departmentName;
 }

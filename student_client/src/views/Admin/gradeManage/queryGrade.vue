@@ -9,53 +9,67 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="课程名" prop="cname">
-            <el-input v-model="ruleForm.cname" placeholder="支持模糊搜索"></el-input>
+            <el-select v-model="ruleForm.cname" placeholder="请选择课程" clearable filterable>
+              <el-option
+                  v-for="item in courses"
+                  :key="item.id"
+                  :label="item.cname"
+                  :value="item.cname">
+              </el-option>
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="学期" prop="term">
-            <el-input v-model="ruleForm.term"></el-input>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <el-form-item label="学院" prop="departmentId">
-            <el-select v-model="ruleForm.departmentId" placeholder="请选择学院" clearable>
+            <el-select v-model="ruleForm.term" placeholder="请选择学期" clearable>
               <el-option
-                  v-for="item in departments"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id">
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="专业" prop="majorId">
-            <el-select v-model="ruleForm.majorId" placeholder="请选择专业" clearable>
-              <el-option
-                  v-for="item in majors"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id">
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="班级" prop="classId">
-            <el-select v-model="ruleForm.classId" placeholder="请选择班级" clearable>
-              <el-option
-                  v-for="item in classes"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id">
+                  v-for="item in terms"
+                  :key="item"
+                  :label="item"
+                  :value="item">
               </el-option>
             </el-select>
           </el-form-item>
         </el-col>
       </el-row>
+    <el-row :gutter="20">
+      <el-col :span="8">
+        <el-form-item label="学院" prop="departmentId">
+          <el-select v-model="ruleForm.departmentId" placeholder="请选择学院" clearable @change="handleDepartmentChange">
+            <el-option
+                v-for="item in departments"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="专业" prop="majorId">
+          <el-select v-model="ruleForm.majorId" placeholder="请选择专业" clearable @change="handleMajorChange">
+            <el-option
+                v-for="item in majors"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-col>
+      <el-col :span="8">
+        <el-form-item label="班级" prop="classId">
+          <el-select v-model="ruleForm.classId" placeholder="请选择班级" clearable>
+            <el-option
+                v-for="item in classes"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-col>
+    </el-row>
       <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item label="最低分" prop="lowBound">
@@ -77,27 +91,35 @@
     <el-table :data="tableData" border style="width: 100%; margin-top: 20px;">
       <el-table-column prop="sid" label="学号" width="100"></el-table-column>
       <el-table-column prop="sname" label="学生姓名" width="120"></el-table-column>
-      <el-table-column prop="cname" label="课程名" width="150"></el-table-column>
-      <el-table-column prop="tname" label="教师姓名" width="120"></el-table-column>
-      <el-table-column prop="usualGrade" label="平时成绩" width="100"></el-table-column>
-      <el-table-column prop="finalGrade" label="期末成绩" width="100"></el-table-column>
-      <el-table-column prop="totalGrade" label="总成绩" width="100"></el-table-column>
-      <el-table-column prop="term" label="学期" width="120"></el-table-column>
-      <el-table-column label="操作" width="150">
+      <el-table-column prop="departmentName" label="学院" width="150">
         <template slot-scope="scope">
-          <el-button @click="editor(scope.row)" type="text" size="small">编辑</el-button>
-          <el-popconfirm
-              confirm-button-text='删除'
-              cancel-button-text='取消'
-              icon="el-icon-info"
-              icon-color="red"
-              title="确定删除该成绩记录吗？"
-              @confirm="deleteGrade(scope.row)"
-          >
-            <el-button slot="reference" type="text" size="small" style="color: red; margin-left: 10px;">删除</el-button>
-          </el-popconfirm>
+          {{ scope.row.departmentName || scope.row.departmentId }}
         </template>
       </el-table-column>
+      <el-table-column prop="majorName" label="专业" width="150">
+        <template slot-scope="scope">
+          {{ scope.row.majorName || scope.row.majorId }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="className" label="班级" width="120">
+        <template slot-scope="scope">
+          {{ scope.row.className || scope.row.classId }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="cname" label="课程名" width="150"></el-table-column>
+      <el-table-column prop="tname" label="教师姓名" width="120">
+        <template slot-scope="scope">
+          {{ scope.row.teacherRealName || scope.row.tname }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="usualGrade" label="平时成绩" width="100"></el-table-column>
+      <el-table-column prop="finalGrade" label="期末成绩" width="100"></el-table-column>
+      <el-table-column prop="totalGrade" label="总成绩" width="100">
+        <template slot-scope="scope">
+          {{ scope.row.totalGrade || scope.row.grade }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="term" label="学期" width="120"></el-table-column>
     </el-table>
   </div>
 </template>
@@ -119,6 +141,8 @@ export default {
       departments: [],
       majors: [],
       classes: [],
+      courses: [],
+      terms: [],
       tableData: [],
       rules: {}
     };
@@ -135,94 +159,86 @@ export default {
           if (that.ruleForm.departmentId) params.departmentId = that.ruleForm.departmentId
           if (that.ruleForm.majorId) params.majorId = that.ruleForm.majorId
           if (that.ruleForm.classId) params.classId = that.ruleForm.classId
-          if (that.ruleForm.lowBound !== null) params.lowBound = that.ruleForm.lowBound
-          if (that.ruleForm.highBound !== null) params.highBound = that.ruleForm.highBound
-          params.sFuzzy = 'true'
-          params.cFuzzy = 'true'
-
-          axios.post('/grade/query', params).then(function (resp) {
-            that.tableData = resp.data
-            that.$message({
-              message: '查询成功，共 ' + resp.data.length + ' 条记录',
-              type: 'success'
-            });
+          if (that.ruleForm.lowBound !== null && that.ruleForm.lowBound !== 0) params.lowBound = that.ruleForm.lowBound
+          if (that.ruleForm.highBound !== null && that.ruleForm.highBound !== 0) params.highBound = that.ruleForm.highBound
+          
+          this.axios.post('/grade/query', params).then(resp => {
+            this.tableData = resp.data
+            this.$message.success('查询成功，共 ' + resp.data.length + ' 条记录');
           })
-        } else {
-          console.log('error submit!!');
-          return false;
         }
       });
     },
     resetForm(formName) {
       this.$refs[formName].resetFields();
       this.tableData = [];
+      this.majors = [];
+      this.classes = [];
+    },
+    handleDepartmentChange(val) {
+      this.ruleForm.majorId = null;
+      this.ruleForm.classId = null;
+      this.majors = [];
+      this.classes = [];
+      if (val) {
+        this.axios.get(`/major/findByDepartmentId/${val}`).then(resp => {
+          this.majors = resp.data;
+        }).catch(err => {
+          console.error('加载专业失败:', err);
+          this.$message.error('加载专业列表失败');
+        });
+      }
+    },
+    handleMajorChange(val) {
+      this.ruleForm.classId = null;
+      this.classes = [];
+      if (val) {
+        this.axios.get(`/class/findByMajorId/${val}`).then(resp => {
+          this.classes = resp.data;
+        }).catch(err => {
+          console.error('加载班级失败:', err);
+          this.$message.error('加载班级列表失败');
+        });
+      }
     },
     exportReexamination() {
-      const that = this
-      const params = {}
-      if (that.ruleForm.departmentId) params.departmentId = that.ruleForm.departmentId
-      if (that.ruleForm.majorId) params.majorId = that.ruleForm.majorId
-      if (that.ruleForm.classId) params.classId = that.ruleForm.classId
-      if (that.ruleForm.term) params.term = that.ruleForm.term
-
-      axios.post('/grade/reexamination/export', params, {
-        responseType: 'blob'
-      }).then(function (resp) {
-        const blob = new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = '补考名单.xlsx'
-        link.click()
-        window.URL.revokeObjectURL(url)
-        that.$message({
-          message: '导出成功！',
-          type: 'success'
+      const params = { ...this.ruleForm }
+      // 导出当前查询结果，而不是固定的补考名单
+      this.axios.post('/grade/query', params).then(resp => {
+        const data = resp.data;
+        if (!data || data.length === 0) {
+          this.$message.warning('当前查询结果为空，无法导出');
+          return;
+        }
+        // 调用后端通用的导出接口（使用当前查询到的数据列表）
+        this.axios.post('/grade/reexamination/export', params, {
+          responseType: 'blob'
+        }).then(resp => {
+          const url = window.URL.createObjectURL(new Blob([resp.data]))
+          const link = document.createElement('a')
+          link.href = url
+          link.download = '成绩查询结果.xlsx'
+          link.click()
         });
-      }).catch(function (error) {
-        that.$message.error('导出失败！');
-      })
-    },
-    editor(row) {
-      this.$router.push({
-        path: '/editorGradeCourse',
-        query: {
-          cid: row.courseId || row.cid,
-          tid: row.teacherId || row.tid,
-          sid: row.studentId || row.sid,
-          term: row.term
-        }
-      })
-    },
-    deleteGrade(row) {
-      const that = this
-      const sid = row.studentId || row.sid
-      const cid = row.courseId || row.cid
-      const tid = row.teacherId || row.tid
-      const term = row.term
-      axios.get("/SCT/deleteById/" + sid + '/' + cid + '/' + tid + '/' + term).then(function (resp) {
-        if (resp.data === true) {
-          that.$message.success('删除成功');
-          that.submitForm('ruleForm'); // 重新查询
-        } else {
-          that.$message.error('删除失败');
-        }
-      }).catch(function (error) {
-        that.$message.error('删除出错，存在依赖');
-      })
+      });
     }
   },
   created() {
-    const that = this
-    axios.get('/department/findAll').then(function (resp) {
-      that.departments = resp.data
-    })
-    axios.get('/major/findAll').then(function (resp) {
-      that.majors = resp.data
-    })
-    axios.get('/class/findAll').then(function (resp) {
-      that.classes = resp.data
-    })
+    console.log('QueryGrade initialized, fetching initial data...');
+    // 获取学院列表
+    this.axios.get('/department/findAll').then(resp => {
+      this.departments = resp.data
+    }).catch(err => console.error('加载学院失败:', err))
+    
+    // 获取课程列表
+    this.axios.get('/course/findAll').then(resp => {
+      this.courses = resp.data
+    }).catch(err => console.error('加载课程失败:', err))
+    
+    // 获取学期列表
+    this.axios.get('/SCT/findAllTerm').then(resp => {
+      this.terms = resp.data || [];
+    }).catch(err => console.error('加载学期失败:', err))
   }
 }
 </script>

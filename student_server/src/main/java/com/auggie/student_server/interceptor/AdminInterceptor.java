@@ -34,6 +34,13 @@ public class AdminInterceptor implements HandlerInterceptor {
 
         // 获取操作者信息
         String operator = request.getHeader("Operator");
+        if (operator != null) {
+            try {
+                operator = java.net.URLDecoder.decode(operator, "UTF-8");
+            } catch (java.io.UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
         String userType = request.getHeader("UserType");
         
         if (operator == null || operator.isEmpty()) {

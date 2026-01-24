@@ -6,11 +6,23 @@
 
     <insert id="save">
         INSERT INTO studentms.score_import_record
-        (file_name, term, course_id, teacher_id, operator, status, message, created_at)
+        (file_name, file_path, term, course_id, teacher_id, department_id, operator, status, message, created_at)
         VALUES
-        (#{record.fileName}, #{record.term}, #{record.courseId}, #{record.teacherId},
-         #{record.operator}, #{record.status}, #{record.message}, #{record.createdAt})
+        (#{record.fileName}, #{record.filePath}, #{record.term}, #{record.courseId}, #{record.teacherId},
+         #{record.departmentId}, #{record.operator}, #{record.status}, #{record.message}, #{record.createdAt})
     </insert>
+
+    <select id="findAll" resultType="ScoreImportRecord">
+        SELECT * FROM studentms.score_import_record ORDER BY created_at DESC
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.score_import_record WHERE id = #{id}
+    </delete>
+
+    <select id="findById" resultType="ScoreImportRecord">
+        SELECT * FROM studentms.score_import_record WHERE id = #{id}
+    </select>
 
 </mapper>
 

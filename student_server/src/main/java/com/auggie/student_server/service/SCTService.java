@@ -58,97 +58,88 @@ public class SCTService {
                 cid, null, 0,
                 tid, null, 0,
                 null, null, term,
-                null, null, null).get(0);
+                null, null, null,
+                null, null, null, null).get(0);
     }
 
-    public boolean updateById(Integer sid, Integer cid, Integer tid, String term, Integer grade) {
-        return studentCourseTeacherMapper.updateById(sid, cid, tid, term, grade);
+    public boolean updateGrade(StudentCourseTeacher sct) {
+        return studentCourseTeacherMapper.updateGrade(sct);
     }
 
-    public List<SCTInfo> findBySearch(Map<String, String> map) {
+    public List<SCTInfo> findBySearch(Map<String, Object> map) {
         Integer sid = null, cid = null, tid = null;
         String sname = null, cname = null, tname = null, term = null;
         Integer sFuzzy = null, cFuzzy = null, tFuzzy = null;
         Integer lowBound = null, highBound = null;
 
         if (map.containsKey("cid")) {
-            try {
-                cid = Integer.parseInt(map.get("cid"));
-            }
-            catch (Exception e) {
-            }
+            cid = getIntFromMap(map, "cid");
         }
         if (map.containsKey("sid")) {
-            try {
-                sid = Integer.parseInt(map.get("sid"));
-            }
-            catch (Exception e) {
-            }
+            sid = getIntFromMap(map, "sid");
         }
         if (map.containsKey("tid")) {
-            try {
-                tid = Integer.parseInt(map.get("tid"));
-            }
-            catch (Exception e) {
-            }
+            tid = getIntFromMap(map, "tid");
         }
         if (map.containsKey("sname")) {
-            sname = map.get("sname");
+            sname = (String) map.get("sname");
         }
         if (map.containsKey("tname")) {
-            tname = map.get("tname");
+            tname = (String) map.get("tname");
         }
         if (map.containsKey("cname")) {
-            cname = map.get("cname");
+            cname = (String) map.get("cname");
         }
         if (map.containsKey("term")) {
-            term = map.get("term");
+            term = (String) map.get("term");
         }
         if (map.containsKey("sFuzzy")) {
-            sFuzzy = map.get("sFuzzy").equals("true") ? 1 : 0;
+            Object val = map.get("sFuzzy");
+            sFuzzy = "true".equals(val.toString()) ? 1 : 0;
         }
         if (map.containsKey("tFuzzy")) {
-            tFuzzy = map.get("tFuzzy").equals("true") ? 1 : 0;
+            Object val = map.get("tFuzzy");
+            tFuzzy = "true".equals(val.toString()) ? 1 : 0;
         }
         if (map.containsKey("cFuzzy")) {
-            cFuzzy = map.get("cFuzzy").equals("true") ? 1 : 0;
+            Object val = map.get("cFuzzy");
+            cFuzzy = "true".equals(val.toString()) ? 1 : 0;
         }
         if (map.containsKey("lowBound")) {
-            try {
-                lowBound = Integer.parseInt(map.get("lowBound"));
-            }
-            catch (Exception e) {
-            }
+            lowBound = getIntFromMap(map, "lowBound");
         }
         if (map.containsKey("highBound")) {
-            try {
-                highBound = Integer.valueOf(map.get("highBound"));
-            }
-            catch (Exception e) {
-            }
+            highBound = getIntFromMap(map, "highBound");
         }
 
         Integer classId = null;
         Integer majorId = null;
         Integer departmentId = null;
+        String className = null;
+        String majorName = null;
+        String departmentName = null;
+        String gradeLevel = null;
 
         if (map.containsKey("classId")) {
-            try {
-                classId = Integer.parseInt(map.get("classId"));
-            } catch (Exception e) {
-            }
+            classId = getIntFromMap(map, "classId");
         }
         if (map.containsKey("majorId")) {
-            try {
-                majorId = Integer.parseInt(map.get("majorId"));
-            } catch (Exception e) {
-            }
+            majorId = getIntFromMap(map, "majorId");
         }
         if (map.containsKey("departmentId")) {
-            try {
-                departmentId = Integer.parseInt(map.get("departmentId"));
-            } catch (Exception e) {
-            }
+            departmentId = getIntFromMap(map, "departmentId");
+        }
+        if (map.containsKey("className")) {
+            className = (String) map.get("className");
+        }
+        if (map.containsKey("majorName")) {
+            majorName = (String) map.get("majorName");
+        }
+        if (map.containsKey("departmentName")) {
+            departmentName = (String) map.get("departmentName");
+        }
+        if (map.containsKey("gradeLevel")) {
+            gradeLevel = (String) map.get("gradeLevel");
         }
 
         System.out.println("SCT 查询：" + map);
@@ -157,14 +148,27 @@ public class SCTService {
                 cid, cname, cFuzzy,
                 tid, tname, tFuzzy,
                 lowBound, highBound, term,
-                classId, majorId, departmentId);
+                classId, majorId, departmentId,
+                className, majorName, departmentName, gradeLevel);
+    }
+
+    private Integer getIntFromMap(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val == null) return null;
+        if (val instanceof Integer) return (Integer) val;
+        if (val instanceof Number) return ((Number) val).intValue();
+        try {
+            return Integer.parseInt(val.toString());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
      * 获取补考学生列表（总成绩 < 60）
      */
-    public List<SCTInfo> getReexaminationList(Map<String, String> map) {
-        map.put("highBound", "59");
+    public List<SCTInfo> getReexaminationList(Map<String, Object> map) {
+        map.put("highBound", 59);
         return findBySearch(map);
     }
 }

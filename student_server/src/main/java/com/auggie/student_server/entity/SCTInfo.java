@@ -26,6 +26,7 @@ public class SCTInfo {
     private Integer courseId;
     private String sname;
     private String tname;
+    private String teacherRealName; // 关联查询出的真实姓名
     private String cname;
     private Float grade;
     private String term;
@@ -35,4 +36,13 @@ public class SCTInfo {
     private Integer classId;
     private Integer majorId;
     private Integer departmentId;
+    private String className;
+    private String majorName;
+    private String departmentName;
+    private String gradeLevel;
+    private String courseCategory;
+    private String courseNature;
+    private String examMethod;
+    private Integer hours;
+    private Float credit;
 }

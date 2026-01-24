@@ -34,6 +34,7 @@ public class GradeController {
 
     @PostMapping("/upload")
     public String uploadExcel(@RequestParam("file") MultipartFile file,
+                              @RequestParam(value = "departmentId", required = false) Integer departmentId,
                               @RequestAttribute(value = "operator", required = false) String operator) {
         if (file.isEmpty()) {
             return "文件为空，请选择文件";
@@ -45,21 +46,52 @@ public class GradeController {
         if (operator == null || operator.isEmpty()) {
             operator = "unknown";
         }
-        return gradeService.uploadExcel(file, operator);
+        return gradeService.uploadExcel(file, operator, departmentId);
+    }
+
+    @GetMapping("/records")
+    public List<com.auggie.student_server.entity.ScoreImportRecord> getImportRecords() {
+        return gradeService.findAllRecords();
+    }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> downloadRecord(@PathVariable Long id) throws IOException {
+        java.io.File file = gradeService.getRecordFile(id);
+        if (file == null) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+        
+        com.auggie.student_server.entity.ScoreImportRecord record = gradeService.findAllRecords().stream()
+                .filter(r -> r.getId().equals(id)).findFirst().orElse(null);
+        String fileName = record != null ? record.getFileName() : "score.xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", java.net.URLEncoder.encode(fileName, "UTF-8"));
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(bytes);
+    }
+
+    @DeleteMapping("/record/{id}")
+    public boolean deleteRecord(@PathVariable Long id) {
+        return gradeService.deleteRecord(id);
     }
 
     @PostMapping("/query")
-    public List<SCTInfo> queryGrades(@RequestBody Map<String, String> map) {
+    public List<SCTInfo> queryGrades(@RequestBody Map<String, Object> map) {
         return sctService.findBySearch(map);
     }
 
     @PostMapping("/reexamination")
-    public List<SCTInfo> getReexaminationList(@RequestBody Map<String, String> map) {
+    public List<SCTInfo> getReexaminationList(@RequestBody Map<String, Object> map) {
         return sctService.getReexaminationList(map);
     }
 
     @PostMapping("/reexamination/export")
-    public ResponseEntity<byte[]> exportReexamination(@RequestBody Map<String, String> map) throws IOException {
+    public ResponseEntity<byte[]> exportReexamination(@RequestBody Map<String, Object> map) throws IOException {
         List<SCTInfo> list = sctService.getReexaminationList(map);
         Workbook workbook = gradeService.exportReexaminationToExcel(list);
 

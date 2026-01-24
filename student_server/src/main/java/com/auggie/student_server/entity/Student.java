@@ -27,6 +27,11 @@ public class Student {
     private Integer majorId;
     private Integer departmentId;
 
+    // 冗余字段用于展示
+    private String className;
+    private String majorName;
+    private String departmentName;
+
     // 同时提供 id 和 sid 字段的 getter/setter，确保前后端双向兼容
     public Integer getId() {
         return id;

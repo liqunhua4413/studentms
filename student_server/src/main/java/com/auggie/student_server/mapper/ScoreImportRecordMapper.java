@@ -11,5 +11,10 @@ public interface ScoreImportRecordMapper {
 
     boolean save(@Param("record") ScoreImportRecord record);
 
+    java.util.List<ScoreImportRecord> findAll();
+
+    boolean deleteById(@Param("id") Long id);
+
+    ScoreImportRecord findById(@Param("id") Long id);
 }
 

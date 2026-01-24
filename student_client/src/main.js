@@ -7,6 +7,9 @@ import './plugins/element.js'
 
 Vue.config.productionTip = false
 
+console.error('===== 考务系统前端已启动 =====');
+console.log('当前后端 API 地址:', '/api');
+
 new Vue({
   router,
   store,

@@ -17,12 +17,15 @@ import java.time.LocalDateTime;
 public class ScoreImportRecord {
     private Long id;
     private String fileName;
+    private String filePath;
     private String term;
     private Integer courseId;
     private Integer teacherId;
+    private Integer departmentId;
     private String operator;
     private String status;
     private String message;
     private LocalDateTime createdAt;
 }
+
 

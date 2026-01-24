@@ -4,29 +4,47 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.auggie.student_server.mapper.StudentMapper">
     <select id="findAll" resultType="Student">
-        SELECT * FROM studentms.student;
+        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        FROM studentms.student s
+        LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.major m ON s.major_id = m.id
+        LEFT JOIN studentms.department d ON s.department_id = d.id;
     </select>
 
     <select id="findById" resultType="Student">
-        SELECT * FROM studentms.student WHERE id = #{sid};
+        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        FROM studentms.student s
+        LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.major m ON s.major_id = m.id
+        LEFT JOIN studentms.department d ON s.department_id = d.id
+        WHERE s.id = #{sid};
     </select>
 
     <select id="findByStudentNo" resultType="Student">
-        SELECT * FROM studentms.student WHERE student_no = #{studentNo};
+        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        FROM studentms.student s
+        LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.major m ON s.major_id = m.id
+        LEFT JOIN studentms.department d ON s.department_id = d.id
+        WHERE s.student_no = #{studentNo};
     </select>
 
     <select id="findBySearch" resultType="Student">
-        SELECT * FROM studentms.student
+        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        FROM studentms.student s
+        LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.major m ON s.major_id = m.id
+        LEFT JOIN studentms.department d ON s.department_id = d.id
         <where>
             <if test="student.id != null">
-                id = #{student.id}
+                s.id = #{student.id}
             </if>
             <if test="student.sname != null">
                 <if test="fuzzy == 0">
-                    AND sname = #{student.sname}
+                    AND s.sname = #{student.sname}
                 </if>
                 <if test="fuzzy == 1">
-                    AND sname LIKE CONCAT('%', #{student.sname}, '%')
+                    AND s.sname LIKE CONCAT('%', #{student.sname}, '%')
                 </if>
             </if>
         </where>

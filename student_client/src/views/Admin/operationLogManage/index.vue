@@ -4,24 +4,19 @@
       <el-row :gutter="20">
         <el-col :span="6">
           <el-form-item label="操作者" prop="operator">
-            <el-input v-model="ruleForm.operator" placeholder="支持模糊搜索"></el-input>
+            <el-input v-model="ruleForm.operator" placeholder="学号/工号"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="操作类型" prop="operationType">
             <el-select v-model="ruleForm.operationType" placeholder="请选择" clearable>
-              <el-option label="INSERT" value="INSERT"></el-option>
-              <el-option label="UPDATE" value="UPDATE"></el-option>
-              <el-option label="DELETE" value="DELETE"></el-option>
+              <el-option label="新增" value="新增"></el-option>
+              <el-option label="编辑" value="编辑"></el-option>
+              <el-option label="删除" value="删除"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="目标表" prop="targetTable">
-            <el-input v-model="ruleForm.targetTable" placeholder="如：s, c, t"></el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
+        <el-col :span="12">
           <el-form-item>
             <el-button type="primary" @click="submitForm('ruleForm')">查询</el-button>
             <el-button @click="resetForm('ruleForm')">重置</el-button>
@@ -53,13 +48,10 @@
     </el-form>
 
     <el-table :data="tableData" border style="width: 100%">
-      <el-table-column prop="id" label="ID" width="80"></el-table-column>
-      <el-table-column prop="operator" label="操作者" width="120"></el-table-column>
-      <el-table-column prop="operationType" label="操作类型" width="100"></el-table-column>
-      <el-table-column prop="targetTable" label="目标表" width="120"></el-table-column>
-      <el-table-column prop="targetId" label="目标ID" width="100"></el-table-column>
-      <el-table-column prop="content" label="操作内容" min-width="300" show-overflow-tooltip></el-table-column>
-      <el-table-column prop="createTime" label="操作时间" width="180"></el-table-column>
+      <el-table-column prop="operator" label="学号/工号" width="180"></el-table-column>
+      <el-table-column prop="operationType" label="操作类型" width="120"></el-table-column>
+      <el-table-column prop="content" label="操作内容" min-width="400" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="createTime" label="时间" width="200"></el-table-column>
     </el-table>
   </div>
 </template>
@@ -71,7 +63,6 @@ export default {
       ruleForm: {
         operator: null,
         operationType: null,
-        targetTable: null,
         startTime: null,
         endTime: null
       },
@@ -87,7 +78,6 @@ export default {
           const params = {}
           if (that.ruleForm.operator) params.operator = that.ruleForm.operator
           if (that.ruleForm.operationType) params.operationType = that.ruleForm.operationType
-          if (that.ruleForm.targetTable) params.targetTable = that.ruleForm.targetTable
           if (that.ruleForm.startTime) params.startTime = that.ruleForm.startTime
           if (that.ruleForm.endTime) params.endTime = that.ruleForm.endTime
 

@@ -26,19 +26,19 @@
           width="100">
       </el-table-column>
       <el-table-column
-          prop="classId"
-          label="班级ID"
-          width="100">
+          prop="className"
+          label="班级"
+          width="120">
       </el-table-column>
       <el-table-column
-          prop="majorId"
-          label="专业ID"
-          width="100">
+          prop="majorName"
+          label="专业"
+          width="150">
       </el-table-column>
       <el-table-column
-          prop="departmentId"
-          label="学院ID"
-          width="100">
+          prop="departmentName"
+          label="学院"
+          width="150">
       </el-table-column>
       <el-table-column
           label="操作"

@@ -7,9 +7,13 @@ import com.auggie.student_server.mapper.StudentMapper;
 import com.auggie.student_server.mapper.CourseMapper;
 import com.auggie.student_server.mapper.TeacherMapper;
 import com.auggie.student_server.mapper.ScoreImportRecordMapper;
+import com.auggie.student_server.mapper.MajorMapper;
+import com.auggie.student_server.mapper.ClassMapper;
 import com.auggie.student_server.entity.Student;
 import com.auggie.student_server.entity.Course;
 import com.auggie.student_server.entity.Teacher;
+import com.auggie.student_server.entity.Major;
+import com.auggie.student_server.entity.SCTInfo;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -20,6 +24,21 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import com.auggie.student_server.mapper.DepartmentMapper;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * @Auther: auggie
@@ -42,153 +61,228 @@ public class GradeService {
     private ScoreImportRecordMapper scoreImportRecordMapper;
     @Autowired
     private StudentService studentService;
+    @Autowired
+    private DepartmentMapper departmentMapper;
+
+    @Value("${file.upload.path:${user.home}/studentms/uploads}")
+    private String uploadPath;
+
+    @Autowired
+    private MajorMapper majorMapper;
+    @Autowired
+    private ClassMapper classMapper;
 
     /**
-     * 解析 Excel 文件并批量插入成绩
-     * 新格式：
-     * 第1行：合并单元格，标题
-     * 第2行：合并单元格，课程元信息（需要解析）
-     * 第3行：合并单元格，教学信息（需要解析）
-     * 第4行：表头
-     * 第5-42行：学生数据
-     * 第43-45行：重复表头（跳过）
-     * 第46-73行：学生数据
+     * 解析 Excel 文件并批量插入成绩（含严格业务校验）
      */
-    public String uploadExcel(MultipartFile file, String operator) {
+    public String uploadExcel(MultipartFile file, String operator, Integer selectedDepartmentId) {
         try {
-            InputStream inputStream = file.getInputStream();
-            Workbook workbook = new XSSFWorkbook(inputStream);
+            // 1. 基本检查与保存文件
+            if (selectedDepartmentId == null) return "上传失败：请先选择学院";
+            com.auggie.student_server.entity.Department dept = departmentMapper.findById(selectedDepartmentId);
+            if (dept == null) return "上传失败：选择的学院不存在";
+
+            String originalFilename = file.getOriginalFilename();
+            String resolvedPath = uploadPath;
+            if (resolvedPath.startsWith("./") || resolvedPath.startsWith(".\\")) {
+                resolvedPath = new File(".").getCanonicalPath() + File.separator + resolvedPath.substring(2);
+            }
+            Path uploadDir = Paths.get(resolvedPath, "grade_excel");
+            Files.createDirectories(uploadDir);
+            String savedFileName = UUID.randomUUID() + originalFilename.substring(originalFilename.lastIndexOf("."));
+            Path savedFilePath = uploadDir.resolve(savedFileName);
+            file.transferTo(savedFilePath.toFile());
+
+            // 2. 解析 Excel - 使用保存后的文件，避免 MultipartFile 临时文件被删除的问题
+            Workbook workbook = new XSSFWorkbook(savedFilePath.toFile());
             Sheet sheet = workbook.getSheetAt(0);
+            List<StudentCourseTeacher> validGradeList = new ArrayList<>();
+            List<String> errorReports = new ArrayList<>();
 
-            List<StudentCourseTeacher> gradeList = new ArrayList<>();
-            int successCount = 0;
-            int failCount = 0;
-            StringBuilder errorMsg = new StringBuilder();
-
-            // 解析第2行：课程元信息（合并单元格）
-            String courseName = null;
-            String courseCategory = null;
-            String courseNature = null;
-            String examMethod = null;
-            String teacherName = null;
-            
+            // 解析第2行：课程与教师
             Row row2 = sheet.getRow(1);
-            if (row2 != null) {
-                String row2Text = getMergedCellValue(sheet, row2, 0);
-                if (row2Text != null) {
-                    // 解析：课程名称：高等数学  课程类别：必修  课程性质：理论课  考核方式：考试  任课教师：张老师
-                    courseName = extractValue(row2Text, "课程名称：");
-                    courseCategory = extractValue(row2Text, "课程类别：");
-                    courseNature = extractValue(row2Text, "课程性质：");
-                    examMethod = extractValue(row2Text, "考核方式：");
-                    teacherName = extractValue(row2Text, "任课教师：");
-                }
-            }
-
-            // 解析第3行：教学信息（合并单元格）
-            String term = null;
-            Integer credit = null;
-            Integer hours = null;
-            String className = null;
-            String gradeLevel = null;
+            String row2Text = getMergedCellValue(sheet, row2, 0);
+            String courseName = extractValue(row2Text, "课程名称：");
+            String teacherName = extractValue(row2Text, "任课教师：");
             
+            // 校验课程是否存在
+            List<Course> courses = courseMapper.findBySearch(null, courseName != null ? courseName.trim() : "", 0, null, null);
+            if (courses == null || courses.isEmpty()) return "上传失败：课程【" + courseName + "】在系统中未定义";
+            Course targetCourse = courses.get(0);
+
+            // 解析第3行：教学信息
             Row row3 = sheet.getRow(2);
-            if (row3 != null) {
-                String row3Text = getMergedCellValue(sheet, row3, 0);
-                if (row3Text != null) {
-                    // 解析：开课学期：2023-2024-1  学分：4  学时：64  开课班级：23级计算机1班  年级：2023级
-                    term = extractValue(row3Text, "开课学期：");
-                    String creditStr = extractValue(row3Text, "学分：");
-                    if (creditStr != null) {
-                        try {
-                            credit = Integer.parseInt(creditStr.trim());
-                        } catch (Exception e) {}
-                    }
-                    String hoursStr = extractValue(row3Text, "学时：");
-                    if (hoursStr != null) {
-                        try {
-                            hours = Integer.parseInt(hoursStr.trim());
-                        } catch (Exception e) {}
-                    }
-                    className = extractValue(row3Text, "开课班级：");
-                    gradeLevel = extractValue(row3Text, "年级：");
-                }
+            String row3Text = getMergedCellValue(sheet, row3, 0);
+            String term = extractValue(row3Text, "开课学期：");
+            String fullClassName = extractValue(row3Text, "开课班级：");
+            
+            // 复杂解析：24级信息安全技术应用2班
+            String extractedGradeLevel = "";
+            String extractedMajorName = "";
+            String extractedClassName = "";
+            if (fullClassName != null && !fullClassName.isEmpty()) {
+                java.util.regex.Matcher gradeMatcher = java.util.regex.Pattern.compile("(\\d{2}级)").matcher(fullClassName);
+                if (gradeMatcher.find()) extractedGradeLevel = "20" + gradeMatcher.group(1);
+                
+                java.util.regex.Matcher classMatcher = java.util.regex.Pattern.compile("(\\d+班)$").matcher(fullClassName);
+                if (classMatcher.find()) extractedClassName = classMatcher.group(1);
+                
+                extractedMajorName = fullClassName.replaceAll("\\d{2}级", "").replaceAll("\\d+班$", "").trim();
             }
 
-            // 查找课程和教师
-            Integer courseIdForRecord = null;
-            Integer teacherIdForRecord = null;
-            
-            if (courseName != null && !courseName.isEmpty()) {
-                List<Course> courses = courseMapper.findBySearch(null, courseName.trim(), 1, null, null);
-                if (courses != null && !courses.isEmpty()) {
-                    courseIdForRecord = courses.get(0).getId();
-                }
-            }
-            
-            if (teacherName != null && !teacherName.isEmpty()) {
-                List<Teacher> teachers = teacherMapper.findBySearch(null, teacherName.trim(), 1);
-                if (teachers != null && !teachers.isEmpty()) {
-                    teacherIdForRecord = teachers.get(0).getId();
-                }
-            }
+            // 校验专业和班级是否存在
+            List<Major> majorList = majorMapper.findBySearch(extractedMajorName, selectedDepartmentId);
+            if (majorList == null || majorList.isEmpty()) return "上传失败：专业【" + extractedMajorName + "】在所属学院下未定义";
+            Major targetMajor = majorList.get(0);
 
-            // 从第5行开始读取学生数据（索引4），跳过第43-45行（索引42-44）
+            List<com.auggie.student_server.entity.Class> classList = classMapper.findBySearch(extractedClassName, targetMajor.getId(), selectedDepartmentId);
+            if (classList == null || classList.isEmpty()) return "上传失败：班级【" + extractedClassName + "】在对应专业下未定义";
+            com.auggie.student_server.entity.Class targetClass = classList.get(0);
+
+            // 3. 逐行校验学生数据
             for (int i = 4; i <= sheet.getLastRowNum(); i++) {
-                // 跳过第43-45行（索引42-44）
-                if (i >= 42 && i <= 44) {
-                    continue;
-                }
+                if (i >= 42 && i <= 45) continue; // 跳过中间重复的标题和表头行
                 
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                // 处理第一个学生（A-G列，索引0-6）
-                int beforeSize = gradeList.size();
-                processStudentRow(sheet, row, 0, 6, courseIdForRecord, teacherIdForRecord, term, 
-                    gradeList, errorMsg, i + 1);
-                if (gradeList.size() > beforeSize) {
-                    successCount++;
-                } else {
-                    failCount++;
+                // 实时探测页脚内容，只要匹配到“各档成绩百分比”等字样立刻终止
+                String firstCellText = getStringValue(row.getCell(0));
+                if (firstCellText != null && (firstCellText.startsWith("各档成绩百分比") || firstCellText.contains("签字"))) {
+                    System.out.println("检测到页脚标识【" + firstCellText + "】，解析提前结束。");
+                    break;
                 }
-                
-                // 处理第二个学生（H-N列，索引7-13）
-                beforeSize = gradeList.size();
-                processStudentRow(sheet, row, 7, 13, courseIdForRecord, teacherIdForRecord, term, 
-                    gradeList, errorMsg, i + 1);
-                if (gradeList.size() > beforeSize) {
-                    successCount++;
-                } else {
-                    failCount++;
-                }
+
+                // 处理左右两列学生 (A-G 和 H-N)
+                validateAndAddStudent(row, 0, targetCourse, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
+                validateAndAddStudent(row, 7, targetCourse, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
             }
 
-            // 批量插入
-            if (!gradeList.isEmpty()) {
-                studentCourseTeacherMapper.batchInsert(gradeList);
+            // 4. 结果处理
+            if (!errorReports.isEmpty()) {
+                // 如果有任何一条错误，拒绝整份文件录入
+                return "上传被拒绝，发现以下错误：\n" + String.join("\n", errorReports.subList(0, Math.min(errorReports.size(), 10))) + (errorReports.size() > 10 ? "\n...等更多错误" : "");
             }
 
-            workbook.close();
-            inputStream.close();
+            if (!validGradeList.isEmpty()) {
+                studentCourseTeacherMapper.batchInsert(validGradeList);
+            }
 
-            // 记录导入结果
+            // 记录导入
             ScoreImportRecord record = new ScoreImportRecord();
-            record.setFileName(file.getOriginalFilename());
+            record.setFileName(originalFilename);
+            record.setFilePath(savedFilePath.toString());
             record.setTerm(term);
-            record.setCourseId(courseIdForRecord);
-            record.setTeacherId(teacherIdForRecord);
+            record.setCourseId(targetCourse.getId());
+            record.setDepartmentId(selectedDepartmentId);
+            // 尝试根据教师姓名查找 ID
+            List<Teacher> teachers = teacherMapper.findBySearch(null, teacherName != null ? teacherName.trim() : "", 0);
+            if (teachers != null && !teachers.isEmpty()) {
+                record.setTeacherId(teachers.get(0).getId());
+            }
             record.setOperator(operator);
-            record.setStatus(failCount == 0 ? "SUCCESS" : (successCount == 0 ? "FAILED" : "PARTIAL"));
-            record.setMessage(String.format("成功：%d 条，失败：%d 条\n%s", successCount, failCount, errorMsg.toString()));
-            record.setCreatedAt(java.time.LocalDateTime.now());
+            record.setStatus("SUCCESS");
+            record.setMessage("成功导入 " + validGradeList.size() + " 条记录");
+            record.setCreatedAt(LocalDateTime.now());
             scoreImportRecordMapper.save(record);
 
-            return String.format("上传完成！成功：%d 条，失败：%d 条\n%s", successCount, failCount, errorMsg.toString());
+            return "上传成功！已导入 " + validGradeList.size() + " 条成绩记录";
         } catch (Exception e) {
             e.printStackTrace();
-            return "上传失败：" + e.getMessage();
+            return "系统内部错误：" + e.getMessage();
         }
+    }
+
+    private void validateAndAddStudent(Row row, int startCol, Course course, String term, 
+                                      com.auggie.student_server.entity.Department dept, Major major, 
+                                      com.auggie.student_server.entity.Class targetClass, String gradeLevel,
+                                      List<StudentCourseTeacher> validList, List<String> errorReports, int lineNum) {
+        String studentNo = getStringValue(row.getCell(startCol));
+        String studentName = getStringValue(row.getCell(startCol + 1));
+        if (studentNo == null || studentNo.isEmpty()) return;
+        
+        // 长度校验，防止数据库报 Data too long 错误
+        if (studentNo.length() > 50) {
+            errorReports.add("第" + lineNum + "行：学号【" + studentNo.substring(0, 10) + "...】长度超过50位，请检查格式");
+            return;
+        }
+        if (studentName != null && studentName.length() > 50) {
+            errorReports.add("第" + lineNum + "行：姓名【" + studentName.substring(0, 10) + "...】长度超过50位，请检查格式");
+            return;
+        }
+
+        // 1. 校验学生是否存在，不存在则自动创建
+        Student student = studentMapper.findByStudentNo(studentNo);
+        if (student == null) {
+            // 自动创建学生
+            System.out.println("检测到新学生，正在自动创建：" + studentNo + " " + studentName);
+            student = new Student();
+            student.setStudentNo(studentNo);
+            student.setSname(studentName);
+            student.setPassword("123456"); // 默认密码
+            student.setDepartmentId(dept.getId());
+            student.setMajorId(major.getId());
+            student.setClassId(targetClass.getId());
+            student.setGradeLevel(gradeLevel);
+            studentMapper.save(student);
+            // 重新查询以获取数据库分配的 ID
+            student = studentMapper.findByStudentNo(studentNo);
+            if (student == null) {
+                errorReports.add("第" + lineNum + "行：自动创建学生【" + studentNo + "】失败");
+                return;
+            }
+        } else if (!student.getSname().equals(studentName)) {
+            errorReports.add("第" + lineNum + "行：学号【" + studentNo + "】与系统姓名【" + student.getSname() + "】不匹配");
+            return;
+        }
+
+        // 2. 成绩唯一性校验 (同一学生+同一课程+同一学期)
+        List<SCTInfo> existing = studentCourseTeacherMapper.findBySearch(student.getId(), null, 0, course.getId(), null, 0, null, null, 0, null, null, term, null, null, null, null, null, null, null);
+        if (existing != null && !existing.isEmpty()) {
+            errorReports.add("第" + lineNum + "行：冲突！学生【" + studentName + "】在【" + term + "】学期的【" + course.getCname() + "】成绩已存在");
+            return;
+        }
+
+        // 3. 组装数据
+        StudentCourseTeacher sct = new StudentCourseTeacher();
+        sct.setStudentId(student.getId());
+        sct.setCourseId(course.getId());
+        sct.setTerm(term);
+        sct.setUsualGrade(getFloatValue(row.getCell(startCol + 2)));
+        sct.setFinalGrade(getFloatValue(row.getCell(startCol + 4)));
+        sct.setTotalGrade(getFloatValue(row.getCell(startCol + 5)));
+        sct.setDepartmentId(dept.getId());
+        sct.setDepartmentName(dept.getName());
+        sct.setMajorId(major.getId());
+        sct.setMajorName(major.getName());
+        sct.setClassName(targetClass.getName());
+        sct.setGradeLevel(gradeLevel);
+        sct.setCourseName(course.getCname());
+        
+        validList.add(sct);
+    }
+
+    public List<ScoreImportRecord> findAllRecords() {
+        return scoreImportRecordMapper.findAll();
+    }
+
+    public boolean deleteRecord(Long id) {
+        ScoreImportRecord record = scoreImportRecordMapper.findById(id);
+        if (record != null) {
+            File file = new File(record.getFilePath());
+            if (file.exists()) file.delete();
+            return scoreImportRecordMapper.deleteById(id);
+        }
+        return false;
+    }
+
+    public File getRecordFile(Long id) {
+        ScoreImportRecord record = scoreImportRecordMapper.findById(id);
+        if (record != null) {
+            File file = new File(record.getFilePath());
+            if (file.exists()) return file;
+        }
+        return null;
     }
 
     /**
@@ -220,13 +314,29 @@ public class GradeService {
      */
     private String extractValue(String text, String prefix) {
         if (text == null) return null;
-        int index = text.indexOf(prefix);
-        if (index == -1) return null;
-        int start = index + prefix.length();
-        int end = text.indexOf("  ", start); // 两个空格分隔
-        if (end == -1) {
-            end = text.length();
+        // 支持全角和半角冒号
+        String p1 = prefix.replace("：", ":");
+        String p2 = prefix.replace(":", "：");
+        int index = text.indexOf(p1);
+        String usedPrefix = p1;
+        if (index == -1) {
+            index = text.indexOf(p2);
+            usedPrefix = p2;
         }
+        
+        if (index == -1) return null;
+        
+        int start = index + usedPrefix.length();
+        // 查找下一个明显的间隔
+        int end = text.length();
+        String[] separators = {"  ", " 课程", " 教师", " 学分", " 学时", " 开课"};
+        for (String sep : separators) {
+            int sepIndex = text.indexOf(sep, start);
+            if (sepIndex != -1 && sepIndex < end) {
+                end = sepIndex;
+            }
+        }
+        
         return text.substring(start, end).trim();
     }
 
@@ -297,20 +407,8 @@ public class GradeService {
 
     private String getStringValue(Cell cell) {
         if (cell == null) return null;
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().trim();
-            case NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getDateCellValue().toString();
-                } else {
-                    return String.valueOf((long) cell.getNumericCellValue());
-                }
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
-            default:
-                return null;
-        }
+        DataFormatter formatter = new DataFormatter();
+        return formatter.formatCellValue(cell).trim();
     }
 
     private Integer getIntValue(Cell cell) {
@@ -384,135 +482,89 @@ public class GradeService {
      * 生成成绩单批量导入模板（按特定格式要求）
      * 第 1 行：合并A-N列，内容"邯郸应用技术职业学院课程成绩单"
      * 第 2 行：合并A-N列，内容"课程名称：高等数学  课程类别：必修  课程性质：理论课  考核方式：考试  任课教师：张老师"
-     * 第 3 行：合并A-N列，内容"开课学期：2023-2024-1  学分：4  学时：64  开课班级：23级计算机1班  年级：2023级"
+     * 第 3 行：合并A-N列，内容"开课学期：2023-2024-1  学分：4  学时：64  开课班级：23级计算机1班"
      * 第 4 行：表头（A-G 为第一个学生，H-N 为第二个学生）
      * 第 5-42 行：学生数据
      * 第 43-45 行：重复第1-3行内容
-     * 第 46-73 行：学生数据
+     * 第 46 行：重复第4行内容（表头）
+     * 第 47-73 行：学生数据
      */
     public Workbook generateScoreTemplate() {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("成绩单模板");
 
-        // 第 1 行：合并A-N列，标题
-        Row titleRow = sheet.createRow(0);
-        Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("邯郸应用技术职业学院课程成绩单");
-        // 合并A1-N1
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 13));
-        // 设置样式
+        // 设置通用样式
+        CellStyle infoStyle = workbook.createCellStyle();
+        infoStyle.setAlignment(HorizontalAlignment.LEFT);
+
         CellStyle titleStyle = workbook.createCellStyle();
         org.apache.poi.xssf.usermodel.XSSFFont titleFont = ((XSSFWorkbook) workbook).createFont();
         titleFont.setBold(true);
         titleFont.setFontHeightInPoints((short) 16);
         titleStyle.setFont(titleFont);
         titleStyle.setAlignment(HorizontalAlignment.CENTER);
-        titleCell.setCellStyle(titleStyle);
 
-        // 第 2 行：合并A-N列，课程元信息
-        Row courseInfoRow = sheet.createRow(1);
-        Cell courseInfoCell = courseInfoRow.createCell(0);
-        courseInfoCell.setCellValue("课程名称：高等数学  课程类别：必修  课程性质：理论课  考核方式：考试  任课教师：张老师");
-        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 13));
-        CellStyle infoStyle = workbook.createCellStyle();
-        infoStyle.setAlignment(HorizontalAlignment.LEFT);
-        courseInfoCell.setCellStyle(infoStyle);
-
-        // 第 3 行：合并A-N列，教学信息
-        Row teachingInfoRow = sheet.createRow(2);
-        Cell teachingInfoCell = teachingInfoRow.createCell(0);
-        teachingInfoCell.setCellValue("开课学期：2023-2024-1  学分：4  学时：64  开课班级：23级计算机1班  年级：2023级");
-        sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 13));
-        teachingInfoCell.setCellStyle(infoStyle);
-
-        // 第 4 行：表头（A-G 为第一个学生，H-N 为第二个学生）
-        Row headerRow = sheet.createRow(3);
-        // 第一个学生表头（A-G）
-        headerRow.createCell(0).setCellValue("学生学号");
-        headerRow.createCell(1).setCellValue("学生姓名");
-        headerRow.createCell(2).setCellValue("平时");
-        headerRow.createCell(3).setCellValue("期中");
-        headerRow.createCell(4).setCellValue("期末");
-        headerRow.createCell(5).setCellValue("总成绩");
-        headerRow.createCell(6).setCellValue("标志");
-        // 第二个学生表头（H-N）
-        headerRow.createCell(7).setCellValue("学生学号");
-        headerRow.createCell(8).setCellValue("学生姓名");
-        headerRow.createCell(9).setCellValue("平时");
-        headerRow.createCell(10).setCellValue("期中");
-        headerRow.createCell(11).setCellValue("期末");
-        headerRow.createCell(12).setCellValue("总成绩");
-        headerRow.createCell(13).setCellValue("标志");
+        // 生成前4行
+        createHeaderRows(workbook, sheet, 0);
 
         // 第 5-42 行：学生数据（示例数据）
         int rowIndex = 4; // 从第5行开始（索引4）
-        for (int i = 0; i < 38; i++) { // 5-42行共38行
-            Row dataRow = sheet.createRow(rowIndex);
-            // 第一个学生数据（A-G列）
-            dataRow.createCell(0).setCellValue("S23000" + String.format("%02d", i + 1));
-            dataRow.createCell(1).setCellValue("学生" + (i + 1));
-            dataRow.createCell(2).setCellValue(80 + i % 20); // 平时
-            dataRow.createCell(3).setCellValue(75 + i % 25); // 期中
-            dataRow.createCell(4).setCellValue(70 + i % 30); // 期末
-            dataRow.createCell(5).setCellValue(75 + i % 25); // 总成绩
-            dataRow.createCell(6).setCellValue(""); // 标志
-            // 第二个学生数据（H-N列）
-            if (i < 19) { // 只填充前19个学生的第二个位置
-                dataRow.createCell(7).setCellValue("S23000" + String.format("%02d", i + 20));
-                dataRow.createCell(8).setCellValue("学生" + (i + 20));
-                dataRow.createCell(9).setCellValue(80 + (i + 19) % 20);
-                dataRow.createCell(10).setCellValue(75 + (i + 19) % 25);
-                dataRow.createCell(11).setCellValue(70 + (i + 19) % 30);
-                dataRow.createCell(12).setCellValue(75 + (i + 19) % 25);
-                dataRow.createCell(13).setCellValue("");
-            }
-            rowIndex++;
+        for (int i = 0; i < 38; i++) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            // 填充示例数据... (省略或简化)
         }
 
         // 第 43-45 行：重复第1-3行内容
-        Row repeatTitleRow = sheet.createRow(42); // 第43行（索引42）
-        Cell repeatTitleCell = repeatTitleRow.createCell(0);
-        repeatTitleCell.setCellValue("邯郸应用技术职业学院课程成绩单");
-        sheet.addMergedRegion(new CellRangeAddress(42, 42, 0, 13));
-        repeatTitleCell.setCellStyle(titleStyle);
+        createHeaderRows(workbook, sheet, 42); // 43, 44, 45, 46
 
-        Row repeatCourseInfoRow = sheet.createRow(43); // 第44行（索引43）
-        Cell repeatCourseInfoCell = repeatCourseInfoRow.createCell(0);
-        repeatCourseInfoCell.setCellValue("课程名称：高等数学  课程类别：必修  课程性质：理论课  考核方式：考试  任课教师：张老师");
-        sheet.addMergedRegion(new CellRangeAddress(43, 43, 0, 13));
-        repeatCourseInfoCell.setCellStyle(infoStyle);
-
-        Row repeatTeachingInfoRow = sheet.createRow(44); // 第45行（索引44）
-        Cell repeatTeachingInfoCell = repeatTeachingInfoRow.createCell(0);
-        repeatTeachingInfoCell.setCellValue("开课学期：2023-2024-1  学分：4  学时：64  开课班级：23级计算机1班  年级：2023级");
-        sheet.addMergedRegion(new CellRangeAddress(44, 44, 0, 13));
-        repeatTeachingInfoCell.setCellStyle(infoStyle);
-
-        // 第 46-73 行：学生数据（示例数据）
-        rowIndex = 45; // 从第46行开始（索引45）
-        for (int i = 0; i < 28; i++) { // 46-73行共28行
-            Row dataRow = sheet.createRow(rowIndex);
-            // 第一个学生数据（A-G列）
-            dataRow.createCell(0).setCellValue("S23000" + String.format("%02d", i + 39));
-            dataRow.createCell(1).setCellValue("学生" + (i + 39));
-            dataRow.createCell(2).setCellValue(80 + (i + 38) % 20);
-            dataRow.createCell(3).setCellValue(75 + (i + 38) % 25);
-            dataRow.createCell(4).setCellValue(70 + (i + 38) % 30);
-            dataRow.createCell(5).setCellValue(75 + (i + 38) % 25);
-            dataRow.createCell(6).setCellValue("");
-            // 第二个学生数据（H-N列）
-            if (i < 14) { // 只填充前14个学生的第二个位置
-                dataRow.createCell(7).setCellValue("S23000" + String.format("%02d", i + 58));
-                dataRow.createCell(8).setCellValue("学生" + (i + 58));
-                dataRow.createCell(9).setCellValue(80 + (i + 57) % 20);
-                dataRow.createCell(10).setCellValue(75 + (i + 57) % 25);
-                dataRow.createCell(11).setCellValue(70 + (i + 57) % 30);
-                dataRow.createCell(12).setCellValue(75 + (i + 57) % 25);
-                dataRow.createCell(13).setCellValue("");
-            }
-            rowIndex++;
+        // 第 47-73 行：学生数据
+        rowIndex = 46; // 从第47行开始（索引46）
+        for (int i = 0; i < 28; i++) {
+            Row dataRow = sheet.createRow(rowIndex++);
         }
 
         return workbook;
+    }
+
+    private void createHeaderRows(Workbook workbook, Sheet sheet, int startRow) {
+        CellStyle titleStyle = workbook.createCellStyle();
+        org.apache.poi.xssf.usermodel.XSSFFont titleFont = ((XSSFWorkbook) workbook).createFont();
+        titleFont.setBold(true);
+        titleFont.setFontHeightInPoints((short) 16);
+        titleStyle.setFont(titleFont);
+        titleStyle.setAlignment(HorizontalAlignment.CENTER);
+
+        CellStyle infoStyle = workbook.createCellStyle();
+        infoStyle.setAlignment(HorizontalAlignment.LEFT);
+
+        // 第 1/43 行：标题
+        Row titleRow = sheet.createRow(startRow);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("邯郸应用技术职业学院课程成绩单");
+        sheet.addMergedRegion(new CellRangeAddress(startRow, startRow, 0, 13));
+        titleCell.setCellStyle(titleStyle);
+
+        // 第 2/44 行：课程元信息
+        Row row2 = sheet.createRow(startRow + 1);
+        Cell cell2 = row2.createCell(0);
+        cell2.setCellValue("课程名称：高等数学  课程类别：必修  课程性质：理论课  考核方式：考试  任课教师：张老师");
+        sheet.addMergedRegion(new CellRangeAddress(startRow + 1, startRow + 1, 0, 13));
+        cell2.setCellStyle(infoStyle);
+
+        // 第 3/45 行：教学信息
+        Row row3 = sheet.getRow(startRow + 2);
+        if (row3 == null) row3 = sheet.createRow(startRow + 2);
+        Cell cell3 = row3.createCell(0);
+        cell3.setCellValue("开课学期：2023-2024-1  学分：4  学时：64  开课班级：24级信息安全技术应用1班");
+        sheet.addMergedRegion(new CellRangeAddress(startRow + 2, startRow + 2, 0, 13));
+        cell3.setCellStyle(infoStyle);
+
+        // 第 4/46 行：表头
+        Row headerRow = sheet.getRow(startRow + 3);
+        if (headerRow == null) headerRow = sheet.createRow(startRow + 3);
+        String[] headers = {"学生学号", "学生姓名", "平时", "期中", "期末", "总成绩", "标志", "学生学号", "学生姓名", "平时", "期中", "期末", "总成绩", "标志"};
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
     }
 }

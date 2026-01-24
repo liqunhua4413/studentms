@@ -57,6 +57,11 @@ public class CourseController {
         return courseService.updateById(course);
     }
 
+    @GetMapping("/findAll")
+    public List<Course> findAll() {
+        return courseService.findBySearch(new java.util.HashMap<>());
+    }
+
     /**
      * 课程批量导入（Excel）
      */
