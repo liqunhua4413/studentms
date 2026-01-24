@@ -5,7 +5,7 @@
         <span>成绩上传</span>
       </div>
       
-      <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 20px;" v-if="userType !== 'dean'">
         <el-form :inline="true">
           <el-form-item label="选择学院" required>
             <el-select v-model="selectedDepartmentId" placeholder="请选择学院">
@@ -18,6 +18,14 @@
             </el-select>
           </el-form-item>
         </el-form>
+      </div>
+      <div style="margin-bottom: 20px;" v-else>
+        <el-alert
+          :title="'当前学院：' + (currentDepartmentName || '未知')"
+          type="info"
+          :closable="false"
+          show-icon>
+        </el-alert>
       </div>
 
       <el-upload
@@ -79,22 +87,36 @@
 <script>
 export default {
   data() {
+    const userType = sessionStorage.getItem('type') || 'admin'
+    const departmentId = sessionStorage.getItem('departmentId')
     return {
       uploadUrl: '/api/grade/upload',
       fileList: [],
       uploadResult: '',
-      selectedDepartmentId: null,
+      selectedDepartmentId: userType === 'dean' && departmentId ? parseInt(departmentId) : null,
       departments: [],
       records: [],
+      userType: userType,
+      currentDepartmentName: null,
       uploadHeaders: {
         'Operator': encodeURIComponent(sessionStorage.getItem('name') || 'admin'),
-        'UserType': sessionStorage.getItem('type') || 'admin'
+        'UserType': userType
       }
     }
   },
   created() {
     console.log('UploadGrade initialized, fetching departments...');
-    this.fetchDepartments();
+    const userType = sessionStorage.getItem('type') || 'admin'
+    if (userType === 'dean') {
+      // 院长自动使用自己的学院
+      const departmentId = sessionStorage.getItem('departmentId')
+      if (departmentId) {
+        this.selectedDepartmentId = parseInt(departmentId)
+        this.fetchDepartmentName(departmentId)
+      }
+    } else {
+      this.fetchDepartments();
+    }
     this.fetchRecords();
   },
   methods: {
@@ -110,10 +132,18 @@ export default {
     fetchRecords() {
       this.axios.get('/grade/records').then(resp => {
         console.log('UploadGrade records loaded:', resp.data);
+        // 如果是院长，后端已经过滤了，直接使用
         this.records = resp.data;
       }).catch(err => {
         console.error('加载记录失败:', err);
       });
+    },
+    fetchDepartmentName(departmentId) {
+      this.axios.get(`/department/findById/${departmentId}`).then(resp => {
+        if (resp.data) {
+          this.currentDepartmentName = resp.data.name
+        }
+      }).catch(() => {})
     },
     submitUpload() {
       if (!this.selectedDepartmentId) {
@@ -124,7 +154,11 @@ export default {
     },
     beforeUpload(file) {
       if (!this.selectedDepartmentId) {
-        this.$message.warning('请先选择学院');
+        if (this.userType === 'dean') {
+          this.$message.error('无法获取学院信息，请重新登录');
+        } else {
+          this.$message.warning('请先选择学院');
+        }
         return false;
       }
       const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');

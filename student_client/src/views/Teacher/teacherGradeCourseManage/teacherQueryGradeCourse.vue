@@ -57,7 +57,7 @@ export default {
         sid: null,
         sname: null,
         sFuzzy: true,
-        tid: sessionStorage.getItem('tid'),
+        tid: parseInt(sessionStorage.getItem('tid')),
         tname: null,
         tFuzzy: true,
         cid: null,
@@ -65,7 +65,8 @@ export default {
         cFuzzy: true,
         lowBound: null,
         highBound: null,
-        term: sessionStorage.getItem('currentTerm')
+        term: sessionStorage.getItem('currentTerm'),
+        departmentId: sessionStorage.getItem('departmentId') ? parseInt(sessionStorage.getItem('departmentId')) : null
       },
       rules: {
         cid: [

@@ -24,7 +24,7 @@ public class AdminInterceptor implements HandlerInterceptor {
         // 允许跨域
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Operator, UserType");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Operator, UserType, DepartmentId");
 
         // 处理 OPTIONS 请求
         if ("OPTIONS".equals(request.getMethod())) {
@@ -42,12 +42,16 @@ public class AdminInterceptor implements HandlerInterceptor {
             }
         }
         String userType = request.getHeader("UserType");
+        String departmentId = request.getHeader("DepartmentId");
         
         if (operator == null || operator.isEmpty()) {
             operator = request.getParameter("operator");
         }
         if (userType == null || userType.isEmpty()) {
             userType = request.getParameter("userType");
+        }
+        if (departmentId == null || departmentId.isEmpty()) {
+            departmentId = request.getParameter("departmentId");
         }
         
         if (operator == null || operator.isEmpty()) {
@@ -57,6 +61,13 @@ public class AdminInterceptor implements HandlerInterceptor {
         // 将操作者信息存储到 request 属性中
         request.setAttribute("operator", operator);
         request.setAttribute("userType", userType);
+        if (departmentId != null && !departmentId.isEmpty()) {
+            try {
+                request.setAttribute("departmentId", Integer.parseInt(departmentId));
+            } catch (NumberFormatException e) {
+                // 忽略格式错误
+            }
+        }
 
         // 检查是否是 admin/dean 操作
         String requestURI = request.getRequestURI();
@@ -64,7 +75,7 @@ public class AdminInterceptor implements HandlerInterceptor {
         // 需要管理员或院长权限的路径
         String[] restrictedPaths = {
             "/department", "/major", "/class",
-            "/grade/upload", "/grade/reexamination/export",
+            "/grade/reexamination/export",
             "/paper/deleteById",
             "/operationLog",
             "/student/import", "/teacher/import",

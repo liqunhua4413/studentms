@@ -42,4 +42,8 @@ public class OperationLogService {
     public List<OperationLog> findBySearch(String operator, String operationType, String targetTable, String startTime, String endTime) {
         return operationLogMapper.findBySearch(operator, operationType, targetTable, startTime, endTime);
     }
+    
+    public List<OperationLog> findByDepartmentId(Integer departmentId) {
+        return operationLogMapper.findByDepartmentId(departmentId);
+    }
 }

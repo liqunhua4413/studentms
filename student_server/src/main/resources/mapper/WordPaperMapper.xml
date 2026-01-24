@@ -41,6 +41,18 @@
         ORDER BY upload_time DESC
     </select>
 
+    <select id="findByDepartmentId" resultType="WordPaper">
+        SELECT DISTINCT epa.id,
+               epa.file_name  AS fileName,
+               epa.file_path  AS filePath,
+               epa.upload_by  AS uploadBy,
+               epa.upload_time AS uploadTime
+        FROM studentms.exam_paper_analysis epa
+        INNER JOIN studentms.teacher t ON epa.upload_by = t.tname
+        WHERE t.department_id = #{departmentId}
+        ORDER BY epa.upload_time DESC
+    </select>
+
     <insert id="save" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO studentms.exam_paper_analysis (file_name, file_path, upload_by, uploader_role, upload_time)
         VALUES (#{paper.fileName}, #{paper.filePath}, #{paper.uploadBy}, 'teacher', #{paper.uploadTime})

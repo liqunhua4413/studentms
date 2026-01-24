@@ -41,7 +41,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="学院" prop="departmentId">
-            <el-select v-model="ruleForm.departmentId" placeholder="请选择学院" clearable @change="handleDepartmentChange">
+            <el-select v-model="ruleForm.departmentId" placeholder="请选择学院" :disabled="userType === 'dean'" clearable @change="handleDepartmentChange">
               <el-option
                   v-for="item in departments"
                   :key="item.id"
@@ -168,7 +168,8 @@ export default {
       courses: [],
       terms: [],
       tableData: [],
-      rules: {}
+      rules: {},
+      userType: sessionStorage.getItem('type') || 'admin'
     };
   },
   methods: {
@@ -315,10 +316,24 @@ export default {
   },
   created() {
     console.log('QueryGrade initialized, fetching initial data...');
-    // 获取学院列表
-    this.axios.get('/department/findAll').then(resp => {
-      this.departments = resp.data
-    }).catch(err => console.error('加载学院失败:', err))
+    const userType = sessionStorage.getItem('type') || 'admin'
+    const departmentId = sessionStorage.getItem('departmentId')
+    
+    // 如果是院长，自动设置并锁定学院
+    if (userType === 'dean' && departmentId) {
+      this.ruleForm.departmentId = parseInt(departmentId)
+      // 获取学院名称
+      this.axios.get(`/department/findById/${departmentId}`).then(resp => {
+        if (resp.data) {
+          this.departments = [resp.data] // 只显示自己的学院
+        }
+      }).catch(err => console.error('加载学院失败:', err))
+    } else {
+      // 管理员可以查看所有学院
+      this.axios.get('/department/findAll').then(resp => {
+        this.departments = resp.data
+      }).catch(err => console.error('加载学院失败:', err))
+    }
     
     // 获取课程列表
     this.axios.get('/course/findAll').then(resp => {

@@ -20,6 +20,7 @@ public interface WordPaperMapper {
     List<WordPaper> findAll();
     WordPaper findById(@Param("id") Long id);
     List<WordPaper> findBySearch(@Param("fileName") String fileName, @Param("uploadBy") String uploadBy);
+    List<WordPaper> findByDepartmentId(@Param("departmentId") Integer departmentId);
     boolean save(@Param("paper") WordPaper paper);
     boolean deleteById(@Param("id") Long id);
 }

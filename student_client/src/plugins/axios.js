@@ -26,11 +26,16 @@ _axios.interceptors.request.use(
     // 从 sessionStorage 获取用户信息，设置到请求头
     const type = sessionStorage.getItem("type");
     const name = sessionStorage.getItem("name");
+    const departmentId = sessionStorage.getItem("departmentId");
     
     // 根据 type 设置请求头，不再强制要求 name 必须是 "admin"
     if (type && name) {
       config.headers["Operator"] = encodeURIComponent(name);
       config.headers["UserType"] = type;
+    }
+    // 传递 departmentId，用于院长权限控制
+    if (departmentId) {
+      config.headers["DepartmentId"] = departmentId;
     }
     
     return config;

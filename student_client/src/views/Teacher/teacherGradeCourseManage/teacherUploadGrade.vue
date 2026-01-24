@@ -1,10 +1,18 @@
 <template>
   <div>
+    <div style="margin-bottom: 20px;" v-if="userType === 'teacher'">
+      <el-alert
+        :title="'当前学院：' + (currentDepartmentName || '未知')"
+        type="info"
+        :closable="false"
+        show-icon>
+      </el-alert>
+    </div>
     <el-upload
         class="upload-demo"
         ref="upload"
         :action="uploadUrl"
-        :data="{uploadBy: uploadBy}"
+        :data="{uploadBy: uploadBy, departmentId: selectedDepartmentId}"
         :on-success="handleSuccess"
         :on-error="handleError"
         :before-upload="beforeUpload"
@@ -36,11 +44,25 @@
 <script>
 export default {
   data() {
+    const userType = sessionStorage.getItem('type') || 'teacher'
+    const departmentId = sessionStorage.getItem('departmentId')
     return {
       uploadUrl: '/api/grade/upload',
       fileList: [],
       uploadResult: '',
-      uploadBy: sessionStorage.getItem('name') || 'teacher'
+      uploadBy: sessionStorage.getItem('name') || 'teacher',
+      selectedDepartmentId: userType === 'teacher' && departmentId ? parseInt(departmentId) : null,
+      userType: userType,
+      currentDepartmentName: null
+    }
+  },
+  created() {
+    const userType = sessionStorage.getItem('type') || 'teacher'
+    const departmentId = sessionStorage.getItem('departmentId')
+    // 教师自动使用自己的学院
+    if (userType === 'teacher' && departmentId) {
+      this.selectedDepartmentId = parseInt(departmentId)
+      this.fetchDepartmentName(departmentId)
     }
   },
   methods: {
@@ -73,6 +95,18 @@ export default {
       this.uploadResult = (this.uploadResult ? this.uploadResult + '\n' : '') + 
                          file.name + ': 上传失败：' + (err.message || '未知错误');
       this.$message.error(file.name + ' 上传失败！');
+    },
+    fetchDepartmentName(departmentId) {
+      if (!departmentId) return
+      this.axios.get(`/department/findById/${departmentId}`).then(resp => {
+        if (resp.data && resp.data.name) {
+          this.currentDepartmentName = resp.data.name
+        } else {
+          this.currentDepartmentName = '未知'
+        }
+      }).catch(() => {
+        this.currentDepartmentName = '未知'
+      })
     },
     downloadTemplate() {
       const that = this

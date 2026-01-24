@@ -37,10 +37,29 @@ public class OperationLogAspect {
                 HttpServletRequest request = attributes.getRequest();
                 String operator = (String) request.getAttribute("operator");
                 if (operator != null && !operator.isEmpty() && !"unknown".equals(operator)) {
+                    // 如果是admin账户，返回"系统管理员"
+                    if ("admin".equals(operator) || "系统管理员".equals(operator)) {
+                        return "系统管理员";
+                    }
+                    // 尝试URL解码
+                    try {
+                        operator = java.net.URLDecoder.decode(operator, "UTF-8");
+                    } catch (Exception e) {
+                        // 忽略解码错误
+                    }
                     return operator;
                 }
                 operator = request.getHeader("Operator");
                 if (operator != null && !operator.isEmpty()) {
+                    try {
+                        operator = java.net.URLDecoder.decode(operator, "UTF-8");
+                    } catch (Exception e) {
+                        // 忽略解码错误
+                    }
+                    // 如果是admin账户，返回"系统管理员"
+                    if ("admin".equals(operator) || "系统管理员".equals(operator)) {
+                        return "系统管理员";
+                    }
                     return operator;
                 }
             }
@@ -125,12 +144,12 @@ public class OperationLogAspect {
             if (methodName.contains("upload")) {
                 content += "，结果: " + (result != null ? result.toString() : "未知");
             } else if (args.length > 0) {
-                content += "，详情: " + args[0].toString();
-            }
-            if (methodName.contains("upload")) {
-                content += "，结果: " + (result != null ? result.toString() : "未知");
-            } else if (args.length > 0) {
-                content += "，详情: " + args[0].toString();
+                // 只显示关键信息，避免内容过长
+                String argStr = args[0].toString();
+                if (argStr.length() > 200) {
+                    argStr = argStr.substring(0, 200) + "...";
+                }
+                content += "，详情: " + argStr;
             }
 
             // 记录日志

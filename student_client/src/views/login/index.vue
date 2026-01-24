@@ -95,6 +95,10 @@ export default {
                 sessionStorage.setItem("type", that.ruleForm.type)
                 sessionStorage.setItem("name", user.tname)
                 sessionStorage.setItem("tid", userId)
+                // 保存 departmentId，用于院长权限控制
+                if (user.departmentId) {
+                  sessionStorage.setItem("departmentId", user.departmentId)
+                }
 
                 const role = user.role || 'teacher'
                 if ((that.ruleForm.type === 'admin' && role === 'admin') ||

@@ -39,6 +39,16 @@
         ORDER BY created_at DESC
     </select>
 
+    <select id="findByDepartmentId" resultType="OperationLog">
+        SELECT DISTINCT ol.id, ol.operator, ol.operation_type AS operationType, 
+               ol.target_table AS targetTable, ol.target_id AS targetId, 
+               ol.content, ol.created_at AS createTime
+        FROM studentms.operation_log ol
+        INNER JOIN studentms.teacher t ON ol.operator = t.tname
+        WHERE t.department_id = #{departmentId}
+        ORDER BY ol.created_at DESC
+    </select>
+
     <insert id="save">
         INSERT INTO studentms.operation_log (operator, operation_type, target_table, target_id, content, created_at)
         VALUES (#{log.operator}, #{log.operationType}, #{log.targetTable}, #{log.targetId}, #{log.content}, #{log.createTime})

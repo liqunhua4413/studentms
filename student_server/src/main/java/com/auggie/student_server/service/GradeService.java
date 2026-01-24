@@ -320,6 +320,10 @@ public class GradeService {
     public List<ScoreImportRecord> findAllRecords() {
         return scoreImportRecordMapper.findAll();
     }
+    
+    public List<ScoreImportRecord> findRecordsByDepartmentId(Integer departmentId) {
+        return scoreImportRecordMapper.findByDepartmentId(departmentId);
+    }
 
     public boolean deleteRecord(Long id) {
         ScoreImportRecord record = scoreImportRecordMapper.findById(id);

@@ -37,6 +37,10 @@ public class WordPaperService {
     public List<WordPaper> findBySearch(String fileName, String uploadBy) {
         return wordPaperMapper.findBySearch(fileName, uploadBy);
     }
+    
+    public List<WordPaper> findByDepartmentId(Integer departmentId) {
+        return wordPaperMapper.findByDepartmentId(departmentId);
+    }
 
     public WordPaper upload(MultipartFile file, String uploadBy) throws IOException {
 

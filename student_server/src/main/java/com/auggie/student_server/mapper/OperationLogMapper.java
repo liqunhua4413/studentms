@@ -24,5 +24,6 @@ public interface OperationLogMapper {
                                     @Param("targetTable") String targetTable,
                                     @Param("startTime") String startTime,
                                     @Param("endTime") String endTime);
+    List<OperationLog> findByDepartmentId(@Param("departmentId") Integer departmentId);
     boolean save(@Param("log") OperationLog log);
 }

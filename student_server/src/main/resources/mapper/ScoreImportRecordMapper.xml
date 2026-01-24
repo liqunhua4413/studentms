@@ -16,6 +16,12 @@
         SELECT * FROM studentms.score_import_record ORDER BY created_at DESC
     </select>
 
+    <select id="findByDepartmentId" resultType="ScoreImportRecord">
+        SELECT * FROM studentms.score_import_record 
+        WHERE department_id = #{departmentId}
+        ORDER BY created_at DESC
+    </select>
+
     <delete id="deleteById">
         DELETE FROM studentms.score_import_record WHERE id = #{id}
     </delete>

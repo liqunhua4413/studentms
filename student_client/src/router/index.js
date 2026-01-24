@@ -599,6 +599,32 @@ const routes = [
             name: '上传试卷分析',
             component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadWordPaper'),
             meta: {requireAuth: true}
+          },
+          {
+            path: '/teacherUploadRecordList',
+            name: '已上传成绩单',
+            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadRecordList'),
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/teacherWordPaperList',
+            name: '已上传试卷分析',
+            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherWordPaperList'),
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/teacherOperationLogManage',
+        name: '操作日志',
+        component: operationLogManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/teacherOperationLogList',
+            name: '日志查看',
+            component: operationLogManage,
+            meta: {requireAuth: true}
           }
         ]
       }

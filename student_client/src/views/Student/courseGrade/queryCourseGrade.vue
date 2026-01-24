@@ -35,21 +35,35 @@
           </template>
         </el-table-column>
         <el-table-column
-            prop="usualGrade"
+            prop="usualScore"
             label="平时成绩"
             width="100">
+          <template slot-scope="scope">
+            {{ formatScore(scope.row.usualScore || scope.row.usualGrade) }}
+          </template>
         </el-table-column>
         <el-table-column
-            prop="finalGrade"
+            prop="midScore"
+            label="期中成绩"
+            width="100">
+          <template slot-scope="scope">
+            {{ formatScore(scope.row.midScore) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+            prop="finalScore"
             label="期末成绩"
             width="100">
+          <template slot-scope="scope">
+            {{ formatScore(scope.row.finalScore || scope.row.finalGrade) }}
+          </template>
         </el-table-column>
         <el-table-column
-            prop="totalGrade"
+            prop="grade"
             label="总成绩"
             width="120">
           <template slot-scope="scope">
-            {{ scope.row.totalGrade || scope.row.grade }}
+            {{ formatScore(scope.row.grade || scope.row.totalGrade) }}
           </template>
         </el-table-column>
         <el-table-column
@@ -90,9 +104,9 @@ export default {
         const list = this.tmpList || []
         let count = 0
         for (let i = 0; i < list.length; i++) {
-          const grade = list[i].totalGrade || list[i].grade
+          const grade = list[i].grade || list[i].totalGrade
           const credit = list[i].credit || list[i].ccredit || 0
-          if (grade != null) {
+          if (grade != null && grade > 0) {
             totalScore += credit
             this.avg += credit * grade
             count++
@@ -102,6 +116,10 @@ export default {
           this.avg = 0
         else
           this.avg /= totalScore
+    },
+    formatScore(score) {
+      if (score == null || score === undefined) return '-'
+      return parseFloat(score).toFixed(2)
     }
   },
   data() {
