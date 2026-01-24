@@ -14,39 +14,52 @@
           border
           style="width: 100%">
         <el-table-column
-            fixed
-            prop="cid"
-            label="课号"
-            width="150">
-        </el-table-column>
-        <el-table-column
             prop="cname"
-            label="课程号"
-            width="150">
-        </el-table-column>
-        <el-table-column
-            prop="tid"
-            label="教师号"
-            width="150">
+            label="课程名称"
+            width="180">
         </el-table-column>
         <el-table-column
             prop="tname"
             label="教师名称"
             width="150">
+          <template slot-scope="scope">
+            {{ scope.row.teacherRealName || scope.row.tname }}
+          </template>
         </el-table-column>
         <el-table-column
-            prop="ccredit"
+            prop="credit"
             label="学分"
-            width="150">
+            width="100">
+          <template slot-scope="scope">
+            {{ scope.row.credit || scope.row.ccredit }}
+          </template>
         </el-table-column>
         <el-table-column
-            prop="grade"
-            label="成绩"
+            prop="usualGrade"
+            label="平时成绩"
+            width="100">
+        </el-table-column>
+        <el-table-column
+            prop="finalGrade"
+            label="期末成绩"
+            width="100">
+        </el-table-column>
+        <el-table-column
+            prop="totalGrade"
+            label="总成绩"
+            width="120">
+          <template slot-scope="scope">
+            {{ scope.row.totalGrade || scope.row.grade }}
+          </template>
+        </el-table-column>
+        <el-table-column
+            prop="term"
+            label="学期"
             width="150">
         </el-table-column>
       </el-table>
       <p>
-        平均成绩：{{ avg }}
+        平均成绩：{{ avg.toFixed(2) }}
       </p>
       <el-pagination
           background
@@ -71,6 +84,25 @@ export default {
       let ans = (end < length) ? end : length
       that.tableData = that.tmpList.slice(start, ans)
     },
+    calculateAvg() {
+        let totalScore = 0
+        this.avg = 0
+        const list = this.tmpList || []
+        let count = 0
+        for (let i = 0; i < list.length; i++) {
+          const grade = list[i].totalGrade || list[i].grade
+          const credit = list[i].credit || list[i].ccredit || 0
+          if (grade != null) {
+            totalScore += credit
+            this.avg += credit * grade
+            count++
+          }
+        }
+        if (totalScore === 0)
+          this.avg = 0
+        else
+          this.avg /= totalScore
+    }
   },
   data() {
     return {
@@ -85,7 +117,7 @@ export default {
   },
   created() {
     const that = this
-    axios.get('/SCT/findAllTerm').then(function (resp) {
+    this.axios.get('/SCT/findAllTerm').then(function (resp) {
       that.termList = resp.data
     })
   },
@@ -94,64 +126,23 @@ export default {
       handler(newTerm, oldTerm) {
         const sid = sessionStorage.getItem('sid')
         const that = this
-        if (newTerm === 'all') {
-          // 查询所有学期
-          axios.get('/SCT/findBySid/' + sid).then(function (resp) {
-            that.tmpList = resp.data || []
-            that.total = that.tmpList.length
-            let start = 0, end = that.pageSize
-            let length = that.tmpList.length
-            let ans = (end < length) ? end : length
-            that.tableData = that.tmpList.slice(start, ans)
-            let totalScore = 0
-            that.avg = 0
-            for (let i = 0; i < that.total; i++) {
-              if (that.tmpList[i].grade != null) {
-                totalScore += that.tmpList[i].ccredit
-                that.avg += that.tmpList[i].ccredit * that.tmpList[i].grade
-              }
-            }
-            if (totalScore === 0)
-              that.avg = 0
-            else
-              that.avg /= totalScore
-          })
-        } else {
-          // 查询指定学期
-          axios.get('/SCT/findBySid/' + sid + '/' + newTerm).then(function (resp) {
-            that.tmpList = resp.data || []
-            that.total = that.tmpList.length
-            let start = 0, end = that.pageSize
-            let length = that.tmpList.length
-            let ans = (end < length) ? end : length
-            that.tableData = that.tmpList.slice(start, ans)
-            let totalScore = 0
-            that.avg = 0
-            for (let i = 0; i < that.total; i++) {
-              if (that.tmpList[i].grade != null) {
-                totalScore += that.tmpList[i].ccredit
-                that.avg += that.tmpList[i].ccredit * that.tmpList[i].grade
-              }
-            }
-            if (totalScore === 0)
-              that.avg = 0
-            else
-              that.avg /= totalScore
-          })
+        let url = '/SCT/findBySid/' + sid
+        if (newTerm !== 'all') {
+          url += '/' + newTerm
         }
+        
+        this.axios.get(url).then(function (resp) {
+            that.tmpList = resp.data || []
+            that.total = that.tmpList.length
+            let start = 0, end = that.pageSize
+            let length = that.tmpList.length
+            let ans = (end < length) ? end : length
+            that.tableData = that.tmpList.slice(start, ans)
+            that.calculateAvg()
+        })
       },
       immediate: true
     }
   }
 }
 </script>
-
-<!--
-  TODO：
-  1. 管理员：
-    1. 学生选课管理
-    2. 成绩管理（只能当前学期）
-  2. 学生：成绩排名
-  3. 教师：成绩管理（？使用弹框）（只能当前学期）
-
--->

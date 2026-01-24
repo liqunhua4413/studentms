@@ -3,8 +3,13 @@
     <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
       <el-row :gutter="20">
         <el-col :span="8">
+          <el-form-item label="学号" prop="studentNo">
+            <el-input v-model="ruleForm.studentNo" placeholder="输入学号查询" clearable></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
           <el-form-item label="学生姓名" prop="sname">
-            <el-input v-model="ruleForm.sname" placeholder="支持模糊搜索"></el-input>
+            <el-input v-model="ruleForm.sname" placeholder="支持模糊搜索" clearable></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -19,9 +24,12 @@
             </el-select>
           </el-form-item>
         </el-col>
+      </el-row>
+      <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item label="学期" prop="term">
             <el-select v-model="ruleForm.term" placeholder="请选择学期" clearable>
+              <el-option label="所有学期" value="all"></el-option>
               <el-option
                   v-for="item in terms"
                   :key="item"
@@ -31,65 +39,67 @@
             </el-select>
           </el-form-item>
         </el-col>
+        <el-col :span="8">
+          <el-form-item label="学院" prop="departmentId">
+            <el-select v-model="ruleForm.departmentId" placeholder="请选择学院" clearable @change="handleDepartmentChange">
+              <el-option
+                  v-for="item in departments"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.id">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="专业" prop="majorId">
+            <el-select v-model="ruleForm.majorId" placeholder="请选择专业" clearable @change="handleMajorChange">
+              <el-option
+                  v-for="item in majors"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.id">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
       </el-row>
-    <el-row :gutter="20">
-      <el-col :span="8">
-        <el-form-item label="学院" prop="departmentId">
-          <el-select v-model="ruleForm.departmentId" placeholder="请选择学院" clearable @change="handleDepartmentChange">
-            <el-option
-                v-for="item in departments"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="专业" prop="majorId">
-          <el-select v-model="ruleForm.majorId" placeholder="请选择专业" clearable @change="handleMajorChange">
-            <el-option
-                v-for="item in majors"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-col>
-      <el-col :span="8">
-        <el-form-item label="班级" prop="classId">
-          <el-select v-model="ruleForm.classId" placeholder="请选择班级" clearable>
-            <el-option
-                v-for="item in classes"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id">
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-col>
-    </el-row>
       <el-row :gutter="20">
         <el-col :span="8">
+          <el-form-item label="班级" prop="classId">
+            <el-select v-model="ruleForm.classId" placeholder="请选择班级" clearable>
+              <el-option
+                  v-for="item in classes"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.id">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
           <el-form-item label="最低分" prop="lowBound">
-            <el-input-number v-model="ruleForm.lowBound" :min="0" :max="100"></el-input-number>
+            <el-input-number v-model="ruleForm.lowBound" :min="0" :max="100" :precision="2" :step="0.01" placeholder="不填则不限制"></el-input-number>
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="最高分" prop="highBound">
-            <el-input-number v-model="ruleForm.highBound" :min="0" :max="100"></el-input-number>
+            <el-input-number v-model="ruleForm.highBound" :min="0" :max="100" :precision="2" :step="0.01" placeholder="不填则不限制"></el-input-number>
           </el-form-item>
         </el-col>
       </el-row>
       <el-form-item>
         <el-button type="primary" @click="submitForm('ruleForm')">查询</el-button>
         <el-button @click="resetForm('ruleForm')">重置</el-button>
-        <el-button type="success" @click="exportReexamination">导出补考名单</el-button>
+        <el-button type="success" @click="exportGradeList">导出名单</el-button>
       </el-form-item>
     </el-form>
     <el-table :data="tableData" border style="width: 100%; margin-top: 20px;">
-      <el-table-column prop="sid" label="学号" width="100"></el-table-column>
+      <el-table-column prop="studentNo" label="学号" width="120">
+        <template slot-scope="scope">
+          {{ scope.row.studentNo || scope.row.sid }}
+        </template>
+      </el-table-column>
       <el-table-column prop="sname" label="学生姓名" width="120"></el-table-column>
       <el-table-column prop="departmentName" label="学院" width="150">
         <template slot-scope="scope">
@@ -112,11 +122,24 @@
           {{ scope.row.teacherRealName || scope.row.tname }}
         </template>
       </el-table-column>
-      <el-table-column prop="usualGrade" label="平时成绩" width="100"></el-table-column>
-      <el-table-column prop="finalGrade" label="期末成绩" width="100"></el-table-column>
-      <el-table-column prop="totalGrade" label="总成绩" width="100">
+      <el-table-column prop="usualScore" label="平时成绩" width="100">
         <template slot-scope="scope">
-          {{ scope.row.totalGrade || scope.row.grade }}
+          {{ formatScore(scope.row.usualScore || scope.row.usualGrade) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="midScore" label="期中成绩" width="100">
+        <template slot-scope="scope">
+          {{ formatScore(scope.row.midScore) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="finalScore" label="期末成绩" width="100">
+        <template slot-scope="scope">
+          {{ formatScore(scope.row.finalScore || scope.row.finalGrade) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="grade" label="总成绩" width="100">
+        <template slot-scope="scope">
+          {{ formatScore(scope.row.grade || scope.row.totalGrade) }}
         </template>
       </el-table-column>
       <el-table-column prop="term" label="学期" width="120"></el-table-column>
@@ -129,6 +152,7 @@ export default {
   data() {
     return {
       ruleForm: {
+        studentNo: null,
         sname: null,
         cname: null,
         term: null,
@@ -152,22 +176,50 @@ export default {
       const that = this
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          const params = {}
-          if (that.ruleForm.sname) params.sname = that.ruleForm.sname
-          if (that.ruleForm.cname) params.cname = that.ruleForm.cname
-          if (that.ruleForm.term) params.term = that.ruleForm.term
-          if (that.ruleForm.departmentId) params.departmentId = that.ruleForm.departmentId
-          if (that.ruleForm.majorId) params.majorId = that.ruleForm.majorId
-          if (that.ruleForm.classId) params.classId = that.ruleForm.classId
-          if (that.ruleForm.lowBound !== null && that.ruleForm.lowBound !== 0) params.lowBound = that.ruleForm.lowBound
-          if (that.ruleForm.highBound !== null && that.ruleForm.highBound !== 0) params.highBound = that.ruleForm.highBound
-          
-          this.axios.post('/grade/query', params).then(resp => {
-            this.tableData = resp.data
-            this.$message.success('查询成功，共 ' + resp.data.length + ' 条记录');
-          })
+          // 如果输入了学号，先根据学号查找学生ID
+          if (that.ruleForm.studentNo) {
+            this.axios.post('/student/findByStudentNo', { studentNo: that.ruleForm.studentNo }).then(studentResp => {
+              if (studentResp.data && studentResp.data.id) {
+                that.executeQuery({ sid: studentResp.data.id })
+              } else {
+                that.$message.warning('未找到学号为【' + that.ruleForm.studentNo + '】的学生')
+              }
+            }).catch(err => {
+              that.$message.error('查询学生失败：' + err.message)
+            })
+          } else {
+            // 没有输入学号，直接查询
+            that.executeQuery({})
+          }
         }
       });
+    },
+    executeQuery(baseParams) {
+      const params = { ...baseParams }
+      // 处理学期参数：如果选择"所有学期"，则不传term参数
+      if (this.ruleForm.term && this.ruleForm.term !== 'all') {
+        params.term = this.ruleForm.term
+      }
+      // 其他查询条件
+      if (this.ruleForm.sname) params.sname = this.ruleForm.sname
+      if (this.ruleForm.cname) params.cname = this.ruleForm.cname
+      if (this.ruleForm.departmentId) params.departmentId = this.ruleForm.departmentId
+      if (this.ruleForm.majorId) params.majorId = this.ruleForm.majorId
+      if (this.ruleForm.classId) params.classId = this.ruleForm.classId
+      // 修复分数查询逻辑：只有当用户明确输入了分数（且大于0）时才传递参数
+      if (this.ruleForm.lowBound !== null && this.ruleForm.lowBound !== undefined && this.ruleForm.lowBound > 0) {
+        params.lowBound = this.ruleForm.lowBound
+      }
+      if (this.ruleForm.highBound !== null && this.ruleForm.highBound !== undefined && this.ruleForm.highBound > 0) {
+        params.highBound = this.ruleForm.highBound
+      }
+      
+      this.axios.post('/grade/query', params).then(resp => {
+        this.tableData = resp.data
+        this.$message.success('查询成功，共 ' + resp.data.length + ' 条记录');
+      }).catch(err => {
+        this.$message.error('查询失败：' + err.message)
+      })
     },
     resetForm(formName) {
       this.$refs[formName].resetFields();
@@ -201,26 +253,64 @@ export default {
         });
       }
     },
-    exportReexamination() {
-      const params = { ...this.ruleForm }
-      // 导出当前查询结果，而不是固定的补考名单
-      this.axios.post('/grade/query', params).then(resp => {
-        const data = resp.data;
-        if (!data || data.length === 0) {
-          this.$message.warning('当前查询结果为空，无法导出');
-          return;
-        }
-        // 调用后端通用的导出接口（使用当前查询到的数据列表）
-        this.axios.post('/grade/reexamination/export', params, {
-          responseType: 'blob'
-        }).then(resp => {
-          const url = window.URL.createObjectURL(new Blob([resp.data]))
-          const link = document.createElement('a')
-          link.href = url
-          link.download = '成绩查询结果.xlsx'
-          link.click()
-        });
+    exportGradeList() {
+      // 如果当前没有查询结果，先执行查询
+      if (!this.tableData || this.tableData.length === 0) {
+        this.$message.warning('请先执行查询，然后再导出');
+        return;
+      }
+      
+      // 构建查询参数（与当前查询条件一致）
+      const params = {}
+      if (this.ruleForm.studentNo) {
+        // 如果有学号，需要先查找学生ID
+        this.axios.post('/student/findByStudentNo', { studentNo: this.ruleForm.studentNo }).then(studentResp => {
+          if (studentResp.data && studentResp.data.id) {
+            params.sid = studentResp.data.id
+            this.executeExport(params)
+          } else {
+            this.$message.warning('未找到学号为【' + this.ruleForm.studentNo + '】的学生')
+          }
+        }).catch(err => {
+          this.$message.error('查询学生失败：' + err.message)
+        })
+      } else {
+        // 没有学号，直接导出
+        if (this.ruleForm.term && this.ruleForm.term !== 'all') params.term = this.ruleForm.term
+        if (this.ruleForm.sname) params.sname = this.ruleForm.sname
+        if (this.ruleForm.cname) params.cname = this.ruleForm.cname
+        if (this.ruleForm.departmentId) params.departmentId = this.ruleForm.departmentId
+        if (this.ruleForm.majorId) params.majorId = this.ruleForm.majorId
+        if (this.ruleForm.classId) params.classId = this.ruleForm.classId
+        if (this.ruleForm.lowBound !== null && this.ruleForm.lowBound !== undefined && this.ruleForm.lowBound > 0) params.lowBound = this.ruleForm.lowBound
+        if (this.ruleForm.highBound !== null && this.ruleForm.highBound !== undefined && this.ruleForm.highBound > 0) params.highBound = this.ruleForm.highBound
+        this.executeExport(params)
+      }
+    },
+    executeExport(params) {
+      // 调用后端导出接口（根据查询条件导出）
+      this.axios.post('/grade/reexamination/export', params, {
+        responseType: 'blob'
+      }).then(resp => {
+        const url = window.URL.createObjectURL(new Blob([resp.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.download = '成绩查询结果.xlsx'
+        link.click()
+        this.$message.success('导出成功');
+      }).catch(err => {
+        this.$message.error('导出失败：' + err.message)
       });
+    },
+    formatScore(score) {
+      if (score === null || score === undefined || score === '') {
+        return ''
+      }
+      const num = parseFloat(score)
+      if (isNaN(num)) {
+        return score
+      }
+      return num.toFixed(2)
     }
   },
   created() {

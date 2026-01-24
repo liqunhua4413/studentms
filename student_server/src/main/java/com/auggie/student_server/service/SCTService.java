@@ -171,4 +171,11 @@ public class SCTService {
         map.put("highBound", 59);
         return findBySearch(map);
     }
+
+    /**
+     * 根据学生ID、课程ID、学期查询成绩记录
+     */
+    public List<StudentCourseTeacher> findByStudentCourseTerm(StudentCourseTeacher sct) {
+        return studentCourseTeacherMapper.findBySCT(sct);
+    }
 }

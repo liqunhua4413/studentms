@@ -9,7 +9,7 @@
             <if test="cid != null">
                 id = #{cid}
             </if>
-            <if test="cname != null">
+            <if test="cname != null and cname != ''">
                 <if test="fuzzy == 0">
                     AND cname = #{cname}
                 </if>
@@ -31,13 +31,18 @@
                                cname = #{course.cname},
                                ccredit = #{course.ccredit},
                                major_id = #{course.majorId},
-                               department_id = #{course.departmentId}
+                               department_id = #{course.departmentId},
+                               category = #{course.category},
+                               nature = #{course.nature},
+                               exam_method = #{course.examMethod},
+                               hours = #{course.hours}
         WHERE id = #{course.id};
     </update>
 
-    <insert id="insertCourse">
-        INSERT INTO studentms.course (cname, ccredit, major_id, department_id) 
-        VALUES (#{course.cname}, #{course.ccredit}, #{course.majorId}, #{course.departmentId})
+    <insert id="insertCourse" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO studentms.course (cname, ccredit, major_id, department_id, category, nature, exam_method, hours) 
+        VALUES (#{course.cname}, #{course.ccredit}, #{course.majorId}, #{course.departmentId}, 
+                #{course.category}, #{course.nature}, #{course.examMethod}, #{course.hours})
     </insert>
 
     <delete id="deleteById">

@@ -92,7 +92,8 @@ public class GradeController {
 
     @PostMapping("/reexamination/export")
     public ResponseEntity<byte[]> exportReexamination(@RequestBody Map<String, Object> map) throws IOException {
-        List<SCTInfo> list = sctService.getReexaminationList(map);
+        // 根据查询条件导出，而不是固定导出补考名单
+        List<SCTInfo> list = sctService.findBySearch(map);
         Workbook workbook = gradeService.exportReexaminationToExcel(list);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -101,7 +102,7 @@ public class GradeController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "补考名单.xlsx");
+        headers.setContentDispositionFormData("attachment", "成绩查询结果.xlsx");
 
         return ResponseEntity.ok()
                 .headers(headers)

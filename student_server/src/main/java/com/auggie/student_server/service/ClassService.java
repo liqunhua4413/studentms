@@ -54,7 +54,7 @@ public class ClassService {
 
     /**
      * 批量导入班级（Excel）
-     * 模板列顺序：班级名称、年级、专业ID、学院ID
+     * 模板列顺序：班级名称、专业ID、学院ID
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -71,9 +71,8 @@ public class ClassService {
                 if (row == null) continue;
                 try {
                     String name = getStringValue(row.getCell(0));
-                    String gradeLevel = getStringValue(row.getCell(1));
-                    Integer majorId = getIntValue(row.getCell(2));
-                    Integer departmentId = getIntValue(row.getCell(3));
+                    Integer majorId = getIntValue(row.getCell(1));
+                    Integer departmentId = getIntValue(row.getCell(2));
 
                     if (name == null || name.isEmpty() || majorId == null || departmentId == null) {
                         continue;
@@ -81,7 +80,6 @@ public class ClassService {
 
                     Class clazz = new Class();
                     clazz.setName(name);
-                    clazz.setGradeLevel(gradeLevel);
                     clazz.setMajorId(majorId);
                     clazz.setDepartmentId(departmentId);
 
@@ -150,7 +148,7 @@ public class ClassService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"班级名称", "年级", "专业ID", "学院ID"};
+        String[] headers = {"班级名称", "专业ID", "学院ID"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -159,9 +157,8 @@ public class ClassService {
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
         exampleRow.createCell(0).setCellValue("计算机1班");
-        exampleRow.createCell(1).setCellValue("2023级");
+        exampleRow.createCell(1).setCellValue(1);
         exampleRow.createCell(2).setCellValue(1);
-        exampleRow.createCell(3).setCellValue(1);
 
         return workbook;
     }

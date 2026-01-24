@@ -86,4 +86,13 @@ public class SCTcontroller {
     public List<SCTInfo> getReexaminationList(@RequestBody Map<String, Object> map) {
         return sctService.getReexaminationList(map);
     }
+
+    @PostMapping("/findByStudentCourseTerm")
+    public ResponseEntity<?> findByStudentCourseTerm(@RequestBody StudentCourseTeacher sct) {
+        List<StudentCourseTeacher> list = sctService.findByStudentCourseTerm(sct);
+        if (list != null && !list.isEmpty()) {
+            return ResponseEntity.ok(list.get(0));
+        }
+        return ResponseEntity.ok(null);
+    }
 }

@@ -25,14 +25,16 @@ public class SCTInfo {
     @JsonProperty("cid")
     private Integer courseId;
     private String sname;
+    private String studentNo;
     private String tname;
     private String teacherRealName; // 关联查询出的真实姓名
     private String cname;
-    private Float grade;
+    private Float grade;        // 总成绩
     private String term;
-    private Float usualGrade;
-    private Float finalGrade;
-    private Float totalGrade;
+    private Float usualScore;   // 平时成绩
+    private Float midScore;     // 期中成绩
+    private Float finalScore;   // 期末成绩
+    private String remark;
     private Integer classId;
     private Integer majorId;
     private Integer departmentId;

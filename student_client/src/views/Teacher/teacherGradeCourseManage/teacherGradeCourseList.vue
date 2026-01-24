@@ -28,14 +28,22 @@
           width="100">
       </el-table-column>
       <el-table-column
-          prop="grade"
-          label="成绩"
+          prop="totalGrade"
+          label="总成绩"
           width="100">
+        <template slot-scope="scope">
+          {{ scope.row.totalGrade || scope.row.grade }}
+        </template>
       </el-table-column>
       <el-table-column
           prop="term"
           label="学期"
           width="100">
+      </el-table-column>
+      <el-table-column label="教师" width="120">
+        <template slot-scope="scope">
+          {{ scope.row.teacherRealName || scope.row.tname }}
+        </template>
       </el-table-column>
       <!-- 教师不能修改成绩，只能上传 -->
     </el-table>

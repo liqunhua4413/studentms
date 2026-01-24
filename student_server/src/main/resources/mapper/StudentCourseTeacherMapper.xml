@@ -5,21 +5,47 @@
 <mapper namespace="com.auggie.student_server.mapper.StudentCourseTeacherMapper">
     <select id="findByStudentId" resultType="CourseTeacherInfo">
         SELECT c.id AS course_id, c.cname, t.id AS teacher_id, t.tname, sct.grade, c.ccredit
-        FROM studentms.score sct INNER JOIN studentms.teacher t ON sct.teacher_id = t.id
-                INNER JOIN studentms.course c ON sct.course_id = c.id
+        FROM studentms.score sct 
+        INNER JOIN studentms.teacher t ON sct.teacher_id = t.id
+        INNER JOIN studentms.course c ON sct.course_id = c.id
         WHERE sct.student_id = #{sid} AND sct.term = #{term}
     </select>
 
     <select id="findBySearch" resultType="SCTInfo">
-        SELECT sct.course_id AS cid, sct.course_name AS cname, sct.teacher_id AS tid, sct.teacher_name AS tname, 
-               sct.student_id AS sid, s.sname, sct.grade, sct.term,
-               sct.usual_grade, sct.final_grade, sct.total_grade, sct.class_id, sct.major_id, sct.department_id,
-               sct.class_name, sct.major_name, sct.department_name, sct.grade_level,
-               sct.course_category, sct.course_nature, sct.exam_method, sct.hours, sct.credit,
-               t.tname as teacher_real_name
+        SELECT 
+            sct.course_id AS cid, 
+            c.cname, 
+            sct.teacher_id AS tid, 
+            t.tname, 
+            sct.student_id AS sid, 
+            s.sname, 
+            s.student_no,
+            sct.grade, 
+            sct.term,
+            sct.usual_score AS usualScore, 
+            sct.mid_score AS midScore, 
+            sct.final_score AS finalScore, 
+            sct.remark,
+            s.class_id, 
+            s.major_id, 
+            s.department_id,
+            cls.name AS class_name, 
+            m.name AS major_name, 
+            d.name AS department_name, 
+            s.grade_level,
+            c.category AS course_category, 
+            c.nature AS course_nature, 
+            c.exam_method, 
+            c.hours, 
+            c.ccredit AS credit,
+            t.tname as teacher_real_name
         FROM studentms.score sct 
         LEFT JOIN studentms.student s ON sct.student_id = s.id
         LEFT JOIN studentms.teacher t ON sct.teacher_id = t.id
+        LEFT JOIN studentms.course c ON sct.course_id = c.id
+        LEFT JOIN studentms.class cls ON s.class_id = cls.id
+        LEFT JOIN studentms.major m ON s.major_id = m.id
+        LEFT JOIN studentms.department d ON s.department_id = d.id
         <where>
             <if test="sid != null">
                 sct.student_id = #{sid}
@@ -34,58 +60,54 @@
                 AND s.sname LIKE CONCAT('%', #{sname}, '%')
             </if>
             <if test="tname != null and tname != ''">
-                AND sct.teacher_name LIKE CONCAT('%', #{tname}, '%')
+                AND t.tname LIKE CONCAT('%', #{tname}, '%')
             </if>
             <if test="cname != null and cname != ''">
-                AND sct.course_name LIKE CONCAT('%', #{cname}, '%')
+                AND c.cname LIKE CONCAT('%', #{cname}, '%')
             </if>
             <if test="term != null and term != ''">
                 AND sct.term = #{term}
             </if>
             <if test="classId != null">
-                AND sct.class_id = #{classId}
+                AND s.class_id = #{classId}
             </if>
             <if test="majorId != null">
-                AND sct.major_id = #{majorId}
+                AND s.major_id = #{majorId}
             </if>
             <if test="departmentId != null">
-                AND sct.department_id = #{departmentId}
+                AND s.department_id = #{departmentId}
             </if>
             <if test="className != null and className != ''">
-                AND sct.class_name LIKE CONCAT('%', #{className}, '%')
+                AND cls.name LIKE CONCAT('%', #{className}, '%')
             </if>
             <if test="majorName != null and majorName != ''">
-                AND sct.major_name LIKE CONCAT('%', #{majorName}, '%')
+                AND m.name LIKE CONCAT('%', #{majorName}, '%')
             </if>
             <if test="departmentName != null and departmentName != ''">
-                AND sct.department_name LIKE CONCAT('%', #{departmentName}, '%')
+                AND d.name LIKE CONCAT('%', #{departmentName}, '%')
             </if>
             <if test="gradeLevel != null and gradeLevel != ''">
-                AND sct.grade_level = #{gradeLevel}
+                AND s.grade_level = #{gradeLevel}
             </if>
             <if test="lowBound != null">
-                AND sct.total_grade >= #{lowBound}
+                AND sct.grade IS NOT NULL AND sct.grade >= #{lowBound}
             </if>
             <if test="highBound != null">
-                AND #{highBound} >= sct.total_grade
+                AND sct.grade IS NOT NULL AND sct.grade &lt;= #{highBound}
             </if>
         </where>
     </select>
 
     <insert id="batchInsert">
         INSERT INTO studentms.score (
-            student_id, course_id, teacher_id, grade, term, 
-            usual_grade, final_grade, total_grade, class_id, major_id, department_id,
-            course_name, course_category, course_nature, exam_method, teacher_name,
-            hours, credit, grade_level, major_name, class_name, department_name
+            student_id, course_id, teacher_id, term, 
+            usual_score, mid_score, final_score, grade, remark
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
             (
-                #{item.studentId}, #{item.courseId}, #{item.teacherId}, #{item.grade}, #{item.term}, 
-                #{item.usualGrade}, #{item.finalGrade}, #{item.totalGrade}, #{item.classId}, #{item.majorId}, #{item.departmentId},
-                #{item.courseName}, #{item.courseCategory}, #{item.courseNature}, #{item.examMethod}, #{item.teacherName},
-                #{item.hours}, #{item.credit}, #{item.gradeLevel}, #{item.majorName}, #{item.className}, #{item.departmentName}
+                #{item.studentId}, #{item.courseId}, #{item.teacherId}, #{item.term}, 
+                #{item.usualScore}, #{item.midScore}, #{item.finalScore}, #{item.grade}, #{item.remark}
             )
         </foreach>
     </insert>

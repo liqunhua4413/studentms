@@ -46,28 +46,21 @@ public interface StudentCourseTeacherMapper {
     @Select("SELECT DISTINCT term FROM studentms.score")
     public List<String> findAllTerm();
 
-    @Select("SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId, grade, term, usual_grade AS usualGrade, final_grade AS finalGrade, total_grade AS totalGrade, class_id AS classId, major_id AS majorId, department_id AS departmentId FROM studentms.score WHERE student_id = #{sct.studentId} AND course_id = #{sct.courseId} AND teacher_id = #{sct.teacherId} AND term = #{sct.term}")
+    @Select("SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId, grade, term, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore, remark FROM studentms.score WHERE student_id = #{sct.studentId} AND course_id = #{sct.courseId} AND term = #{sct.term}")
     public List<StudentCourseTeacher> findBySCT(@Param("sct") StudentCourseTeacher studentCourseTeacher);
 
-    @Insert("INSERT INTO studentms.score (student_id, course_id, teacher_id, grade, term, usual_grade, final_grade, total_grade, class_id, major_id, department_id) " +
-            "VALUES (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.grade}, #{s.term}, #{s.usualGrade}, #{s.finalGrade}, #{s.totalGrade}, #{s.classId}, #{s.majorId}, #{s.departmentId})")
+    @Insert("INSERT INTO studentms.score (student_id, course_id, teacher_id, term, usual_score, mid_score, final_score, grade, remark) " +
+            "VALUES (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.term}, #{s.usualScore}, #{s.midScore}, #{s.finalScore}, #{s.grade}, #{s.remark})")
     public boolean insert(@Param("s")StudentCourseTeacher studentCourseTeacher);
 
     @Update("UPDATE studentms.score SET " +
-            "grade = #{s.totalGrade}, " +
-            "total_grade = #{s.totalGrade}, " +
-            "usual_grade = #{s.usualGrade}, " +
-            "final_grade = #{s.finalGrade}, " +
-            "course_name = (SELECT cname FROM studentms.course WHERE id = #{s.courseId}), " +
-            "teacher_name = (SELECT tname FROM studentms.teacher WHERE id = #{s.teacherId}), " +
-            "grade_level = #{s.gradeLevel}, " +
-            "major_name = (SELECT name FROM studentms.major WHERE id = #{s.majorId}), " +
-            "class_name = (SELECT name FROM studentms.class WHERE id = #{s.classId}), " +
-            "department_name = (SELECT name FROM studentms.department WHERE id = #{s.departmentId}), " +
-            "department_id = #{s.departmentId}, " +
-            "major_id = #{s.majorId}, " +
-            "class_id = #{s.classId} " +
-            "WHERE student_id = #{s.studentId} AND teacher_id = #{s.teacherId} AND course_id = #{s.courseId} AND term = #{s.term}")
+            "teacher_id = #{s.teacherId}, " +
+            "usual_score = #{s.usualScore}, " +
+            "mid_score = #{s.midScore}, " +
+            "final_score = #{s.finalScore}, " +
+            "grade = #{s.grade}, " +
+            "remark = #{s.remark} " +
+            "WHERE student_id = #{s.studentId} AND course_id = #{s.courseId} AND term = #{s.term}")
     public boolean updateGrade(@Param("s") StudentCourseTeacher s);
 
     public boolean batchInsert(@Param("list") List<StudentCourseTeacher> list);

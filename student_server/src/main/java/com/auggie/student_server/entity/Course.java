@@ -23,6 +23,10 @@ public class Course {
     private Integer ccredit;
     private Integer majorId;
     private Integer departmentId;
+    private String category;
+    private String nature;
+    private String examMethod;
+    private Integer hours;
 
     // 同时提供 id 和 cid 字段的 getter/setter，确保前后端双向兼容
     public Integer getId() {

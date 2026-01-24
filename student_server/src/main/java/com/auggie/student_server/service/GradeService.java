@@ -103,19 +103,50 @@ public class GradeService {
             Row row2 = sheet.getRow(1);
             String row2Text = getMergedCellValue(sheet, row2, 0);
             String courseName = extractValue(row2Text, "课程名称：");
+            String courseCategory = extractValue(row2Text, "课程类别：");
+            String courseNature = extractValue(row2Text, "课程性质：");
+            String examMethod = extractValue(row2Text, "考核方式：");
             String teacherName = extractValue(row2Text, "任课教师：");
             
-            // 校验课程是否存在
-            List<Course> courses = courseMapper.findBySearch(null, courseName != null ? courseName.trim() : "", 0, null, null);
-            if (courses == null || courses.isEmpty()) return "上传失败：课程【" + courseName + "】在系统中未定义";
-            Course targetCourse = courses.get(0);
-
             // 解析第3行：教学信息
             Row row3 = sheet.getRow(2);
             String row3Text = getMergedCellValue(sheet, row3, 0);
             String term = extractValue(row3Text, "开课学期：");
+            String creditStr = extractValue(row3Text, "学分：");
+            String hoursStr = extractValue(row3Text, "学时：");
             String fullClassName = extractValue(row3Text, "开课班级：");
+
+            Float credit = 0.0f;
+            try { if (creditStr != null) credit = Float.parseFloat(creditStr); } catch (Exception ignored) {}
+            Integer hours = 0;
+            try { if (hoursStr != null) hours = Integer.parseInt(hoursStr); } catch (Exception ignored) {}
             
+            // 校验课程是否存在，不存在则创建
+            List<Course> courses = courseMapper.findBySearch(null, courseName != null ? courseName.trim() : "", 0, null, null);
+            Course targetCourse;
+            if (courses == null || courses.isEmpty()) {
+                // 自动创建课程
+                targetCourse = new Course();
+                targetCourse.setCname(courseName != null ? courseName.trim() : "未知课程");
+                targetCourse.setCcredit(credit.intValue()); // 暂时存为 int，如果需要 float 可修改实体
+                targetCourse.setCategory(courseCategory);
+                targetCourse.setNature(courseNature);
+                targetCourse.setExamMethod(examMethod);
+                targetCourse.setHours(hours);
+                targetCourse.setDepartmentId(selectedDepartmentId);
+                // 这里可能还需要设置 majorId，如果能从班级信息推断的话
+                courseMapper.insertCourse(targetCourse);
+            } else {
+                targetCourse = courses.get(0);
+                // 也可以选择更新课程信息
+                boolean needUpdate = false;
+                if (targetCourse.getCategory() == null) { targetCourse.setCategory(courseCategory); needUpdate = true; }
+                if (targetCourse.getNature() == null) { targetCourse.setNature(courseNature); needUpdate = true; }
+                if (targetCourse.getExamMethod() == null) { targetCourse.setExamMethod(examMethod); needUpdate = true; }
+                if (targetCourse.getHours() == null || targetCourse.getHours() == 0) { targetCourse.setHours(hours); needUpdate = true; }
+                if (needUpdate) courseMapper.updateById(targetCourse);
+            }
+
             // 复杂解析：24级信息安全技术应用2班
             String extractedGradeLevel = "";
             String extractedMajorName = "";
@@ -139,6 +170,17 @@ public class GradeService {
             if (classList == null || classList.isEmpty()) return "上传失败：班级【" + extractedClassName + "】在对应专业下未定义";
             com.auggie.student_server.entity.Class targetClass = classList.get(0);
 
+            // 获取教师 ID（仅精确匹配，否则报错）
+            Integer targetTeacherId;
+            if (teacherName == null || teacherName.trim().isEmpty()) {
+                return "上传失败：成绩单中未提取到任课教师姓名";
+            }
+            List<Teacher> teachers = teacherMapper.findBySearch(null, teacherName.trim(), 0);
+            if (teachers == null || teachers.isEmpty()) {
+                return "上传失败：未找到教师【" + teacherName.trim() + "】，请确保教师姓名与系统内完全一致";
+            }
+            targetTeacherId = teachers.get(0).getId();
+
             // 3. 逐行校验学生数据
             for (int i = 4; i <= sheet.getLastRowNum(); i++) {
                 if (i >= 42 && i <= 45) continue; // 跳过中间重复的标题和表头行
@@ -154,8 +196,8 @@ public class GradeService {
                 }
 
                 // 处理左右两列学生 (A-G 和 H-N)
-                validateAndAddStudent(row, 0, targetCourse, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
-                validateAndAddStudent(row, 7, targetCourse, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
+                validateAndAddStudent(row, 0, targetCourse, targetTeacherId, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
+                validateAndAddStudent(row, 7, targetCourse, targetTeacherId, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
             }
 
             // 4. 结果处理
@@ -175,11 +217,7 @@ public class GradeService {
             record.setTerm(term);
             record.setCourseId(targetCourse.getId());
             record.setDepartmentId(selectedDepartmentId);
-            // 尝试根据教师姓名查找 ID
-            List<Teacher> teachers = teacherMapper.findBySearch(null, teacherName != null ? teacherName.trim() : "", 0);
-            if (teachers != null && !teachers.isEmpty()) {
-                record.setTeacherId(teachers.get(0).getId());
-            }
+            record.setTeacherId(targetTeacherId);
             record.setOperator(operator);
             record.setStatus("SUCCESS");
             record.setMessage("成功导入 " + validGradeList.size() + " 条记录");
@@ -193,7 +231,7 @@ public class GradeService {
         }
     }
 
-    private void validateAndAddStudent(Row row, int startCol, Course course, String term, 
+    private void validateAndAddStudent(Row row, int startCol, Course course, Integer teacherId, String term, 
                                       com.auggie.student_server.entity.Department dept, Major major, 
                                       com.auggie.student_server.entity.Class targetClass, String gradeLevel,
                                       List<StudentCourseTeacher> validList, List<String> errorReports, int lineNum) {
@@ -247,17 +285,34 @@ public class GradeService {
         StudentCourseTeacher sct = new StudentCourseTeacher();
         sct.setStudentId(student.getId());
         sct.setCourseId(course.getId());
+        sct.setTeacherId(teacherId); // 如果找不到教师，这里可能是 null，但至少会尝试设置
         sct.setTerm(term);
-        sct.setUsualGrade(getFloatValue(row.getCell(startCol + 2)));
-        sct.setFinalGrade(getFloatValue(row.getCell(startCol + 4)));
-        sct.setTotalGrade(getFloatValue(row.getCell(startCol + 5)));
-        sct.setDepartmentId(dept.getId());
-        sct.setDepartmentName(dept.getName());
-        sct.setMajorId(major.getId());
-        sct.setMajorName(major.getName());
-        sct.setClassName(targetClass.getName());
-        sct.setGradeLevel(gradeLevel);
-        sct.setCourseName(course.getCname());
+        
+        // 读取成绩：平时成绩（第3列）、期中成绩（第4列）、期末成绩（第5列）、总成绩（第6列）
+        Float usualScore = getFloatValue(row.getCell(startCol + 2));
+        Float midScore = getFloatValue(row.getCell(startCol + 3)); // 期中成绩
+        Float finalScore = getFloatValue(row.getCell(startCol + 4));
+        Float grade = getFloatValue(row.getCell(startCol + 5)); // 总成绩
+        String remark = getStringValue(row.getCell(startCol + 6));
+        
+        // 验证总成绩：如果总成绩为空，记录警告（但不阻止导入）
+        Cell gradeCell = row.getCell(startCol + 5);
+        if (grade == null) {
+            String cellInfo = gradeCell != null ? "单元格类型=" + gradeCell.getCellType() + ", 值=" + getCellValueAsString(gradeCell) : "单元格为空";
+            System.out.println("警告：第" + lineNum + "行，学号" + studentNo + " 的总成绩为空 (" + cellInfo + ")");
+            // 如果总成绩为空但其他成绩有值，给出提示
+            if ((usualScore != null && usualScore > 0) || (finalScore != null && finalScore > 0)) {
+                System.out.println("  提示：该学生有平时成绩或期末成绩，但总成绩为空，请检查Excel文件");
+            }
+        } else {
+            System.out.println("第" + lineNum + "行，学号" + studentNo + "：总成绩=" + grade);
+        }
+        
+        sct.setUsualScore(usualScore);
+        sct.setMidScore(midScore);
+        sct.setFinalScore(finalScore);
+        sct.setGrade(grade);  // 允许为 null，数据库字段允许 NULL
+        sct.setRemark(remark);
         
         validList.add(sct);
     }
@@ -391,13 +446,11 @@ public class GradeService {
             sct.setStudentId(student.getId());
             sct.setCourseId(courseId);
             sct.setTeacherId(teacherId);
-            sct.setUsualGrade(usualGrade);
-            sct.setFinalGrade(finalGrade);
-            sct.setTotalGrade(totalGrade);
+            sct.setUsualScore(usualGrade);
+            sct.setMidScore(midGrade);
+            sct.setFinalScore(finalGrade);
+            sct.setGrade(totalGrade);
             sct.setTerm(term);
-            sct.setClassId(student.getClassId());
-            sct.setMajorId(student.getMajorId());
-            sct.setDepartmentId(student.getDepartmentId());
 
             gradeList.add(sct);
         } catch (Exception e) {
@@ -429,30 +482,75 @@ public class GradeService {
 
     private Float getFloatValue(Cell cell) {
         if (cell == null) return null;
-        switch (cell.getCellType()) {
-            case NUMERIC:
-                return (float) cell.getNumericCellValue();
-            case STRING:
-                try {
-                    return Float.parseFloat(cell.getStringCellValue().trim());
-                } catch (NumberFormatException e) {
+        try {
+            switch (cell.getCellType()) {
+                case NUMERIC:
+                    return (float) cell.getNumericCellValue();
+                case STRING:
+                    String strValue = cell.getStringCellValue().trim();
+                    if (strValue.isEmpty()) return null;
+                    return Float.parseFloat(strValue);
+                case FORMULA:
+                    // 公式单元格：尝试获取计算后的数值
+                    try {
+                        return (float) cell.getNumericCellValue();
+                    } catch (Exception e) {
+                        // 如果公式结果是字符串，尝试解析
+                        try {
+                            String formulaResult = cell.getStringCellValue().trim();
+                            if (formulaResult.isEmpty()) return null;
+                            return Float.parseFloat(formulaResult);
+                        } catch (Exception e2) {
+                            return null;
+                        }
+                    }
+                case BLANK:
                     return null;
-                }
-            default:
-                return null;
+                default:
+                    return null;
+            }
+        } catch (Exception e) {
+            System.err.println("解析单元格值失败: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "null";
+        try {
+            switch (cell.getCellType()) {
+                case NUMERIC:
+                    return String.valueOf(cell.getNumericCellValue());
+                case STRING:
+                    return cell.getStringCellValue();
+                case FORMULA:
+                    try {
+                        return String.valueOf(cell.getNumericCellValue());
+                    } catch (Exception e) {
+                        return cell.getStringCellValue();
+                    }
+                case BOOLEAN:
+                    return String.valueOf(cell.getBooleanCellValue());
+                case BLANK:
+                    return "(空白)";
+                default:
+                    return "(未知类型:" + cell.getCellType() + ")";
+            }
+        } catch (Exception e) {
+            return "(错误:" + e.getMessage() + ")";
         }
     }
 
     /**
-     * 导出补考名单到 Excel
+     * 导出成绩列表到 Excel
      */
     public Workbook exportReexaminationToExcel(List<com.auggie.student_server.entity.SCTInfo> list) {
         Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("补考名单");
+        Sheet sheet = workbook.createSheet("成绩列表");
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"学号", "学生姓名", "课程名", "教师姓名", "平时成绩", "期末成绩", "总成绩", "学期", "班级ID", "专业ID", "系ID"};
+        String[] headers = {"学号", "学生姓名", "学院", "专业", "班级", "课程名", "教师姓名", "平时成绩", "期中成绩", "期末成绩", "总成绩", "学期"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -462,17 +560,19 @@ public class GradeService {
         int rowNum = 1;
         for (com.auggie.student_server.entity.SCTInfo info : list) {
             Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(info.getStudentId() != null ? info.getStudentId() : 0);
+            row.createCell(0).setCellValue(info.getStudentNo() != null ? info.getStudentNo() : "");
             row.createCell(1).setCellValue(info.getSname() != null ? info.getSname() : "");
-            row.createCell(2).setCellValue(info.getCname() != null ? info.getCname() : "");
-            row.createCell(3).setCellValue(info.getTname() != null ? info.getTname() : "");
-            row.createCell(4).setCellValue(info.getUsualGrade() != null ? info.getUsualGrade() : 0);
-            row.createCell(5).setCellValue(info.getFinalGrade() != null ? info.getFinalGrade() : 0);
-            row.createCell(6).setCellValue(info.getTotalGrade() != null ? info.getTotalGrade() : 0);
-            row.createCell(7).setCellValue(info.getTerm() != null ? info.getTerm() : "");
-            row.createCell(8).setCellValue(info.getClassId() != null ? info.getClassId() : 0);
-            row.createCell(9).setCellValue(info.getMajorId() != null ? info.getMajorId() : 0);
-            row.createCell(10).setCellValue(info.getDepartmentId() != null ? info.getDepartmentId() : 0);
+            row.createCell(2).setCellValue(info.getDepartmentName() != null ? info.getDepartmentName() : "");
+            row.createCell(3).setCellValue(info.getMajorName() != null ? info.getMajorName() : "");
+            row.createCell(4).setCellValue(info.getClassName() != null ? info.getClassName() : "");
+            row.createCell(5).setCellValue(info.getCname() != null ? info.getCname() : "");
+            String teacherName = info.getTeacherRealName() != null ? info.getTeacherRealName() : info.getTname();
+            row.createCell(6).setCellValue(teacherName != null ? teacherName : "");
+            row.createCell(7).setCellValue(info.getUsualScore() != null ? info.getUsualScore() : 0);
+            row.createCell(8).setCellValue(info.getMidScore() != null ? info.getMidScore() : 0);
+            row.createCell(9).setCellValue(info.getFinalScore() != null ? info.getFinalScore() : 0);
+            row.createCell(10).setCellValue(info.getGrade() != null ? info.getGrade() : 0);
+            row.createCell(11).setCellValue(info.getTerm() != null ? info.getTerm() : "");
         }
 
         return workbook;
