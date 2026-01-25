@@ -1,10 +1,14 @@
 package com.auggie.student_server.controller;
 
 import com.auggie.student_server.entity.SCTInfo;
-import com.auggie.student_server.service.GradeService;
-import com.auggie.student_server.service.SCTService;
-import com.auggie.student_server.mapper.TeacherMapper;
+import com.auggie.student_server.entity.ScoreQueryDTO;
 import com.auggie.student_server.entity.Teacher;
+import com.auggie.student_server.mapper.TeacherMapper;
+import com.auggie.student_server.service.DeanCollegeService;
+import com.auggie.student_server.service.GradeQueryService;
+import com.auggie.student_server.service.GradeService;
+import com.auggie.student_server.service.GradeUploadService;
+import com.auggie.student_server.service.SCTService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -15,14 +19,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * @Auther: auggie
- * @Date: 2024/01/01
- * @Description: GradeController - 成绩管理控制器
- * @Version 1.0.0
+ * 成绩管理控制器。严格按权限：admin 全部；teacher 仅 course_open；dean 仅本院。
+ * 上传后 status=UPLOADED（已上传），等待管理员发布；发布后 PUBLISHED。查询按 status 与权限过滤。
  */
 
 @RestController
@@ -32,49 +36,68 @@ public class GradeController {
     @Autowired
     private GradeService gradeService;
     @Autowired
+    private GradeUploadService gradeUploadService;
+    @Autowired
+    private GradeQueryService gradeQueryService;
+    @Autowired
     private SCTService sctService;
     @Autowired
     private TeacherMapper teacherMapper;
+    @Autowired
+    private DeanCollegeService deanCollegeService;
 
+    /**
+     * 上传成绩单。权限：admin 全部；teacher 仅任课；dean 仅本院。上传前检查学号+课程+学期是否已有成绩；上传后 status=UPLOADED，写 grade_change_log。
+     */
     @PostMapping("/upload")
     public String uploadExcel(@RequestParam("file") MultipartFile file,
                               @RequestParam(value = "departmentId", required = false) Integer paramDepartmentId,
                               @RequestAttribute(value = "operator", required = false) String operator,
                               @RequestAttribute(value = "userType", required = false) String userType,
                               @RequestAttribute(value = "departmentId", required = false) Integer userDepartmentId) {
-        if (file.isEmpty()) {
-            return "文件为空，请选择文件";
+        if (operator == null || operator.isEmpty()) operator = "unknown";
+        Integer finalDeptId = paramDepartmentId;
+        Integer effectiveUserDeptId = userDepartmentId;
+        if ("teacher".equals(userType) && userDepartmentId != null) {
+            finalDeptId = userDepartmentId;
+        } else if ("dean".equals(userType)) {
+            if (userDepartmentId != null) {
+                finalDeptId = userDepartmentId;
+                effectiveUserDeptId = userDepartmentId;
+            } else {
+                Map<String, Object> college = deanCollegeService.getDeanCollege(operator);
+                if (college != null && college.get("collegeId") != null) {
+                    Object cid = college.get("collegeId");
+                    effectiveUserDeptId = cid instanceof Number ? ((Number) cid).intValue() : Integer.parseInt(cid.toString());
+                    finalDeptId = effectiveUserDeptId;
+                }
+            }
         }
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || (!originalFilename.endsWith(".xlsx") && !originalFilename.endsWith(".xls"))) {
-            return "文件格式错误，请上传 Excel 文件（.xlsx 或 .xls）";
-        }
-        if (operator == null || operator.isEmpty()) {
-            operator = "unknown";
-        }
-        Integer finalDepartmentId = paramDepartmentId;
-        // 如果是教师或院长，强制使用自己的学院
-        if (("teacher".equals(userType) || "dean".equals(userType)) && userDepartmentId != null) {
-            finalDepartmentId = userDepartmentId;
-        }
-        // 如果是管理员但没有选择学院，返回错误
-        if ("admin".equals(userType) && finalDepartmentId == null) {
+        if ("admin".equals(userType) && finalDeptId == null) {
             return "上传失败：请先选择学院";
         }
-        return gradeService.uploadExcel(file, operator, finalDepartmentId);
+        Integer teacherId = ("teacher".equals(userType)) ? getTeacherIdByName(operator) : null;
+        return gradeUploadService.uploadExcel(file, operator, userType, effectiveUserDeptId, teacherId, finalDeptId);
     }
 
     @GetMapping("/records")
     public List<com.auggie.student_server.entity.ScoreImportRecord> getImportRecords(
+            @RequestAttribute(value = "operator", required = false) String operator,
             @RequestAttribute(value = "userType", required = false) String userType,
             @RequestAttribute(value = "departmentId", required = false) Integer departmentId) {
-        // admin 可以查看所有记录
         if ("admin".equals(userType)) {
             return gradeService.findAllRecords();
         }
-        // 如果是院长或教师，只返回自己学院的记录
-        if (("dean".equals(userType) || "teacher".equals(userType)) && departmentId != null) {
-            return gradeService.findRecordsByDepartmentId(departmentId);
+        Integer deptId = departmentId;
+        if ("dean".equals(userType) && deptId == null && operator != null) {
+            Map<String, Object> college = deanCollegeService.getDeanCollege(operator);
+            if (college != null && college.get("collegeId") != null) {
+                Object cid = college.get("collegeId");
+                deptId = cid instanceof Number ? ((Number) cid).intValue() : Integer.parseInt(cid.toString());
+            }
+        }
+        if (("dean".equals(userType) || "teacher".equals(userType)) && deptId != null) {
+            return gradeService.findRecordsByDepartmentId(deptId);
         }
         return gradeService.findAllRecords();
     }
@@ -105,38 +128,127 @@ public class GradeController {
         return gradeService.deleteRecord(id);
     }
 
-    @PostMapping("/query")
-    public List<SCTInfo> queryGrades(@RequestBody Map<String, Object> map,
-                                     @RequestAttribute(value = "userType", required = false) String userType,
-                                     @RequestAttribute(value = "departmentId", required = false) Integer departmentId,
-                                     @RequestAttribute(value = "operator", required = false) String operator) {
-        // 如果是院长或教师，强制添加 departmentId 过滤，确保只能查询自己学院的数据
-        if (("dean".equals(userType) || "teacher".equals(userType)) && departmentId != null) {
-            map.put("departmentId", departmentId);
+    /**
+     * 发布成绩。仅 admin 可调用。将 UPLOADED（已上传）→PUBLISHED，写 grade_change_log。
+     * 权限判断：仅 userType=admin；状态判断：仅 UPLOADED 可发布。
+     */
+    @PostMapping("/publish")
+    public Map<String, Object> publishScores(@RequestBody Map<String, Object> body,
+                                             @RequestAttribute(value = "userType", required = false) String userType,
+                                             @RequestAttribute(value = "operator", required = false) String operator) {
+        if (!"admin".equals(userType)) {
+            return Map.of("success", false, "message", "权限不足：仅管理员可发布成绩");
         }
-        // 如果是教师，还需要添加教师ID过滤，确保只能查询自己授课的课程成绩
-        if ("teacher".equals(userType) && operator != null) {
-            // 通过操作者姓名查找教师ID
-            Integer teacherId = getTeacherIdByName(operator);
-            if (teacherId != null) {
-                map.put("tid", teacherId);
-            }
-        }
-        return sctService.findBySearch(map);
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) body.get("scoreIds");
+        List<Integer> scoreIds = ids != null ? ids.stream().map(Number::intValue).collect(Collectors.toList()) : new ArrayList<>();
+        Integer adminId = getTeacherIdByName(operator != null ? operator : "系统管理员");
+        String msg = gradeUploadService.publishScores(scoreIds, adminId, operator != null ? operator : "系统管理员");
+        return Map.of("success", msg.startsWith("发布成功"), "message", msg);
     }
-    
+
+    /**
+     * 锁定成绩。仅 admin 可调用。将任意状态改为 LOCKED，写 grade_change_log。
+     * 权限判断：仅 userType=admin。
+     */
+    @PostMapping("/lock")
+    public Map<String, Object> lockScores(@RequestBody Map<String, Object> body,
+                                          @RequestAttribute(value = "userType", required = false) String userType,
+                                          @RequestAttribute(value = "operator", required = false) String operator) {
+        if (!"admin".equals(userType)) {
+            return Map.of("success", false, "message", "权限不足：仅管理员可锁定成绩");
+        }
+        @SuppressWarnings("unchecked")
+        List<Number> ids = (List<Number>) body.get("scoreIds");
+        List<Integer> scoreIds = ids != null ? ids.stream().map(Number::intValue).collect(Collectors.toList()) : new ArrayList<>();
+        Integer adminId = getTeacherIdByName(operator != null ? operator : "系统管理员");
+        String msg = gradeUploadService.lockScores(scoreIds, adminId, operator != null ? operator : "系统管理员");
+        return Map.of("success", msg.startsWith("锁定成功"), "message", msg);
+    }
+
+    /**
+     * 强制修正锁定成绩。仅 admin 可调用。修正后写超高等级日志。
+     * 权限判断：仅 userType=admin；状态判断：仅 LOCKED 可强制修正。
+     */
+    @PostMapping("/force-edit")
+    public Map<String, Object> forceEdit(@RequestBody Map<String, Object> body,
+                                         @RequestAttribute(value = "userType", required = false) String userType,
+                                         @RequestAttribute(value = "operator", required = false) String operator) {
+        if (!"admin".equals(userType)) {
+            return Map.of("success", false, "message", "权限不足：仅管理员可强制修正锁定成绩");
+        }
+        Integer scoreId = body.get("scoreId") != null ? Integer.parseInt(body.get("scoreId").toString()) : null;
+        Object usualScore = body.get("usualScore");
+        Object midScore = body.get("midScore");
+        Object finalScore = body.get("finalScore");
+        Object grade = body.get("grade");
+        String reason = body.get("reason") != null ? body.get("reason").toString() : null;
+        Integer adminId = getTeacherIdByName(operator != null ? operator : "系统管理员");
+        String msg = gradeUploadService.forceEdit(scoreId, usualScore, midScore, finalScore, grade, reason, adminId, operator != null ? operator : "系统管理员");
+        return Map.of("success", msg.startsWith("修正成功"), "message", msg);
+    }
+
+    /**
+     * 成绩查询。权限：admin 全部；dean 仅本院；teacher 仅本人任课。状态可按 status 过滤。
+     */
+    @PostMapping("/query")
+    public List<ScoreQueryDTO> queryGrades(@RequestBody Map<String, Object> map,
+                                           @RequestAttribute(value = "userType", required = false) String userType,
+                                           @RequestAttribute(value = "departmentId", required = false) Integer departmentId,
+                                           @RequestAttribute(value = "operator", required = false) String operator) {
+        Integer studentId = toInt(map.get("studentId"));
+        Integer courseId = toInt(map.get("courseId"));
+        String term = map.get("term") != null ? map.get("term").toString().trim() : null;
+        if (term != null && term.isEmpty()) term = null;
+        String status = map.get("status") != null ? map.get("status").toString().trim() : null;
+        if (status != null && status.isEmpty()) status = null;
+        Integer majorId = toInt(map.get("majorId"));
+        Integer classId = toInt(map.get("classId"));
+        Integer gradeLevelId = toInt(map.get("gradeLevelId"));
+        Integer queryTeacherId = toInt(map.get("teacherId")); // 查询条件中的教师ID
+        Double lowBound = toDouble(map.get("lowBound"));
+        Double highBound = toDouble(map.get("highBound"));
+        Integer deptId = null;
+        Integer teacherId = null;
+        if ("dean".equals(userType) && departmentId != null) deptId = departmentId;
+        if ("teacher".equals(userType) && operator != null) teacherId = getTeacherIdByName(operator);
+        // 如果查询条件中指定了 teacherId，使用查询条件中的值（admin 可以查询任意教师）
+        if (queryTeacherId != null && "admin".equals(userType)) {
+            teacherId = queryTeacherId;
+        }
+        return gradeQueryService.query(studentId, courseId, term, status, deptId, teacherId,
+                majorId, classId, gradeLevelId, lowBound, highBound);
+    }
+
+    /**
+     * 学生查询本人成绩。仅 status=PUBLISHED。sid 须为当前登录学生 id（前端按会话校验）。
+     */
+    @GetMapping("/query/student")
+    public List<ScoreQueryDTO> queryForStudent(@RequestParam(value = "sid") Integer studentId,
+                                               @RequestParam(value = "term", required = false) String term) {
+        return gradeQueryService.queryForStudent(studentId, term);
+    }
+
+    private static Integer toInt(Object o) {
+        if (o == null) return null;
+        if (o instanceof Number) return ((Number) o).intValue();
+        try { return Integer.parseInt(o.toString().trim()); } catch (Exception e) { return null; }
+    }
+
+    private static Double toDouble(Object o) {
+        if (o == null) return null;
+        if (o instanceof Number) return ((Number) o).doubleValue();
+        try { return Double.parseDouble(o.toString().trim()); } catch (Exception e) { return null; }
+    }
+
     /**
      * 通过教师姓名查找教师ID
      */
     private Integer getTeacherIdByName(String teacherName) {
-        if (teacherName == null || teacherName.isEmpty()) {
-            return null;
-        }
+        if (teacherName == null || teacherName.isEmpty()) return null;
         try {
             List<Teacher> teachers = teacherMapper.findBySearch(null, teacherName, 0);
-            if (teachers != null && !teachers.isEmpty()) {
-                return teachers.get(0).getId();
-            }
+            if (teachers != null && !teachers.isEmpty()) return teachers.get(0).getId();
         } catch (Exception e) {
             e.printStackTrace();
         }

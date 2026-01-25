@@ -4,35 +4,40 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.auggie.student_server.mapper.StudentMapper">
     <select id="findAll" resultType="Student">
-        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        SELECT s.*, c.name AS class_name, gl.name AS grade_level_name, m.name AS major_name, d.name AS department_name
         FROM studentms.student s
         LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.grade_level gl ON s.grade_level_id = gl.id
         LEFT JOIN studentms.major m ON s.major_id = m.id
-        LEFT JOIN studentms.department d ON s.department_id = d.id;
+        LEFT JOIN studentms.department d ON s.department_id = d.id
+        ORDER BY s.id
     </select>
 
     <select id="findById" resultType="Student">
-        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        SELECT s.*, c.name AS class_name, gl.name AS grade_level_name, m.name AS major_name, d.name AS department_name
         FROM studentms.student s
         LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.grade_level gl ON s.grade_level_id = gl.id
         LEFT JOIN studentms.major m ON s.major_id = m.id
         LEFT JOIN studentms.department d ON s.department_id = d.id
-        WHERE s.id = #{sid};
+        WHERE s.id = #{sid}
     </select>
 
     <select id="findByStudentNo" resultType="Student">
-        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        SELECT s.*, c.name AS class_name, gl.name AS grade_level_name, m.name AS major_name, d.name AS department_name
         FROM studentms.student s
         LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.grade_level gl ON s.grade_level_id = gl.id
         LEFT JOIN studentms.major m ON s.major_id = m.id
         LEFT JOIN studentms.department d ON s.department_id = d.id
-        WHERE s.student_no = #{studentNo};
+        WHERE s.student_no = #{studentNo}
     </select>
 
     <select id="findBySearch" resultType="Student">
-        SELECT s.*, c.name as class_name, m.name as major_name, d.name as department_name
+        SELECT s.*, c.name AS class_name, gl.name AS grade_level_name, m.name AS major_name, d.name AS department_name
         FROM studentms.student s
         LEFT JOIN studentms.class c ON s.class_id = c.id
+        LEFT JOIN studentms.grade_level gl ON s.grade_level_id = gl.id
         LEFT JOIN studentms.major m ON s.major_id = m.id
         LEFT JOIN studentms.department d ON s.department_id = d.id
         <where>
@@ -56,18 +61,42 @@
         sname = #{student.sname},
         password = #{student.password},
         class_id = #{student.classId},
-        grade_level = #{student.gradeLevel},
+        grade_level_id = #{student.gradeLevelId},
         major_id = #{student.majorId},
         department_id = #{student.departmentId}
         WHERE id = #{student.id};
     </update>
 
     <insert id="save">
-        INSERT INTO studentms.student (student_no, sname, password, class_id, grade_level, major_id, department_id) 
-        VALUES (#{student.studentNo}, #{student.sname}, #{student.password}, #{student.classId}, #{student.gradeLevel}, #{student.majorId}, #{student.departmentId})
+        INSERT INTO studentms.student (student_no, sname, password, class_id, grade_level_id, major_id, department_id) 
+        VALUES (#{student.studentNo}, #{student.sname}, #{student.password}, #{student.classId}, #{student.gradeLevelId}, #{student.majorId}, #{student.departmentId})
     </insert>
 
     <delete id="deleteById">
         DELETE FROM studentms.student WHERE id = #{sid}
     </delete>
+
+    <select id="findDistinctColleges" resultType="java.util.HashMap">
+        SELECT DISTINCT d.id AS id, d.name AS name
+        FROM studentms.student s
+        INNER JOIN studentms.department d ON s.department_id = d.id
+        WHERE s.department_id IS NOT NULL
+        ORDER BY d.id
+    </select>
+
+    <select id="findDistinctMajorsByCollegeId" resultType="java.util.HashMap">
+        SELECT DISTINCT m.id AS id, m.name AS name
+        FROM studentms.student s
+        INNER JOIN studentms.major m ON s.major_id = m.id
+        WHERE s.department_id = #{collegeId} AND s.major_id IS NOT NULL
+        ORDER BY m.id
+    </select>
+
+    <select id="findDistinctClassesByMajorId" resultType="java.util.HashMap">
+        SELECT DISTINCT c.id AS id, c.name AS name
+        FROM studentms.student s
+        INNER JOIN studentms.class c ON s.class_id = c.id
+        WHERE s.major_id = #{majorId} AND s.class_id IS NOT NULL
+        ORDER BY c.id
+    </select>
 </mapper>

@@ -69,6 +69,20 @@ public class OperationLogAspect {
         return "system";
     }
 
+    /** admin / 系统管理员 统一显示为「系统管理员」 */
+    private String normalizeOperator(String operator) {
+        if (operator == null || operator.isEmpty()) {
+            return operator;
+        }
+        if ("system".equals(operator) || "unknown".equals(operator)) {
+            return operator;
+        }
+        if ("admin".equals(operator) || "系统管理员".equals(operator)) {
+            return "系统管理员";
+        }
+        return operator;
+    }
+
     // 拦截所有重要的 Service 层方法
     @Pointcut("execution(* com.auggie.student_server.service.*.save(..)) || " +
               "execution(* com.auggie.student_server.service.*.update*(..)) || " +
@@ -76,6 +90,7 @@ public class OperationLogAspect {
               "execution(* com.auggie.student_server.service.*.insert*(..)) || " +
               "execution(* com.auggie.student_server.service.*.batchInsert(..)) || " +
               "execution(* com.auggie.student_server.service.*.upload*(..)) || " +
+              "execution(* com.auggie.student_server.service.*.importFromExcel(..)) || " +
               "execution(* com.auggie.student_server.service.*.clearTestData(..)) || " +
               "execution(* com.auggie.student_server.service.*.insertInitialData(..))")
     public void operationPointcut() {
@@ -88,26 +103,39 @@ public class OperationLogAspect {
             String className = joinPoint.getTarget().getClass().getSimpleName();
             Object[] args = joinPoint.getArgs();
 
-            // 确定操作类型
-            String operationType = "未知";
-            if (methodName.contains("save") || methodName.contains("insert") || methodName.contains("upload")) {
+            // 确定操作类型（必须明确，不能是"未知"）
+            String operationType;
+            if (methodName.contains("importFromExcel") || methodName.contains("import")) {
+                operationType = "批量导入";
+            } else if (methodName.contains("save") || methodName.contains("insert")) {
                 operationType = "新增";
             } else if (methodName.contains("update")) {
                 operationType = "编辑";
             } else if (methodName.contains("delete") || methodName.contains("clear")) {
                 operationType = "删除";
+            } else if (methodName.contains("upload")) {
+                operationType = "上传";
+            } else {
+                operationType = "其他";
             }
 
-            // 确定目标表
+            // 确定目标表和模块（必须明确，不能是"未知模块"）
             String targetTable = className.replace("Service", "").toLowerCase();
-            String targetModuleName = "未知模块";
-            if (targetTable.contains("student")) {
+            String targetModuleName;
+            // 优先匹配更具体的类名
+            if (className.equals("CourseTeacherService")) {
+                targetModuleName = "开课管理";
+                targetTable = "course_open";
+            } else if (targetTable.contains("student")) {
                 targetModuleName = "学生管理";
                 targetTable = "student";
-            } else if (targetTable.contains("course")) {
+            } else if (targetTable.contains("courseteacher")) {
+                targetModuleName = "开课管理";
+                targetTable = "course_open";
+            } else if (targetTable.contains("course") && !targetTable.contains("teacher")) {
                 targetModuleName = "课程管理";
                 targetTable = "course";
-            } else if (targetTable.contains("teacher")) {
+            } else if (targetTable.contains("teacher") && !targetTable.contains("course")) {
                 targetModuleName = "教师管理";
                 targetTable = "teacher";
             } else if (targetTable.contains("wordpaper") || targetTable.contains("paper")) {
@@ -116,9 +144,18 @@ public class OperationLogAspect {
             } else if (targetTable.contains("init")) {
                 targetModuleName = "系统维护";
                 targetTable = "all_tables";
+            } else if (targetTable.contains("gradechangelog")) {
+                targetModuleName = "成绩管理";
+                targetTable = "grade_change_log";
+            } else if (targetTable.contains("gradechangerequest")) {
+                targetModuleName = "成绩管理";
+                targetTable = "grade_change_request";
             } else if (targetTable.contains("grade") || targetTable.contains("sct")) {
                 targetModuleName = "成绩管理";
                 targetTable = "score";
+            } else if (targetTable.contains("gradelevel")) {
+                targetModuleName = "年级管理";
+                targetTable = "grade_level";
             } else if (targetTable.contains("department")) {
                 targetModuleName = "学院管理";
                 targetTable = "department";
@@ -128,6 +165,8 @@ public class OperationLogAspect {
             } else if (targetTable.contains("class")) {
                 targetModuleName = "班级管理";
                 targetTable = "class";
+            } else {
+                targetModuleName = "其他模块";
             }
 
             // 获取目标ID
@@ -139,9 +178,22 @@ public class OperationLogAspect {
                 targetId = extractId(result);
             }
 
-            // 构建内容
+            // 构建内容（必须包含操作类型和模块）
             String content = String.format("执行 %s 操作，模块：%s", operationType, targetModuleName);
-            if (methodName.contains("upload")) {
+            if (methodName.contains("importFromExcel") || methodName.contains("import")) {
+                // 批量导入：显示导入结果摘要
+                if (result != null && result instanceof String) {
+                    String resultStr = (String) result;
+                    // 提取成功/失败数量
+                    if (resultStr.contains("成功") || resultStr.contains("失败")) {
+                        content += "，" + resultStr;
+                    } else {
+                        content += "，结果: " + (resultStr.length() > 150 ? resultStr.substring(0, 150) + "..." : resultStr);
+                    }
+                } else {
+                    content += "，批量导入操作";
+                }
+            } else if (methodName.contains("upload")) {
                 content += "，结果: " + (result != null ? result.toString() : "未知");
             } else if (args.length > 0) {
                 // 只显示关键信息，避免内容过长
@@ -152,8 +204,16 @@ public class OperationLogAspect {
                 content += "，详情: " + argStr;
             }
 
-            // 记录日志
+            // 记录日志：优先用 request 中的 operator，否则对试卷分析上传用 uploadBy 兜底
             String operator = getCurrentOperator();
+            if ("system".equals(operator) && "WordPaperService".equals(className) && "upload".equals(methodName)
+                    && args != null && args.length >= 2 && args[1] instanceof String) {
+                String uploadBy = (String) args[1];
+                if (uploadBy != null && !uploadBy.isEmpty()) {
+                    operator = uploadBy;
+                }
+            }
+            operator = normalizeOperator(operator);
             operationLogService.recordOperation(operator, operationType, targetTable, targetId, content);
         } catch (Exception e) {
             e.printStackTrace();

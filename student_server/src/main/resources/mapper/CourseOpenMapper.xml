@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.CourseOpenMapper">
+
+    <select id="countByTeacherCourseTerm" resultType="int">
+        SELECT COUNT(*) FROM studentms.course_open
+        WHERE teacher_id = #{teacherId} AND course_id = #{courseId} AND term = #{term}
+    </select>
+
+    <select id="findByTeacherTerm" resultType="CourseOpen">
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term
+        FROM studentms.course_open
+        WHERE teacher_id = #{teacherId} AND term = #{term}
+    </select>
+
+    <select id="findBySearch" resultType="CourseOpen">
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term
+        FROM studentms.course_open
+        <where>
+            <if test="courseId != null">AND course_id = #{courseId}</if>
+            <if test="teacherId != null">AND teacher_id = #{teacherId}</if>
+            <if test="term != null and term != ''">AND term = #{term}</if>
+        </where>
+    </select>
+</mapper>

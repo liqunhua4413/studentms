@@ -41,7 +41,7 @@ public interface StudentCourseTeacherMapper {
                                       @Param("className") String className,
                                       @Param("majorName") String majorName,
                                       @Param("departmentName") String departmentName,
-                                      @Param("gradeLevel") String gradeLevel);
+                                      @Param("gradeLevelId") Integer gradeLevelId);
 
     @Select("SELECT DISTINCT term FROM studentms.score")
     public List<String> findAllTerm();

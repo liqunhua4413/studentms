@@ -249,27 +249,13 @@ public class GradeService {
             return;
         }
 
-        // 1. 校验学生是否存在，不存在则自动创建
+        // 1. 校验学生是否存在，不存在直接报错（不自动创建）
         Student student = studentMapper.findByStudentNo(studentNo);
         if (student == null) {
-            // 自动创建学生
-            System.out.println("检测到新学生，正在自动创建：" + studentNo + " " + studentName);
-            student = new Student();
-            student.setStudentNo(studentNo);
-            student.setSname(studentName);
-            student.setPassword("123456"); // 默认密码
-            student.setDepartmentId(dept.getId());
-            student.setMajorId(major.getId());
-            student.setClassId(targetClass.getId());
-            student.setGradeLevel(gradeLevel);
-            studentMapper.save(student);
-            // 重新查询以获取数据库分配的 ID
-            student = studentMapper.findByStudentNo(studentNo);
-            if (student == null) {
-                errorReports.add("第" + lineNum + "行：自动创建学生【" + studentNo + "】失败");
-                return;
-            }
-        } else if (!student.getSname().equals(studentName)) {
+            errorReports.add("第" + lineNum + "行：学号【" + studentNo + "】不存在，请先在学生管理中导入该学生");
+            return;
+        }
+        if (!student.getSname().equals(studentName)) {
             errorReports.add("第" + lineNum + "行：学号【" + studentNo + "】与系统姓名【" + student.getSname() + "】不匹配");
             return;
         }
@@ -417,7 +403,7 @@ public class GradeService {
             // 通过学号查找学生
             Student student = studentService.findByStudentNo(studentNo);
             if (student == null) {
-                errorMsg.append("第").append(rowNum).append("行：学号 ").append(studentNo).append(" 不存在\n");
+                errorMsg.append("第").append(rowNum).append("行：学号【").append(studentNo).append("】不存在，请先在学生管理中导入该学生\n");
                 return;
             }
 
@@ -440,6 +426,10 @@ public class GradeService {
             // 总成绩（第5列或第12列）
             Cell totalCell = row.getCell(startCol + 5);
             Float totalGrade = getFloatValue(totalCell);
+            // 总分四舍五入为整数，其它分数保持小数
+            if (totalGrade != null) {
+                totalGrade = (float) Math.round(totalGrade);
+            }
 
             if (courseId == null || teacherId == null) {
                 errorMsg.append("第").append(rowNum).append("行：课程或教师信息缺失\n");

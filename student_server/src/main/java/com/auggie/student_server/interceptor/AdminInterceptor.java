@@ -69,37 +69,38 @@ public class AdminInterceptor implements HandlerInterceptor {
             }
         }
 
-        // 检查是否是 admin/dean 操作
+        // 检查权限
         String requestURI = request.getRequestURI();
         
-        // 需要管理员或院长权限的路径
-        String[] restrictedPaths = {
+        // 仅管理员（admin）可操作的路径（基础数据导入、学生/教师导入、系统管理）
+        String[] adminOnlyPaths = {
             "/department", "/major", "/class",
             "/grade/reexamination/export",
             "/paper/deleteById",
-            "/operationLog",
             "/student/import", "/teacher/import",
-            "/department/import", "/major/import", "/class/import", "/course/import",
-            "/admin/clearAllData", "/admin/generateTestData"
+            "/department/import", "/major/import", "/class/import", "/course/import", "/courseTeacher/import",
+            "/admin/clearAllData", "/admin/generateTestData",
+            "/init/clearTestData", "/init/importBaseData"
         };
 
-        boolean isRestricted = false;
-        for (String path : restrictedPaths) {
+        // 检查是否是仅管理员可操作的路径
+        boolean isAdminOnly = false;
+        for (String path : adminOnlyPaths) {
             if (requestURI.contains(path)) {
-                isRestricted = true;
+                isAdminOnly = true;
                 break;
             }
         }
 
-        if (isRestricted) {
-            boolean isAuthorized = "admin".equals(operator) || "admin".equals(userType) || "dean".equals(userType);
-            
-            // 如果不是 admin 或 dean，则拦截
-            if (!isAuthorized) {
+        if (isAdminOnly) {
+            // 权限检查：仅检查 userType 是否为 "admin"（不检查 operator，operator 是中文名称如"系统管理员"）
+            // 调试日志：输出 userType 和 operator 以便排查问题
+            System.out.println("[AdminInterceptor] 权限检查 - URI: " + requestURI + ", userType: " + userType + ", operator: " + operator);
+            if (!"admin".equals(userType)) {
                 response.setContentType("application/json;charset=UTF-8");
                 Map<String, Object> result = new HashMap<>();
                 result.put("success", false);
-                result.put("message", "权限不足");
+                result.put("message", "权限不足：仅系统管理员可操作（当前 userType: " + (userType != null ? userType : "null") + "）");
                 ObjectMapper mapper = new ObjectMapper();
                 response.getWriter().write(mapper.writeValueAsString(result));
                 return false;

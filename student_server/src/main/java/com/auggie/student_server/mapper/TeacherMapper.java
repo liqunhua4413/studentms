@@ -27,6 +27,11 @@ public interface TeacherMapper {
 
     public List<Teacher> findBySearch(@Param("tid") Integer tid, @Param("tname") String tname, @Param("fuzzy") Integer fuzzy);
 
+    /**
+     * 根据姓名查询院长（role=dean），用于获取院长所属学院。
+     */
+    Teacher findDeanByTname(@Param("tname") String tname);
+
     //    update
     public boolean updateById(@Param("teacher") Teacher teacher);
 

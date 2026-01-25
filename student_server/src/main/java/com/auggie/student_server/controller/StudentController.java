@@ -143,4 +143,30 @@ public class StudentController {
                 .headers(headers)
                 .body(outputStream.toByteArray());
     }
+
+    /**
+     * 获取所有学生学院（去重）。用于院长成绩查询的学生维度筛选。
+     */
+    @GetMapping("/colleges")
+    public List<Map<String, Object>> getColleges() {
+        return studentService.findDistinctColleges();
+    }
+
+    /**
+     * 获取指定学院的学生专业（去重）。用于院长成绩查询的学生维度筛选。
+     */
+    @GetMapping("/majors")
+    public List<Map<String, Object>> getMajors(@RequestParam(value = "collegeId") Integer collegeId) {
+        if (collegeId == null) return List.of();
+        return studentService.findDistinctMajorsByCollegeId(collegeId);
+    }
+
+    /**
+     * 获取指定专业的学生班级（去重）。用于院长成绩查询的学生维度筛选。
+     */
+    @GetMapping("/classes")
+    public List<Map<String, Object>> getClasses(@RequestParam(value = "majorId") Integer majorId) {
+        if (majorId == null) return List.of();
+        return studentService.findDistinctClassesByMajorId(majorId);
+    }
 }

@@ -21,4 +21,14 @@ public class Class {
     private String name;
     private Integer majorId;
     private Integer departmentId;
+
+    // 手动添加 getter/setter 方法以确保编译通过
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public Integer getMajorId() { return majorId; }
+    public void setMajorId(Integer majorId) { this.majorId = majorId; }
+    public Integer getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
 }

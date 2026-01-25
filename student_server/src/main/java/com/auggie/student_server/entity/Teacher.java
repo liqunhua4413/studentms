@@ -43,4 +43,16 @@ public class Teacher {
     public void setTid(Integer tid) {
         this.id = tid;
     }
+
+    // 手动添加其他 getter/setter 方法以确保编译通过
+    public String getTeacherNo() { return teacherNo; }
+    public void setTeacherNo(String teacherNo) { this.teacherNo = teacherNo; }
+    public String getTname() { return tname; }
+    public void setTname(String tname) { this.tname = tname; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+    public Integer getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
 }

@@ -118,7 +118,7 @@ public class SCTService {
         String className = null;
         String majorName = null;
         String departmentName = null;
-        String gradeLevel = null;
+        Integer gradeLevelId = null;
 
         if (map.containsKey("classId")) {
             classId = getIntFromMap(map, "classId");
@@ -138,8 +138,8 @@ public class SCTService {
         if (map.containsKey("departmentName")) {
             departmentName = (String) map.get("departmentName");
         }
-        if (map.containsKey("gradeLevel")) {
-            gradeLevel = (String) map.get("gradeLevel");
+        if (map.containsKey("gradeLevelId")) {
+            gradeLevelId = getIntFromMap(map, "gradeLevelId");
         }
 
         System.out.println("SCT 查询：" + map);
@@ -149,7 +149,7 @@ public class SCTService {
                 tid, tname, tFuzzy,
                 lowBound, highBound, term,
                 classId, majorId, departmentId,
-                className, majorName, departmentName, gradeLevel);
+                className, majorName, departmentName, gradeLevelId);
     }
 
     private Integer getIntFromMap(Map<String, Object> map, String key) {

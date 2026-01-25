@@ -19,7 +19,8 @@
     </select>
 
     <select id="findMyCourse" resultType="Course">
-        SELECT c.id, c.cname, c.ccredit
+        SELECT c.id, c.cname, c.ccredit, c.major_id AS majorId, c.department_id AS departmentId,
+               c.category, c.nature, c.exam_method AS examMethod, c.hours
         FROM studentms.course c INNER JOIN studentms.course_open ct ON c.id = ct.course_id
         WHERE ct.teacher_id = #{tid} AND ct.term = #{term}
     </select>

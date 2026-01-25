@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.GradeChangeRequestMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO studentms.grade_change_request (
+            score_id, applicant_id, applicant_role, reason, attachment_path, attachment_name,
+            before_data, after_data, status
+        ) VALUES (
+            #{scoreId}, #{applicantId}, #{applicantRole}, #{reason}, #{attachmentPath}, #{attachmentName},
+            #{beforeData}, #{afterData}, #{status}
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE studentms.grade_change_request SET
+            status = #{status},
+            dean_approver_id = #{deanApproverId},
+            admin_approver_id = #{adminApproverId},
+            reject_reason = #{rejectReason}
+        WHERE id = #{id}
+    </update>
+
+    <select id="findById" resultType="GradeChangeRequest">
+        SELECT id, score_id AS scoreId, applicant_id AS applicantId, applicant_role AS applicantRole,
+               reason, attachment_path AS attachmentPath, attachment_name AS attachmentName,
+               before_data AS beforeData, after_data AS afterData,
+               status, dean_approver_id AS deanApproverId, admin_approver_id AS adminApproverId,
+               reject_reason AS rejectReason, created_at AS createdAt, updated_at AS updatedAt
+        FROM studentms.grade_change_request WHERE id = #{id}
+    </select>
+
+    <select id="findByApplicant" resultType="GradeChangeRequest">
+        SELECT id, score_id AS scoreId, applicant_id AS applicantId, applicant_role AS applicantRole,
+               reason, attachment_path AS attachmentPath, attachment_name AS attachmentName,
+               before_data AS beforeData, after_data AS afterData,
+               status, dean_approver_id AS deanApproverId, admin_approver_id AS adminApproverId,
+               reject_reason AS rejectReason, created_at AS createdAt, updated_at AS updatedAt
+        FROM studentms.grade_change_request
+        WHERE applicant_id = #{applicantId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByStatus" resultType="GradeChangeRequest">
+        SELECT id, score_id AS scoreId, applicant_id AS applicantId, applicant_role AS applicantRole,
+               reason, attachment_path AS attachmentPath, attachment_name AS attachmentName,
+               before_data AS beforeData, after_data AS afterData,
+               status, dean_approver_id AS deanApproverId, admin_approver_id AS adminApproverId,
+               reject_reason AS rejectReason, created_at AS createdAt, updated_at AS updatedAt
+        FROM studentms.grade_change_request
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByDepartmentId" resultType="GradeChangeRequest">
+        SELECT r.id, r.score_id AS scoreId, r.applicant_id AS applicantId, r.applicant_role AS applicantRole,
+               r.reason, r.attachment_path AS attachmentPath, r.attachment_name AS attachmentName,
+               r.before_data AS beforeData, r.after_data AS afterData,
+               r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
+               r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt
+        FROM studentms.grade_change_request r
+        INNER JOIN studentms.score s ON r.score_id = s.id
+        INNER JOIN studentms.course c ON s.course_id = c.id
+        WHERE c.department_id = #{departmentId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <select id="findByApplicantWithDetails" resultType="com.auggie.student_server.entity.GradeChangeRequestWithDetail">
+        SELECT r.id, r.score_id AS scoreId, r.applicant_id AS applicantId, r.applicant_role AS applicantRole,
+               r.reason, r.attachment_path AS attachmentPath, r.attachment_name AS attachmentName,
+               r.before_data AS beforeData, r.after_data AS afterData,
+               r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
+               r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt,
+               st.student_no AS studentNo, st.sname, c.cname, s.term
+        FROM studentms.grade_change_request r
+        INNER JOIN studentms.score s ON r.score_id = s.id
+        INNER JOIN studentms.student st ON s.student_id = st.id
+        INNER JOIN studentms.course c ON s.course_id = c.id
+        WHERE r.applicant_id = #{applicantId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <select id="findByStatusWithDetails" resultType="com.auggie.student_server.entity.GradeChangeRequestWithDetail">
+        SELECT r.id, r.score_id AS scoreId, r.applicant_id AS applicantId, r.applicant_role AS applicantRole,
+               r.reason, r.attachment_path AS attachmentPath, r.attachment_name AS attachmentName,
+               r.before_data AS beforeData, r.after_data AS afterData,
+               r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
+               r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt,
+               st.student_no AS studentNo, st.sname, c.cname, s.term
+        FROM studentms.grade_change_request r
+        INNER JOIN studentms.score s ON r.score_id = s.id
+        INNER JOIN studentms.student st ON s.student_id = st.id
+        INNER JOIN studentms.course c ON s.course_id = c.id
+        WHERE r.status = #{status}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <select id="findByStatusInWithDetails" resultType="com.auggie.student_server.entity.GradeChangeRequestWithDetail">
+        SELECT r.id, r.score_id AS scoreId, r.applicant_id AS applicantId, r.applicant_role AS applicantRole,
+               r.reason, r.attachment_path AS attachmentPath, r.attachment_name AS attachmentName,
+               r.before_data AS beforeData, r.after_data AS afterData,
+               r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
+               r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt,
+               st.student_no AS studentNo, st.sname, c.cname, s.term
+        FROM studentms.grade_change_request r
+        INNER JOIN studentms.score s ON r.score_id = s.id
+        INNER JOIN studentms.student st ON s.student_id = st.id
+        INNER JOIN studentms.course c ON s.course_id = c.id
+        WHERE r.status IN
+        <foreach collection="statuses" item="s" open="(" separator="," close=")">
+            #{s}
+        </foreach>
+        ORDER BY r.created_at DESC
+    </select>
+
+    <update id="updateForResubmit">
+        UPDATE studentms.grade_change_request SET
+            before_data = #{beforeData},
+            after_data = #{afterData},
+            reason = #{reason},
+            attachment_path = #{attachmentPath},
+            attachment_name = #{attachmentName},
+            status = 'PENDING',
+            reject_reason = NULL,
+            dean_approver_id = NULL,
+            admin_approver_id = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+</mapper>

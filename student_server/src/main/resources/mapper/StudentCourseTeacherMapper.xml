@@ -32,7 +32,7 @@
             cls.name AS class_name, 
             m.name AS major_name, 
             d.name AS department_name, 
-            s.grade_level,
+            gl.name AS grade_level,
             c.category AS course_category, 
             c.nature AS course_nature, 
             c.exam_method, 
@@ -46,6 +46,7 @@
         LEFT JOIN studentms.class cls ON s.class_id = cls.id
         LEFT JOIN studentms.major m ON s.major_id = m.id
         LEFT JOIN studentms.department d ON s.department_id = d.id
+        LEFT JOIN studentms.grade_level gl ON s.grade_level_id = gl.id
         <where>
             <if test="sid != null">
                 sct.student_id = #{sid}
@@ -86,8 +87,8 @@
             <if test="departmentName != null and departmentName != ''">
                 AND d.name LIKE CONCAT('%', #{departmentName}, '%')
             </if>
-            <if test="gradeLevel != null and gradeLevel != ''">
-                AND s.grade_level = #{gradeLevel}
+            <if test="gradeLevelId != null">
+                AND s.grade_level_id = #{gradeLevelId}
             </if>
             <if test="lowBound != null">
                 AND sct.grade IS NOT NULL AND sct.grade >= #{lowBound}

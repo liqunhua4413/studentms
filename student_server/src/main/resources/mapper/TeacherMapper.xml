@@ -32,6 +32,12 @@
         SELECT * FROM studentms.teacher WHERE teacher_no = #{teacherNo};
     </select>
 
+    <select id="findDeanByTname" resultType="Teacher">
+        SELECT * FROM studentms.teacher
+        WHERE tname = #{tname} AND role = 'dean'
+        LIMIT 1
+    </select>
+
     <update id="updateById">
         UPDATE studentms.teacher SET
                                teacher_no = #{teacher.teacherNo},

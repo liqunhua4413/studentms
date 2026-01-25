@@ -46,4 +46,22 @@ public class Course {
     public void setCid(Integer cid) {
         this.id = cid;
     }
+
+    // 手动添加其他 getter/setter 方法以确保编译通过
+    public String getCname() { return cname; }
+    public void setCname(String cname) { this.cname = cname; }
+    public Integer getCcredit() { return ccredit; }
+    public void setCcredit(Integer ccredit) { this.ccredit = ccredit; }
+    public Integer getMajorId() { return majorId; }
+    public void setMajorId(Integer majorId) { this.majorId = majorId; }
+    public Integer getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public String getNature() { return nature; }
+    public void setNature(String nature) { this.nature = nature; }
+    public String getExamMethod() { return examMethod; }
+    public void setExamMethod(String examMethod) { this.examMethod = examMethod; }
+    public Integer getHours() { return hours; }
+    public void setHours(Integer hours) { this.hours = hours; }
 }

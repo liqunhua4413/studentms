@@ -27,6 +27,15 @@ public interface StudentMapper {
 
     public List<Student> findBySearch(@Param("student") Student student, @Param("fuzzy") Integer fuzzy);
 
+    /** 获取所有学生学院（去重） */
+    java.util.List<java.util.Map<String, Object>> findDistinctColleges();
+
+    /** 获取指定学院的学生专业（去重） */
+    java.util.List<java.util.Map<String, Object>> findDistinctMajorsByCollegeId(@Param("collegeId") Integer collegeId);
+
+    /** 获取指定专业的学生班级（去重） */
+    java.util.List<java.util.Map<String, Object>> findDistinctClassesByMajorId(@Param("majorId") Integer majorId);
+
 //    update
     public boolean updateById(@Param("student") Student student);
 

@@ -1,6 +1,8 @@
 package com.auggie.student_server.service;
 
+import com.auggie.student_server.entity.GradeLevel;
 import com.auggie.student_server.entity.Student;
+import com.auggie.student_server.mapper.GradeLevelMapper;
 import com.auggie.student_server.mapper.StudentMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Auther: auggie
@@ -23,6 +26,8 @@ import java.util.List;
 public class StudentService {
     @Autowired
     private StudentMapper studentMapper;
+    @Autowired
+    private GradeLevelMapper gradeLevelMapper;
 
     public List<Student> findByPage(Integer num, Integer size) {
         // num：第几页，size：一页多大
@@ -79,7 +84,7 @@ public class StudentService {
     /**
      * 批量导入学生基础数据（Excel）
      * 模板列顺序：
-     * 学生姓名、初始密码、班级ID、年级、专业ID、学院ID
+     * 学号、学生姓名、初始密码、班级ID、年级、专业ID、学院ID
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -99,47 +104,75 @@ public class StudentService {
                 }
 
                 try {
-                    // 学生姓名
+                    // 学号（第一列，必填）
                     Cell cell0 = row.getCell(0);
-                    String sname = getStringValue(cell0);
-                    if (sname == null || sname.isEmpty()) {
+                    String studentNo = getStringValue(cell0);
+                    if (studentNo == null || studentNo.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学号不能为空\n");
                         continue;
                     }
+                    studentNo = studentNo.trim();
+
+                    // 学生姓名
+                    Cell cell1 = row.getCell(1);
+                    String sname = getStringValue(cell1);
+                    if (sname == null || sname.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学生姓名不能为空\n");
+                        continue;
+                    }
+                    sname = sname.trim();
 
                     // 初始密码
-                    Cell cell1 = row.getCell(1);
-                    String password = getStringValue(cell1);
-                    if (password == null || password.isEmpty()) {
+                    Cell cell2 = row.getCell(2);
+                    String password = getStringValue(cell2);
+                    if (password == null || password.trim().isEmpty()) {
                         password = "123456";
+                    } else {
+                        password = password.trim();
                     }
 
                     // 班级ID
-                    Cell cell2 = row.getCell(2);
-                    Integer classId = getIntValue(cell2);
-
-                    // 年级
                     Cell cell3 = row.getCell(3);
-                    String gradeLevel = getStringValue(cell3);
+                    Integer classId = getIntValue(cell3);
+
+                    // 年级（须在 grade_level 表中存在）
+                    Cell cell4 = row.getCell(4);
+                    String gradeLevelName = getStringValue(cell4);
+                    Integer gradeLevelId = null;
+                    if (gradeLevelName != null && !gradeLevelName.trim().isEmpty()) {
+                        GradeLevel gl = gradeLevelMapper.findByName(gradeLevelName.trim());
+                        if (gl != null) gradeLevelId = gl.getId();
+                        else {
+                            failCount++;
+                            errorMsg.append("第").append(i + 1).append("行：年级【").append(gradeLevelName).append("】在 grade_level 表中不存在\n");
+                            continue;
+                        }
+                    }
 
                     // 专业ID
-                    Cell cell4 = row.getCell(4);
-                    Integer majorId = getIntValue(cell4);
+                    Cell cell5 = row.getCell(5);
+                    Integer majorId = getIntValue(cell5);
 
                     // 学院ID
-                    Cell cell5 = row.getCell(5);
-                    Integer departmentId = getIntValue(cell5);
+                    Cell cell6 = row.getCell(6);
+                    Integer departmentId = getIntValue(cell6);
 
-                    // 生成学号（格式：S + 年级后两位 + 序号，例如 S230001）
-                    String studentNo = "S" + (gradeLevel != null && gradeLevel.length() >= 2 
-                        ? gradeLevel.substring(gradeLevel.length() - 2) : "23") 
-                        + String.format("%04d", i);
+                    // 检查学号是否已存在
+                    Student existing = studentMapper.findByStudentNo(studentNo);
+                    if (existing != null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学号【").append(studentNo).append("】已存在\n");
+                        continue;
+                    }
 
                     Student student = new Student();
                     student.setStudentNo(studentNo);
                     student.setSname(sname);
                     student.setPassword(password);
                     student.setClassId(classId);
-                    student.setGradeLevel(gradeLevel);
+                    student.setGradeLevelId(gradeLevelId);
                     student.setMajorId(majorId);
                     student.setDepartmentId(departmentId);
 
@@ -203,6 +236,7 @@ public class StudentService {
 
     /**
      * 生成学生批量导入模板
+     * 列顺序：学号、学生姓名、初始密码、班级ID、年级、专业ID、学院ID
      */
     public Workbook generateImportTemplate() {
         Workbook workbook = new XSSFWorkbook();
@@ -210,7 +244,7 @@ public class StudentService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"学生姓名", "初始密码", "班级ID", "年级", "专业ID", "学院ID"};
+        String[] headers = {"学号", "学生姓名", "初始密码", "班级ID", "年级", "专业ID", "学院ID"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -218,13 +252,28 @@ public class StudentService {
 
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
-        exampleRow.createCell(0).setCellValue("张三");
-        exampleRow.createCell(1).setCellValue("123456");
-        exampleRow.createCell(2).setCellValue(1);
-        exampleRow.createCell(3).setCellValue("2023级");
-        exampleRow.createCell(4).setCellValue(1);
+        exampleRow.createCell(0).setCellValue("S24001");
+        exampleRow.createCell(1).setCellValue("张三");
+        exampleRow.createCell(2).setCellValue("123456");
+        exampleRow.createCell(3).setCellValue(1);
+        exampleRow.createCell(4).setCellValue("2024级");
         exampleRow.createCell(5).setCellValue(1);
+        exampleRow.createCell(6).setCellValue(1);
 
         return workbook;
+    }
+
+    public List<Map<String, Object>> findDistinctColleges() {
+        return studentMapper.findDistinctColleges();
+    }
+
+    public List<Map<String, Object>> findDistinctMajorsByCollegeId(Integer collegeId) {
+        if (collegeId == null) return new ArrayList<>();
+        return studentMapper.findDistinctMajorsByCollegeId(collegeId);
+    }
+
+    public List<Map<String, Object>> findDistinctClassesByMajorId(Integer majorId) {
+        if (majorId == null) return new ArrayList<>();
+        return studentMapper.findDistinctClassesByMajorId(majorId);
     }
 }
