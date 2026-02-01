@@ -15,7 +15,7 @@
       <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
       <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载模板</el-button>
       <div slot="tip" class="el-upload__tip">
-        模板列顺序：专业ID、课程ID、方案版本、课程类型(REQUIRED/LIMITED/ELECTIVE)、建议年级、建议学期ID、最低学分、最高学分、最大容量、状态(1启用/0停用)、备注。仅管理员可操作。
+        模板列顺序：专业名称、学院名称、课程名称、方案版本、课程类型(REQUIRED/LIMITED/ELECTIVE)、建议年级、建议学期名称、最低学分、最高学分、最大容量、状态(1启用/0停用)、备注。仅管理员可操作。
       </div>
     </el-upload>
     <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">

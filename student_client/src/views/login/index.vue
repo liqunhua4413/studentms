@@ -16,8 +16,8 @@
           </div>
           <div>
             <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
-              <el-form-item label="用户 id" prop="id">
-                <el-input v-model="ruleForm.id" prefix-icon="el-icon-lollipop"></el-input>
+              <el-form-item label="学号/工号" prop="id">
+                <el-input v-model="ruleForm.id" placeholder="学生请输入学号，教师/院长/管理员请输入工号" prefix-icon="el-icon-user"></el-input>
               </el-form-item>
               <el-form-item label="用户密码" prop="password">
                 <el-input v-model="ruleForm.password" placeholder="请输入密码" show-password prefix-icon="el-icon-ice-cream-round"></el-input>
@@ -52,7 +52,7 @@ export default {
         type: null,
       },
       rules: {
-        id: [{ required: true, message: '请输入用户 id', trigger: 'blur' }],
+        id: [{ required: true, message: '请输入学号或工号', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
         type: [{ required: true, message: '请选择', trigger: 'change' }],
       }
@@ -128,11 +128,12 @@ export default {
           })
 
         } else if (that.ruleForm.type === 'student') {
-          // 学生登录
-          const studentIdInput = that.ruleForm.id
-          const password = that.ruleForm.password
-          let form = { sid: null, password: password }
-
+          // 学生登录：仅支持学号
+          const account = that.ruleForm.id && String(that.ruleForm.id).trim()
+          if (!account) {
+            that.$message.error("请输入学号")
+            return
+          }
           const loginSuccess = (student) => {
             const userId = student.sid || student.id
             sessionStorage.setItem("token", 'true')
@@ -142,38 +143,24 @@ export default {
             that.$message.success("登陆成功，欢迎 " + student.sname + "!")
             that.$router.push('/student')
           }
-
-          if (typeof studentIdInput === 'string' && studentIdInput.startsWith('S')) {
-            // 使用学号登录
-            axios.post("/student/findByStudentNo", { studentNo: studentIdInput }).then(resp => {
-              const student = resp.data
-              const userId = student ? (student.sid || student.id) : null
-              if (!student || !userId) {
-                that.$message.error("学号不存在")
-                return
-              }
-              form.sid = userId
-              axios.post("/student/login", form).then(loginResp => {
-                if (loginResp.data === true) loginSuccess(resp.data)
-                else that.$message.error("账号密码错误")
-              })
-            })
-          } else {
-            // 使用数字 sid 登录
-            const sid = parseInt(studentIdInput)
-            if (isNaN(sid)) {
-              that.$message.error("请输入正确学号")
+          axios.post("/student/login", { studentNo: account, password: that.ruleForm.password }).then(loginResp => {
+            if (loginResp.data !== true) {
+              that.$message.error("学号或密码错误")
               return
             }
-            form.sid = sid
-            axios.post("/student/login", form).then(resp => {
-              if (resp.data === true) {
-                axios.get("/student/findById/" + sid).then(r => loginSuccess(r.data))
-              } else {
-                that.$message.error("账号密码错误")
+            axios.post("/student/findByStudentNo", { studentNo: account }).then(resp => {
+              const student = resp.data
+              if (!student || (student.sid == null && student.id == null)) {
+                that.$message.error("登录失败，用户数据异常")
+                return
               }
+              loginSuccess(student)
+            }).catch(() => {
+              that.$message.error("登录失败，用户数据异常")
             })
-          }
+          }).catch(() => {
+            that.$message.error("学号或密码错误")
+          })
 
         } else {
           that.$message.error("未知用户类型")

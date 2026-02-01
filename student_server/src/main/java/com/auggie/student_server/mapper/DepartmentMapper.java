@@ -19,7 +19,13 @@ import java.util.List;
 public interface DepartmentMapper {
     List<Department> findAll();
     Department findById(@Param("id") Integer id);
+    
+    /** 按名称精确查询学院（支持名称→ID解析） */
+    Department findByName(@Param("name") String name);
+    
+    /** 按名称模糊查询学院列表 */
     List<Department> findBySearch(@Param("name") String name);
+    
     boolean updateById(@Param("department") Department department);
     boolean save(@Param("department") Department department);
     boolean deleteById(@Param("id") Integer id);

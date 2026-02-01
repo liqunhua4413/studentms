@@ -19,6 +19,10 @@ import java.util.List;
 public interface MajorMapper {
     List<Major> findAll();
     Major findById(@Param("id") Integer id);
+    
+    /** 按专业名称+学院ID精确查询（专业在学院内唯一） */
+    Major findByNameAndDepartmentId(@Param("name") String name, @Param("departmentId") Integer departmentId);
+    
     List<Major> findBySearch(@Param("name") String name, @Param("departmentId") Integer departmentId);
     List<Major> findByDepartmentId(@Param("departmentId") Integer departmentId);
     boolean updateById(@Param("major") Major major);

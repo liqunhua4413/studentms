@@ -1,6 +1,8 @@
 package com.auggie.student_server.service;
 
+import com.auggie.student_server.entity.Department;
 import com.auggie.student_server.entity.Major;
+import com.auggie.student_server.mapper.DepartmentMapper;
 import com.auggie.student_server.mapper.MajorMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,9 @@ import java.io.InputStream;
 public class MajorService {
     @Autowired
     private MajorMapper majorMapper;
+    
+    @Autowired
+    private DepartmentMapper departmentMapper;
 
     public List<Major> findAll() {
         return majorMapper.findAll();
@@ -54,7 +59,7 @@ public class MajorService {
 
     /**
      * 批量导入专业（Excel）
-     * 模板列顺序：专业名称、所属学院ID
+     * 模板列顺序：专业名称、所属学院名称
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -70,14 +75,42 @@ public class MajorService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
                 try {
-                    String name = getStringValue(row.getCell(0));
-                    Integer departmentId = getIntValue(row.getCell(1));
-                    if (name == null || name.isEmpty() || departmentId == null) {
+                    String majorName = getStringValue(row.getCell(0));
+                    String departmentName = getStringValue(row.getCell(1));
+                    
+                    if (majorName == null || majorName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：专业名称不能为空\n");
                         continue;
                     }
+                    if (departmentName == null || departmentName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：所属学院名称不能为空\n");
+                        continue;
+                    }
+                    
+                    majorName = majorName.trim();
+                    departmentName = departmentName.trim();
+                    
+                    // 按学院名称查询学院ID
+                    Department department = departmentMapper.findByName(departmentName);
+                    if (department == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学院名称【").append(departmentName).append("】不存在\n");
+                        continue;
+                    }
+                    
+                    // 检查专业是否已存在
+                    Major existing = majorMapper.findByNameAndDepartmentId(majorName, department.getId());
+                    if (existing != null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：专业【").append(majorName).append("】在学院【").append(departmentName).append("】中已存在\n");
+                        continue;
+                    }
+                    
                     Major major = new Major();
-                    major.setName(name);
-                    major.setDepartmentId(departmentId);
+                    major.setName(majorName);
+                    major.setDepartmentId(department.getId());
                     boolean ok = majorMapper.save(major);
                     if (ok) successCount++;
                     else {
@@ -143,7 +176,7 @@ public class MajorService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"专业名称", "所属学院ID"};
+        String[] headers = {"专业名称", "所属学院名称"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -152,7 +185,7 @@ public class MajorService {
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
         exampleRow.createCell(0).setCellValue("计算机科学与技术");
-        exampleRow.createCell(1).setCellValue(1);
+        exampleRow.createCell(1).setCellValue("经济管理学院");
 
         return workbook;
     }

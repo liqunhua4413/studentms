@@ -1,7 +1,9 @@
 package com.auggie.student_server.service;
 
 import com.auggie.student_server.entity.Course;
+import com.auggie.student_server.entity.Department;
 import com.auggie.student_server.mapper.CourseMapper;
+import com.auggie.student_server.mapper.DepartmentMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +28,9 @@ import java.io.InputStream;
 public class CourseService {
     @Autowired
     private CourseMapper courseMapper;
+    
+    @Autowired
+    private DepartmentMapper departmentMapper;
 
     public List<Course> findBySearch(Map<String, String> map) {
         Integer cid = null;
@@ -91,7 +96,7 @@ public class CourseService {
 
     /**
      * 批量导入课程（Excel）
-     * 模板列顺序：课程名称、学分、课程类别、考核方式、学时、所属学院ID
+     * 模板列顺序：课程名称、学分、课程类别、考核方式、学时、所属学院名称
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -112,9 +117,35 @@ public class CourseService {
                     String category = getStringValue(row.getCell(2));
                     String examMethod = getStringValue(row.getCell(3));
                     Integer hours = getIntValue(row.getCell(4));
-                    Integer departmentId = getIntValue(row.getCell(5));
+                    String departmentName = getStringValue(row.getCell(5));
 
-                    if (courseName == null || courseName.isEmpty()) {
+                    if (courseName == null || courseName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：课程名称不能为空\n");
+                        continue;
+                    }
+                    if (departmentName == null || departmentName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：所属学院名称不能为空\n");
+                        continue;
+                    }
+
+                    courseName = courseName.trim();
+                    departmentName = departmentName.trim();
+
+                    // 按学院名称查询学院ID
+                    Department department = departmentMapper.findByName(departmentName);
+                    if (department == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学院名称【").append(departmentName).append("】不存在\n");
+                        continue;
+                    }
+
+                    // 检查课程是否已存在
+                    Course existing = courseMapper.findByNameAndDepartmentId(courseName, department.getId());
+                    if (existing != null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：课程【").append(courseName).append("】在学院【").append(departmentName).append("】中已存在\n");
                         continue;
                     }
 
@@ -124,7 +155,7 @@ public class CourseService {
                     course.setCategory(category);
                     course.setExamMethod(examMethod);
                     course.setHours(hours);
-                    course.setDepartmentId(departmentId);
+                    course.setDepartmentId(department.getId());
 
                     boolean ok = courseMapper.insertCourse(course);
                     if (ok) successCount++;
@@ -191,7 +222,7 @@ public class CourseService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"课程名称", "学分", "课程类别", "考核方式", "学时", "所属学院ID"};
+        String[] headers = {"课程名称", "学分", "课程类别", "考核方式", "学时", "所属学院名称"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -199,12 +230,12 @@ public class CourseService {
 
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
-        exampleRow.createCell(0).setCellValue("临床检验基础");
-        exampleRow.createCell(1).setCellValue(4);
+        exampleRow.createCell(0).setCellValue("基础会计");
+        exampleRow.createCell(1).setCellValue(3);
         exampleRow.createCell(2).setCellValue("专业课");
         exampleRow.createCell(3).setCellValue("考试");
-        exampleRow.createCell(4).setCellValue(64);
-        exampleRow.createCell(5).setCellValue(1);
+        exampleRow.createCell(4).setCellValue(48);
+        exampleRow.createCell(5).setCellValue("经济管理学院");
 
         return workbook;
     }

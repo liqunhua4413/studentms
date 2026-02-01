@@ -11,6 +11,12 @@
         SELECT * FROM studentms.major WHERE id = #{id}
     </select>
 
+    <select id="findByNameAndDepartmentId" resultType="Major">
+        SELECT * FROM studentms.major 
+        WHERE name = #{name} AND department_id = #{departmentId}
+        LIMIT 1
+    </select>
+
     <select id="findBySearch" resultType="Major">
         SELECT * FROM studentms.major
         <where>

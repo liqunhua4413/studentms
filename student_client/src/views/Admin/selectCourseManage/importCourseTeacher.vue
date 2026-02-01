@@ -16,7 +16,7 @@
       <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
       <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载模板</el-button>
       <div slot="tip" class="el-upload__tip">
-        模板列顺序：课程ID、教师ID、开课学期。仅管理员可操作。
+        模板列顺序：课程名称、学院名称、教师工号、开课学期名称。仅管理员可操作。
       </div>
     </el-upload>
     <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">

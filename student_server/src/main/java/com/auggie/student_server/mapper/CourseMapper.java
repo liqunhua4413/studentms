@@ -19,6 +19,9 @@ import java.util.List;
 public interface CourseMapper {
 
     Course findByCourseId(@Param("id") Integer id);
+    
+    /** 按课程名称+学院ID精确查询（课程名称在学院内唯一） */
+    Course findByNameAndDepartmentId(@Param("cname") String cname, @Param("departmentId") Integer departmentId);
 
     List<Course> findBySearch(@Param("cid") Integer cid,
                                      @Param("cname") String cname, @Param("fuzzy") Integer fuzzy,

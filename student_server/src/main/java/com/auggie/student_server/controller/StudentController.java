@@ -39,33 +39,20 @@ public class StudentController {
     @PostMapping("/login")
     public boolean login(@RequestBody Map<String, String> loginForm) {
         System.out.println("正在验证学生登陆 " + loginForm);
-        // 优先通过studentNo登录，如果没有则尝试通过sid(id)登录
+        // 仅支持学号登录，不支持ID登录
         String studentNo = loginForm.get("studentNo");
-        String sidStr = loginForm.get("sid");
-        
-        Student s = null;
-        if (studentNo != null && !studentNo.isEmpty()) {
-            s = studentService.findByStudentNo(studentNo);
-        } else if (sidStr != null && !sidStr.isEmpty()) {
-            try {
-                Integer sid = Integer.parseInt(sidStr);
-                s = studentService.findById(sid);
-            } catch (NumberFormatException e) {
-                return false;
-            }
+        if (studentNo == null || studentNo.trim().isEmpty()) {
+            return false;
         }
-
+        Student s = studentService.findByStudentNo(studentNo.trim());
         if (s == null) {
             return false;
         }
-        
         String password = loginForm.get("password");
         if (password == null || !s.getPassword().equals(password)) {
             return false;
         }
-        else {
-            return true;
-        }
+        return true;
     }
 
     @PostMapping("/findBySearch")

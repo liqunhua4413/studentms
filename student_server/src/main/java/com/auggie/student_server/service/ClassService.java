@@ -1,9 +1,13 @@
 package com.auggie.student_server.service;
 
 import com.auggie.student_server.entity.Class;
+import com.auggie.student_server.entity.Department;
 import com.auggie.student_server.entity.GradeLevel;
+import com.auggie.student_server.entity.Major;
 import com.auggie.student_server.mapper.ClassMapper;
+import com.auggie.student_server.mapper.DepartmentMapper;
 import com.auggie.student_server.mapper.GradeLevelMapper;
+import com.auggie.student_server.mapper.MajorMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +31,10 @@ public class ClassService {
     private ClassMapper classMapper;
     @Autowired
     private GradeLevelMapper gradeLevelMapper;
+    @Autowired
+    private DepartmentMapper departmentMapper;
+    @Autowired
+    private MajorMapper majorMapper;
 
     public List<Class> findAll() {
         return classMapper.findAll();
@@ -58,7 +66,7 @@ public class ClassService {
 
     /**
      * 批量导入班级（Excel）
-     * 模板列顺序：班级名称、年级(名称如2024级或ID)、专业ID、学院ID
+     * 模板列顺序：班级名称、年级名称、专业名称、学院名称
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -74,21 +82,74 @@ public class ClassService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
                 try {
-                    String name = getStringValue(row.getCell(0));
-                    Cell gradeCell = row.getCell(1);
-                    Integer gradeLevelId = parseGradeLevelId(gradeCell);
-                    Integer majorId = getIntValue(row.getCell(2));
-                    Integer departmentId = getIntValue(row.getCell(3));
+                    String className = getStringValue(row.getCell(0));
+                    String gradeLevelName = getStringValue(row.getCell(1));
+                    String majorName = getStringValue(row.getCell(2));
+                    String departmentName = getStringValue(row.getCell(3));
 
-                    if (name == null || name.isEmpty() || majorId == null || departmentId == null) {
+                    if (className == null || className.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：班级名称不能为空\n");
+                        continue;
+                    }
+                    if (gradeLevelName == null || gradeLevelName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：年级名称不能为空\n");
+                        continue;
+                    }
+                    if (majorName == null || majorName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：专业名称不能为空\n");
+                        continue;
+                    }
+                    if (departmentName == null || departmentName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学院名称不能为空\n");
+                        continue;
+                    }
+
+                    className = className.trim();
+                    gradeLevelName = gradeLevelName.trim();
+                    majorName = majorName.trim();
+                    departmentName = departmentName.trim();
+
+                    // 按学院名称查询学院ID
+                    Department department = departmentMapper.findByName(departmentName);
+                    if (department == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学院名称【").append(departmentName).append("】不存在\n");
+                        continue;
+                    }
+
+                    // 按专业名称+学院ID查询专业ID
+                    Major major = majorMapper.findByNameAndDepartmentId(majorName, department.getId());
+                    if (major == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：专业【").append(majorName).append("】在学院【").append(departmentName).append("】中不存在\n");
+                        continue;
+                    }
+
+                    // 按年级名称查询年级ID
+                    GradeLevel gradeLevel = gradeLevelMapper.findByName(gradeLevelName);
+                    if (gradeLevel == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：年级名称【").append(gradeLevelName).append("】不存在\n");
+                        continue;
+                    }
+
+                    // 检查班级是否已存在
+                    Class existing = classMapper.findByNameAndMajorIdAndGradeLevelId(className, major.getId(), gradeLevel.getId());
+                    if (existing != null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：班级【").append(className).append("】在专业【").append(majorName).append("】年级【").append(gradeLevelName).append("】中已存在\n");
                         continue;
                     }
 
                     Class clazz = new Class();
-                    clazz.setName(name);
-                    clazz.setGradeLevelId(gradeLevelId);
-                    clazz.setMajorId(majorId);
-                    clazz.setDepartmentId(departmentId);
+                    clazz.setName(className);
+                    clazz.setGradeLevelId(gradeLevel.getId());
+                    clazz.setMajorId(major.getId());
+                    clazz.setDepartmentId(department.getId());
 
                     boolean ok = classMapper.save(clazz);
                     if (ok) successCount++;
@@ -166,7 +227,7 @@ public class ClassService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"班级名称", "年级(名称或ID)", "专业ID", "学院ID"};
+        String[] headers = {"班级名称", "年级名称", "专业名称", "学院名称"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -174,10 +235,10 @@ public class ClassService {
 
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
-        exampleRow.createCell(0).setCellValue("计算机1班");
+        exampleRow.createCell(0).setCellValue("1班");
         exampleRow.createCell(1).setCellValue("2024级");
-        exampleRow.createCell(2).setCellValue(1);
-        exampleRow.createCell(3).setCellValue(1);
+        exampleRow.createCell(2).setCellValue("会计学");
+        exampleRow.createCell(3).setCellValue("经济管理学院");
 
         return workbook;
     }

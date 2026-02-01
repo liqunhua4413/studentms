@@ -6,6 +6,13 @@
     <select id="findByCourseId" resultType="Course">
         SELECT * FROM studentms.course WHERE id = #{id}
     </select>
+    
+    <select id="findByNameAndDepartmentId" resultType="Course">
+        SELECT * FROM studentms.course 
+        WHERE cname = #{cname} AND department_id = #{departmentId}
+        LIMIT 1
+    </select>
+    
     <select id="findBySearch" resultType="Course">
         SELECT * FROM studentms.course
         <where>

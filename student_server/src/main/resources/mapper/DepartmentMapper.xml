@@ -11,6 +11,10 @@
         SELECT * FROM studentms.department WHERE id = #{id}
     </select>
 
+    <select id="findByName" resultType="Department">
+        SELECT * FROM studentms.department WHERE name = #{name} LIMIT 1
+    </select>
+
     <select id="findBySearch" resultType="Department">
         SELECT * FROM studentms.department
         <where>

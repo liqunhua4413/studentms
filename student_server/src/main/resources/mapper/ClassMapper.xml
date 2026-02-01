@@ -11,6 +11,13 @@
         SELECT id, name, grade_level_id AS gradeLevelId, major_id AS majorId, department_id AS departmentId FROM studentms.class WHERE id = #{id}
     </select>
 
+    <select id="findByNameAndMajorIdAndGradeLevelId" resultType="Class">
+        SELECT id, name, grade_level_id AS gradeLevelId, major_id AS majorId, department_id AS departmentId 
+        FROM studentms.class 
+        WHERE name = #{name} AND major_id = #{majorId} AND grade_level_id = #{gradeLevelId}
+        LIMIT 1
+    </select>
+
     <select id="findBySearch" resultType="Class">
         SELECT id, name, grade_level_id AS gradeLevelId, major_id AS majorId, department_id AS departmentId FROM studentms.class
         <where>

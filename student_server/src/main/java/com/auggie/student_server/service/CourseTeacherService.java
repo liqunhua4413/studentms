@@ -3,7 +3,12 @@ package com.auggie.student_server.service;
 import com.auggie.student_server.entity.Course;
 import com.auggie.student_server.entity.CourseTeacher;
 import com.auggie.student_server.entity.CourseTeacherInfo;
+import com.auggie.student_server.entity.Department;
+import com.auggie.student_server.entity.Teacher;
+import com.auggie.student_server.mapper.CourseMapper;
 import com.auggie.student_server.mapper.CourseTeacherMapper;
+import com.auggie.student_server.mapper.DepartmentMapper;
+import com.auggie.student_server.mapper.TeacherMapper;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +32,12 @@ public class CourseTeacherService {
     private CourseTeacherMapper courseTeacherMapper;
     @Autowired
     private TermService termService;
+    @Autowired
+    private DepartmentMapper departmentMapper;
+    @Autowired
+    private CourseMapper courseMapper;
+    @Autowired
+    private TeacherMapper teacherMapper;
 
     public boolean insertCourseTeacher(Integer cid, Integer tid, Integer termId) {
         return courseTeacherMapper.insertCourseTeacher(cid, tid, termId);
@@ -131,7 +142,7 @@ public class CourseTeacherService {
 
     /**
      * 批量导入开课表（Excel）
-     * 模板列顺序：课程ID、教师ID、开课学期
+     * 模板列顺序：课程名称、学院名称、教师工号、开课学期名称
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -147,28 +158,77 @@ public class CourseTeacherService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
                 try {
-                    Integer cid = getIntValue(row.getCell(0));
-                    Integer tid = getIntValue(row.getCell(1));
-                    String termStr = getStringValue(row.getCell(2));
+                    String courseName = getStringValue(row.getCell(0));
+                    String departmentName = getStringValue(row.getCell(1));
+                    String teacherNo = getStringValue(row.getCell(2));
+                    String termName = getStringValue(row.getCell(3));
 
-                    if (cid == null || tid == null || termStr == null || termStr.isEmpty()) {
+                    if (courseName == null || courseName.trim().isEmpty()) {
                         failCount++;
-                        errorMsg.append("第").append(i + 1).append("行：数据不完整\n");
+                        errorMsg.append("第").append(i + 1).append("行：课程名称不能为空\n");
+                        continue;
+                    }
+                    if (departmentName == null || departmentName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学院名称不能为空\n");
+                        continue;
+                    }
+                    if (teacherNo == null || teacherNo.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：教师工号不能为空\n");
+                        continue;
+                    }
+                    if (termName == null || termName.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：开课学期名称不能为空\n");
                         continue;
                     }
 
-                    com.auggie.student_server.entity.Term termEntity = termService.findByName(termStr.trim());
+                    courseName = courseName.trim();
+                    departmentName = departmentName.trim();
+                    teacherNo = teacherNo.trim();
+                    termName = termName.trim();
+
+                    // 按学院名称查询学院ID
+                    Department department = departmentMapper.findByName(departmentName);
+                    if (department == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学院名称【").append(departmentName).append("】不存在\n");
+                        continue;
+                    }
+
+                    // 按课程名称+学院ID查询课程ID
+                    Course course = courseMapper.findByNameAndDepartmentId(courseName, department.getId());
+                    if (course == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：课程【").append(courseName).append("】在学院【").append(departmentName).append("】中不存在\n");
+                        continue;
+                    }
+
+                    // 按教师工号查询教师ID
+                    Teacher teacher = teacherMapper.findByTeacherNo(teacherNo);
+                    if (teacher == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：教师工号【").append(teacherNo).append("】不存在\n");
+                        continue;
+                    }
+
+                    // 按学期名称查询学期ID
+                    com.auggie.student_server.entity.Term termEntity = termService.findByName(termName);
                     if (termEntity == null) {
                         failCount++;
-                        errorMsg.append("第").append(i + 1).append("行：学期【").append(termStr).append("】未定义\n");
+                        errorMsg.append("第").append(i + 1).append("行：学期名称【").append(termName).append("】不存在\n");
                         continue;
                     }
+
+                    Integer cid = course.getId();
+                    Integer tid = teacher.getId();
                     Integer termId = termEntity.getId();
 
                     // 检查是否已存在
                     if (courseTeacherMapper.findBySearch(cid, tid, termId).size() > 0) {
                         failCount++;
-                        errorMsg.append("第").append(i + 1).append("行：开课记录已存在\n");
+                        errorMsg.append("第").append(i + 1).append("行：开课记录【课程:").append(courseName).append(",教师:").append(teacherNo).append(",学期:").append(termName).append("】已存在\n");
                         continue;
                     }
 
@@ -203,7 +263,7 @@ public class CourseTeacherService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"课程ID", "教师ID", "开课学期"};
+        String[] headers = {"课程名称", "学院名称", "教师工号", "开课学期名称"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -211,9 +271,10 @@ public class CourseTeacherService {
 
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
-        exampleRow.createCell(0).setCellValue(1);
-        exampleRow.createCell(1).setCellValue(1);
-        exampleRow.createCell(2).setCellValue("2023-2024-1");
+        exampleRow.createCell(0).setCellValue("基础会计");
+        exampleRow.createCell(1).setCellValue("经济管理学院");
+        exampleRow.createCell(2).setCellValue("T1001");
+        exampleRow.createCell(3).setCellValue("2024-2025-1");
 
         return workbook;
     }

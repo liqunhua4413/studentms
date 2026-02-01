@@ -19,6 +19,10 @@ import java.util.List;
 public interface ClassMapper {
     List<Class> findAll();
     Class findById(@Param("id") Integer id);
+    
+    /** 按班级名称+专业ID+年级ID精确查询（班级在专业+年级内唯一） */
+    Class findByNameAndMajorIdAndGradeLevelId(@Param("name") String name, @Param("majorId") Integer majorId, @Param("gradeLevelId") Integer gradeLevelId);
+    
     List<Class> findBySearch(@Param("name") String name, @Param("gradeLevelId") Integer gradeLevelId, @Param("majorId") Integer majorId, @Param("departmentId") Integer departmentId);
     List<Class> findByMajorId(@Param("majorId") Integer majorId);
     boolean updateById(@Param("class") Class clazz);

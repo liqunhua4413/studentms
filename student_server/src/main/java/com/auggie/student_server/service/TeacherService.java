@@ -1,6 +1,8 @@
 package com.auggie.student_server.service;
 
+import com.auggie.student_server.entity.Department;
 import com.auggie.student_server.entity.Teacher;
+import com.auggie.student_server.mapper.DepartmentMapper;
 import com.auggie.student_server.mapper.StudentMapper;
 import com.auggie.student_server.mapper.TeacherMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ import java.io.InputStream;
 public class TeacherService {
     @Autowired
     private TeacherMapper teacherMapper;
+    
+    @Autowired
+    private DepartmentMapper departmentMapper;
 
     public List<Teacher> findBySearch(Map<String, String> map) {
         Integer tid = null;
@@ -105,7 +110,7 @@ public class TeacherService {
     /**
      * 批量导入教师（Excel）
      * 模板列顺序：
-     * 教师工号、教师姓名、初始密码、角色(admin/teacher/dean)、所属学院ID
+     * 教师工号、教师姓名、初始密码、角色(admin/teacher/dean)、所属学院名称
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -126,16 +131,41 @@ public class TeacherService {
                     String name = getStringValue(row.getCell(1));
                     String password = getStringValue(row.getCell(2));
                     String role = getStringValue(row.getCell(3));
-                    Integer departmentId = getIntValue(row.getCell(4));
+                    String departmentName = getStringValue(row.getCell(4));
 
-                    if (teacherNo == null || teacherNo.isEmpty() || name == null || name.isEmpty()) {
+                    if (teacherNo == null || teacherNo.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：教师工号不能为空\n");
                         continue;
                     }
-                    if (password == null || password.isEmpty()) {
-                        password = "123456";
+                    if (name == null || name.trim().isEmpty()) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：教师姓名不能为空\n");
+                        continue;
                     }
-                    if (role == null || role.isEmpty()) {
-                        role = "teacher";
+
+                    teacherNo = teacherNo.trim();
+                    name = name.trim();
+                    password = (password == null || password.trim().isEmpty()) ? "123456" : password.trim();
+                    role = (role == null || role.trim().isEmpty()) ? "teacher" : role.trim();
+
+                    Integer departmentId = null;
+                    if (departmentName != null && !departmentName.trim().isEmpty()) {
+                        Department department = departmentMapper.findByName(departmentName.trim());
+                        if (department == null) {
+                            failCount++;
+                            errorMsg.append("第").append(i + 1).append("行：学院名称【").append(departmentName.trim()).append("】不存在\n");
+                            continue;
+                        }
+                        departmentId = department.getId();
+                    }
+
+                    // 检查工号是否已存在
+                    Teacher existing = teacherMapper.findByTeacherNo(teacherNo);
+                    if (existing != null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：教师工号【").append(teacherNo).append("】已存在\n");
+                        continue;
                     }
 
                     Teacher teacher = new Teacher();
@@ -212,7 +242,7 @@ public class TeacherService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"教师工号", "教师姓名", "初始密码", "角色(admin/teacher/dean)", "所属学院ID"};
+        String[] headers = {"教师工号", "教师姓名", "初始密码", "角色(admin/teacher/dean)", "所属学院名称"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -220,11 +250,11 @@ public class TeacherService {
 
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
-        exampleRow.createCell(0).setCellValue("T0001");
-        exampleRow.createCell(1).setCellValue("李老师");
+        exampleRow.createCell(0).setCellValue("T1001");
+        exampleRow.createCell(1).setCellValue("张老师");
         exampleRow.createCell(2).setCellValue("123456");
         exampleRow.createCell(3).setCellValue("teacher");
-        exampleRow.createCell(4).setCellValue(1);
+        exampleRow.createCell(4).setCellValue("经济管理学院");
 
         return workbook;
     }
