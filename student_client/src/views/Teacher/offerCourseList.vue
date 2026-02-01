@@ -78,10 +78,13 @@ export default {
     offer(row) {
       const tid = sessionStorage.getItem("tid")
       const cid = row.cid
-      const term = sessionStorage.getItem("currentTerm")
-
+      const termId = sessionStorage.getItem("currentTermId")
+      if (!termId) {
+        this.$message.warning('请先选择学期')
+        return
+      }
       const that = this
-      axios.get('/courseTeacher/insert/' + cid + '/' + tid + '/' + term).then(function (resp) {
+      that.axios.get('/courseTeacher/insert/' + cid + '/' + tid + '/' + termId).then(function (resp) {
         if (resp.data === true) {
           that.$message({
             showClose: true,

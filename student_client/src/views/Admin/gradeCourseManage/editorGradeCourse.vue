@@ -2,7 +2,7 @@
   <div style="padding: 20px;">
     <el-card class="box-card">
       <div slot="header" class="clearfix">
-        <span>编辑成绩</span>
+        <span>成绩修改申请</span>
       </div>
       <el-form style="width: 80%" :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px">
         <el-row :gutter="20">
@@ -21,7 +21,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="课程名称" prop="courseId">
@@ -31,8 +31,10 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="年级" prop="gradeLevel">
-              <el-input v-model="ruleForm.gradeLevel" placeholder="如：2024级"></el-input>
+            <el-form-item label="年级" prop="gradeLevelId">
+              <el-select v-model="ruleForm.gradeLevelId" placeholder="请选择年级" clearable style="width: 100%">
+                <el-option v-for="g in gradeLevels" :key="g.id" :label="g.name" :value="g.id" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -47,9 +49,9 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="学号" prop="studentNo">
-              <el-input 
-                v-model="ruleForm.studentNo" 
-                placeholder="输入学号后按回车确认" 
+              <el-input
+                v-model="ruleForm.studentNo"
+                placeholder="输入学号后按回车确认"
                 @keyup.enter.native="handleStudentNoEnter"
               ></el-input>
             </el-form-item>
@@ -63,9 +65,9 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="学期" prop="term">
-              <el-select v-model="ruleForm.term" placeholder="请选择学期" style="width: 100%" @change="handleCourseOrTermChange">
-                <el-option v-for="item in terms" :key="item" :label="item" :value="item"></el-option>
+            <el-form-item label="学期" prop="termId">
+              <el-select v-model="ruleForm.termId" placeholder="请选择学期" style="width: 100%" @change="handleCourseOrTermChange">
+                <el-option v-for="item in terms" :key="item.id" :label="item.name" :value="item.id"></el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -79,42 +81,85 @@
           </el-col>
         </el-row>
 
+        <el-divider content-position="left">修改前（只读）</el-divider>
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="平时成绩" prop="usualScore">
-              <el-input-number v-model="ruleForm.usualScore" :min="0" :max="100" :precision="2" :step="0.01"></el-input-number>
+          <el-col :span="6">
+            <el-form-item label="平时">
+              <el-input :value="formatScore(ruleForm.beforeUsualScore)" disabled></el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="期中成绩" prop="midScore">
-              <el-input-number v-model="ruleForm.midScore" :min="0" :max="100" :precision="2" :step="0.01"></el-input-number>
+          <el-col :span="6">
+            <el-form-item label="期中">
+              <el-input :value="formatScore(ruleForm.beforeMidScore)" disabled></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="期末">
+              <el-input :value="formatScore(ruleForm.beforeFinalScore)" disabled></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="总分">
+              <el-input :value="formatTotalScore(ruleForm.beforeGrade)" disabled></el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">修改后（可编辑）</el-divider>
+        <el-row :gutter="20">
+          <el-col :span="6">
+            <el-form-item label="平时" prop="usualScore">
+              <el-input-number v-model="ruleForm.usualScore" :min="0" :max="100" :precision="2" :step="0.01" style="width: 100%"></el-input-number>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="期中" prop="midScore">
+              <el-input-number v-model="ruleForm.midScore" :min="0" :max="100" :precision="2" :step="0.01" style="width: 100%"></el-input-number>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="期末" prop="finalScore">
+              <el-input-number v-model="ruleForm.finalScore" :min="0" :max="100" :precision="2" :step="0.01" style="width: 100%"></el-input-number>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="总分" prop="grade">
+              <el-input-number v-model="ruleForm.grade" :min="0" :max="100" :precision="2" :step="0.01" style="width: 100%"></el-input-number>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="期末成绩" prop="finalScore">
-              <el-input-number v-model="ruleForm.finalScore" :min="0" :max="100" :precision="2" :step="0.01"></el-input-number>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="总成绩" prop="grade">
-              <el-input-number v-model="ruleForm.grade" :min="0" :max="100" :precision="2" :step="0.01"></el-input-number>
+          <el-col :span="24">
+            <el-form-item label="申请原因" prop="reason">
+              <el-input v-model="ruleForm.reason" type="textarea" :rows="3" placeholder="必填，说明修改原因" maxlength="500" show-word-limit></el-input>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="备注/标志" prop="remark">
-              <el-input v-model="ruleForm.remark" placeholder="备注信息"></el-input>
+          <el-col :span="24">
+            <el-form-item label="证明附件">
+              <el-upload
+                :action="uploadAction"
+                :headers="uploadHeaders"
+                :http-request="customUpload"
+                :file-list="attachmentList"
+                :limit="1"
+                :on-success="onAttachmentSuccess"
+                :on-error="onAttachmentError"
+                :on-remove="onAttachmentRemove"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              >
+                <el-button size="small" type="default">上传附件</el-button>
+              </el-upload>
+              <span class="attach-hint">可选，支持 pdf / 图片 / Word；最多 1 个。</span>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-form-item style="margin-top: 20px;">
-          <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitForm('ruleForm')">提交</el-button>
           <el-button @click="resetForm('ruleForm')">重置</el-button>
         </el-form-item>
       </el-form>
@@ -123,233 +168,304 @@
 </template>
 
 <script>
+import { formatScore, formatTotalScore } from '@/utils/gradeFormat'
+
 export default {
-  data() {
+  data () {
     return {
       ruleForm: {
+        scoreId: null,
         studentId: null,
         studentNo: '',
         courseId: null,
         teacherId: null,
         teacherName: '',
-        term: null,
+        termId: null,
         departmentId: null,
         majorId: null,
         classId: null,
-        gradeLevel: '',
+        gradeLevelId: null,
         sname: '',
+        beforeUsualScore: null,
+        beforeMidScore: null,
+        beforeFinalScore: null,
+        beforeGrade: null,
         usualScore: null,
         midScore: null,
         finalScore: null,
         grade: null,
-        remark: ''
+        reason: '',
+        attachmentPath: '',
+        attachmentName: ''
       },
+      attachmentList: [],
       departments: [],
       majors: [],
       classes: [],
       courses: [],
       terms: [],
+      gradeLevels: [],
+      submitting: false,
       rules: {
         departmentId: [{ required: true, message: '请选择学院', trigger: 'change' }],
         majorId: [{ required: true, message: '请选择专业', trigger: 'change' }],
         courseId: [{ required: true, message: '请选择课程', trigger: 'change' }],
         classId: [{ required: true, message: '请选择班级', trigger: 'change' }],
         studentNo: [{ required: true, message: '请输入学号', trigger: 'blur' }],
-        grade: [{ required: true, message: '请输入总成绩', trigger: 'change' }],
-        term: [{ required: true, message: '请选择学期', trigger: 'change' }]
+        termId: [{ required: true, message: '请选择学期', trigger: 'change' }],
+        grade: [{ required: true, message: '请输入总分', trigger: 'change' }],
+        reason: [{ required: true, message: '请输入申请原因', trigger: 'blur' }]
       }
-    };
-  },
-  created() {
-    this.initData();
-    const { sid, cid, tid, term } = this.$route.query;
-    if (sid && cid && tid && term) {
-      this.axios.get(`/SCT/findById/${sid}/${cid}/${tid}/${term}`).then(resp => {
-        const data = resp.data;
-        this.ruleForm = {
-          studentId: data.sid,
-          studentNo: data.studentNo || '',
-          courseId: data.cid,
-          teacherId: data.tid,
-          term: data.term,
-          departmentId: data.departmentId,
-          majorId: data.majorId,
-          classId: data.classId,
-          gradeLevel: data.gradeLevel,
-          sname: data.sname,
-          usualScore: data.usualScore || data.usualGrade || null,
-          midScore: data.midScore || null,
-          finalScore: data.finalScore || data.finalGrade || null,
-          grade: data.grade || data.totalGrade || null,
-          remark: data.remark || ''
-        };
-        // 自动触发一次根据学号获取信息以补充 studentNo
-        if (data.sid && !data.studentNo) {
-            this.axios.get(`/student/findById/${data.sid}`).then(sResp => {
-                if (sResp.data) this.ruleForm.studentNo = sResp.data.studentNo;
-            });
-        }
-        // 加载联动数据
-        if (data.departmentId) this.fetchMajors(data.departmentId);
-        if (data.majorId) this.fetchClasses(data.majorId);
-      });
     }
   },
+  computed: {
+    uploadAction () {
+      return (this.axios.defaults.baseURL || '/api') + '/grade/change/upload-attachment'
+    },
+    uploadHeaders () {
+      const name = sessionStorage.getItem('name')
+      const type = sessionStorage.getItem('type')
+      const depId = sessionStorage.getItem('departmentId')
+      const h = { Operator: encodeURIComponent(name || ''), UserType: type || '' }
+      if (depId) h.DepartmentId = depId
+      return h
+    }
+  },
+  created () {
+    const { sid, cid, tid, termId, term } = this.$route.query
+    this.initData().then(() => {
+      if (sid && cid) {
+        this.ruleForm.studentId = parseInt(sid, 10)
+        this.ruleForm.courseId = parseInt(cid, 10)
+        if (termId) {
+          this.ruleForm.termId = parseInt(termId, 10)
+        } else if (term && this.terms.length) {
+          const t = this.terms.find(x => x.name === term)
+          if (t) this.ruleForm.termId = t.id
+        }
+        this.ruleForm.teacherId = tid ? parseInt(tid, 10) : null
+        this.axios.get(`/student/findById/${sid}`).then(sResp => {
+          if (sResp.data) {
+            this.ruleForm.studentNo = sResp.data.studentNo || ''
+            this.ruleForm.sname = sResp.data.sname || ''
+          }
+        }).catch(() => {})
+        this.loadGradeRecord()
+      }
+    }).catch(() => {})
+  },
   methods: {
-    initData() {
-      this.axios.get('/department/findAll').then(resp => this.departments = resp.data);
-      this.axios.get('/course/findAll').then(resp => this.courses = resp.data);
-      this.axios.get('/SCT/findAllTerm').then(resp => this.terms = resp.data);
+    formatScore,
+    formatTotalScore,
+    initData () {
+      const userType = sessionStorage.getItem('type') || 'admin'
+      const departmentId = sessionStorage.getItem('departmentId')
+      
+      // 如果是院长，只加载本学院的部门
+      const deptPromise = userType === 'dean' && departmentId
+        ? this.axios.get(`/department/findById/${departmentId}`).then(r => {
+            this.departments = r.data ? [r.data] : []
+            // 初始化院长的departmentId
+            if (r.data && !this.ruleForm.departmentId) {
+              this.ruleForm.departmentId = r.data.id
+              this.fetchMajors(r.data.id)
+            }
+          })
+        : this.axios.get('/department/findAll').then(r => { this.departments = r.data || [] })
+      
+      return Promise.all([
+        deptPromise,
+        this.axios.get('/course/findAll').then(r => { this.courses = r.data || [] }),
+        this.axios.get('/term/findAll').then(r => { this.terms = r.data || [] }),
+        this.axios.get('/gradeLevel/findAll').then(r => { this.gradeLevels = r.data || [] })
+      ])
     },
-    handleDepartmentChange(val) {
-      this.ruleForm.majorId = null;
-      this.ruleForm.classId = null;
-      this.majors = [];
-      this.classes = [];
-      if (val) this.fetchMajors(val);
+    handleDepartmentChange (val) {
+      this.ruleForm.majorId = null
+      this.ruleForm.classId = null
+      this.majors = []
+      this.classes = []
+      if (val) this.fetchMajors(val)
     },
-    handleMajorChange(val) {
-      this.ruleForm.classId = null;
-      this.classes = [];
-      if (val) this.fetchClasses(val);
+    handleMajorChange (val) {
+      this.ruleForm.classId = null
+      this.classes = []
+      if (val) this.fetchClasses(val)
     },
-    handleStudentNoEnter() {
-      if (!this.ruleForm.studentNo) return;
+    handleStudentNoEnter () {
+      if (!this.ruleForm.studentNo) return
       this.axios.post('/student/findByStudentNo', { studentNo: this.ruleForm.studentNo }).then(resp => {
         if (resp.data) {
-          const student = resp.data;
-          this.ruleForm.sname = student.sname;
-          this.ruleForm.studentId = student.id;
-          // 可选：根据学生信息自动填充学院专业班级
-          this.ruleForm.departmentId = student.departmentId;
-          this.ruleForm.majorId = student.majorId;
-          this.ruleForm.classId = student.classId;
-          this.ruleForm.gradeLevel = student.gradeLevel;
-          
-          if (student.departmentId) this.fetchMajors(student.departmentId);
-          if (student.majorId) this.fetchClasses(student.majorId);
-          
-          this.$message.success(`已找到学生：${student.sname}`);
-          
-          // 如果已经选择了课程和学期，自动查询成绩记录
-          if (this.ruleForm.courseId && this.ruleForm.term) {
-            this.loadGradeRecord();
-          }
+          const s = resp.data
+          this.ruleForm.sname = s.sname
+          this.ruleForm.studentId = s.id
+          this.ruleForm.departmentId = s.departmentId
+          this.ruleForm.majorId = s.majorId
+          this.ruleForm.classId = s.classId
+          this.ruleForm.gradeLevelId = (this.gradeLevels || []).find(g => g.name === (s.gradeLevelName || s.gradeLevel))?.id ?? null
+          if (s.departmentId) this.fetchMajors(s.departmentId)
+          if (s.majorId) this.fetchClasses(s.majorId)
+          this.$message.success(`已找到学生：${s.sname}`)
+          if (this.ruleForm.courseId && this.ruleForm.termId) this.loadGradeRecord()
         } else {
-          this.$message.error('未找到该学号对应的学生');
-          this.ruleForm.sname = '';
-          this.ruleForm.studentId = null;
+          this.$message.error('未找到该学号对应的学生')
+          this.ruleForm.sname = ''
+          this.ruleForm.studentId = null
         }
-      }).catch(err => {
-          this.$message.error('查询学生失败');
-      });
+      }).catch(() => this.$message.error('查询学生失败'))
     },
-    handleCourseOrTermChange() {
-      // 当课程或学期改变时，如果已有学号，自动查询成绩记录
-      if (this.ruleForm.studentId && this.ruleForm.courseId && this.ruleForm.term) {
-        this.loadGradeRecord();
-      }
+    handleCourseOrTermChange () {
+      if (this.ruleForm.studentId && this.ruleForm.courseId && this.ruleForm.termId) this.loadGradeRecord()
     },
-    loadGradeRecord() {
-      if (!this.ruleForm.studentId || !this.ruleForm.courseId || !this.ruleForm.term) {
-        return;
-      }
-      
-      const queryParams = {
+    fetchMajors (deptId) {
+      this.axios.get(`/major/findByDepartmentId/${deptId}`).then(r => { this.majors = r.data || [] })
+    },
+    fetchClasses (majorId) {
+      this.axios.get(`/class/findByMajorId/${majorId}`).then(r => { this.classes = r.data || [] })
+    },
+    loadGradeRecord () {
+      if (!this.ruleForm.studentId || !this.ruleForm.courseId || !this.ruleForm.termId) return
+      const params = {
         studentId: this.ruleForm.studentId,
         courseId: this.ruleForm.courseId,
-        term: this.ruleForm.term
-      };
-      
-      this.axios.post('/SCT/findByStudentCourseTerm', queryParams).then(resp => {
-        if (resp.data) {
-          const record = resp.data;
-          // 填充成绩信息
-          this.ruleForm.usualScore = record.usualScore;
-          this.ruleForm.midScore = record.midScore;
-          this.ruleForm.finalScore = record.finalScore;
-          this.ruleForm.grade = record.grade;
-          this.ruleForm.remark = record.remark || '';
-          this.ruleForm.teacherId = record.teacherId;
-          
-          // 查询教师姓名
-          if (record.teacherId) {
-            this.axios.get(`/teacher/findById/${record.teacherId}`).then(teacherResp => {
-              if (teacherResp.data) {
-                this.ruleForm.teacherName = teacherResp.data.tname || '';
-              }
-            }).catch(() => {});
+        termId: this.ruleForm.termId,
+        status: 'PUBLISHED'
+      }
+      this.axios.post('/grade/query', params).then(resp => {
+        const list = resp.data || []
+        const row = list[0]
+        if (row) {
+          this.ruleForm.scoreId = row.id
+          this.ruleForm.teacherId = row.teacherId
+          this.ruleForm.teacherName = (row.teacherRealName || row.tname) || '—'
+          if (row.departmentId) {
+            this.ruleForm.departmentId = row.departmentId
+            this.fetchMajors(row.departmentId)
           }
-          
-          this.$message.success('已加载该学生的成绩记录');
+          if (row.majorId) {
+            this.ruleForm.majorId = row.majorId
+            this.fetchClasses(row.majorId)
+          }
+          if (row.classId) this.ruleForm.classId = row.classId
+          const u = row.usualScore != null ? parseFloat(row.usualScore) : null
+          const m = row.midScore != null ? parseFloat(row.midScore) : null
+          const f = row.finalScore != null ? parseFloat(row.finalScore) : null
+          const g = row.grade != null ? parseFloat(row.grade) : null
+          this.ruleForm.beforeUsualScore = u
+          this.ruleForm.beforeMidScore = m
+          this.ruleForm.beforeFinalScore = f
+          this.ruleForm.beforeGrade = g
+          this.ruleForm.usualScore = u
+          this.ruleForm.midScore = m
+          this.ruleForm.finalScore = f
+          this.ruleForm.grade = g
+          this.$message.success('已加载已发布成绩，修改后提交将生成申请')
         } else {
-          // 没有找到记录，清空成绩字段（保留其他信息）
-          this.ruleForm.usualScore = null;
-          this.ruleForm.midScore = null;
-          this.ruleForm.finalScore = null;
-          this.ruleForm.grade = null;
-          this.ruleForm.remark = '';
-          this.ruleForm.teacherId = null;
-          this.ruleForm.teacherName = '';
-          this.$message.info('未找到该学生的成绩记录，可以新建');
+          this.$message.warning('未找到该学生本课程本学期的已发布成绩，仅已发布成绩可申请修改')
+          this.ruleForm.scoreId = null
+          this.ruleForm.beforeUsualScore = null
+          this.ruleForm.beforeMidScore = null
+          this.ruleForm.beforeFinalScore = null
+          this.ruleForm.beforeGrade = null
+          this.ruleForm.usualScore = null
+          this.ruleForm.midScore = null
+          this.ruleForm.finalScore = null
+          this.ruleForm.grade = null
         }
+      }).catch(() => this.$message.error('查询成绩失败'))
+    },
+    submitForm (formName) {
+      this.$refs[formName].validate(valid => {
+        if (!valid) return
+        if (!this.ruleForm.scoreId) {
+          this.$message.warning('请先按学号、课程、学期加载已发布成绩')
+          return
+        }
+        const before = {
+          usual_score: this.ruleForm.beforeUsualScore,
+          mid_score: this.ruleForm.beforeMidScore,
+          final_score: this.ruleForm.beforeFinalScore,
+          grade: this.ruleForm.beforeGrade
+        }
+        const after = {
+          usual_score: this.ruleForm.usualScore,
+          mid_score: this.ruleForm.midScore,
+          final_score: this.ruleForm.finalScore,
+          grade: this.ruleForm.grade
+        }
+        this.submitting = true
+        this.axios.post('/grade/change/request', {
+          scoreId: this.ruleForm.scoreId,
+          beforeData: JSON.stringify(before),
+          afterData: JSON.stringify(after),
+          reason: (this.ruleForm.reason || '').trim(),
+          attachmentPath: this.ruleForm.attachmentPath || undefined,
+          attachmentName: this.ruleForm.attachmentName || undefined
+        }).then(resp => {
+          const d = resp.data || {}
+          const ok = d.success === true
+          this.$message[ok ? 'success' : 'warning'](d.message || (ok ? '申请已提交' : '提交失败'))
+          if (ok) {
+            this.$message.info('可在「我的申请」中查看')
+            this.resetForm(formName)
+          }
+        }).catch(err => {
+          const msg = (err.response && err.response.data && err.response.data.message) || err.message || '提交失败'
+          this.$message.error(msg)
+        }).finally(() => { this.submitting = false })
+      })
+    },
+    resetForm (formName) {
+      this.$refs[formName].resetFields()
+      this.ruleForm.sname = ''
+      this.ruleForm.studentId = null
+      this.ruleForm.scoreId = null
+      this.ruleForm.beforeUsualScore = null
+      this.ruleForm.beforeMidScore = null
+      this.ruleForm.beforeFinalScore = null
+      this.ruleForm.beforeGrade = null
+      this.ruleForm.attachmentPath = ''
+      this.ruleForm.attachmentName = ''
+      this.attachmentList = []
+    },
+    customUpload (options) {
+      const form = new FormData()
+      form.append('file', options.file)
+      this.axios.post('/grade/change/upload-attachment', form).then(r => {
+        const d = r.data || {}
+        const path = d.path || d.url || null
+        const fileName = d.fileName || options.file.name || ''
+        if (path) {
+          this.ruleForm.attachmentPath = path
+          this.ruleForm.attachmentName = fileName
+        }
+        options.onSuccess(r)
       }).catch(err => {
-        console.error('查询成绩记录失败:', err);
-        this.$message.warning('查询成绩记录失败，请手动填写');
-      });
+        this.$message.warning('附件上传失败，可留空提交')
+        options.onError(err)
+      })
     },
-    fetchMajors(deptId) {
-      this.axios.get(`/major/findByDepartmentId/${deptId}`).then(resp => this.majors = resp.data);
+    onAttachmentSuccess (resp) {
+      const d = (resp && resp.data) || {}
+      const path = d.path || d.url
+      const fileName = d.fileName || ''
+      if (path) {
+        this.ruleForm.attachmentPath = path
+        this.ruleForm.attachmentName = fileName
+      }
     },
-    fetchClasses(majorId) {
-      this.axios.get(`/class/findByMajorId/${majorId}`).then(resp => this.classes = resp.data);
+    onAttachmentError () {
+      this.$message.warning('附件上传失败，可留空提交')
     },
-    submitForm(formName) {
-      this.$refs[formName].validate((valid) => {
-        if (valid) {
-          if (!this.ruleForm.studentId) {
-              this.$message.warning('请先输入有效的学号并按回车确认');
-              return;
-          }
-          if (!this.ruleForm.courseId) {
-              this.$message.warning('请选择课程');
-              return;
-          }
-          if (!this.ruleForm.term) {
-              this.$message.warning('请选择学期');
-              return;
-          }
-          // 构建提交数据，确保字段名正确
-          const submitData = {
-            studentId: this.ruleForm.studentId,
-            courseId: this.ruleForm.courseId,
-            teacherId: this.ruleForm.teacherId,
-            term: this.ruleForm.term,
-            usualScore: this.ruleForm.usualScore,
-            midScore: this.ruleForm.midScore,
-            finalScore: this.ruleForm.finalScore,
-            grade: this.ruleForm.grade,
-            remark: this.ruleForm.remark
-          };
-          this.axios.post("/SCT/update", submitData).then(resp => {
-            if (resp.data === true) {
-              this.$message.success('编辑成功');
-              this.$router.back();
-            } else {
-              this.$message.error('编辑失败');
-            }
-          }).catch(err => {
-            console.error('更新失败:', err);
-            this.$message.error('更新失败：' + (err.response?.data || err.message));
-          });
-        }
-      });
-    },
-    resetForm(formName) {
-      this.$refs[formName].resetFields();
-      this.ruleForm.sname = '';
-      this.ruleForm.studentId = null;
+    onAttachmentRemove () {
+      this.ruleForm.attachmentPath = ''
+      this.ruleForm.attachmentName = ''
+      this.attachmentList = []
     }
   }
 }
 </script>
+
+<style scoped>
+.attach-hint { margin-left: 8px; color: #909399; font-size: 12px; }
+</style>

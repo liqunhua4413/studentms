@@ -63,13 +63,12 @@ export default {
       const cid = row.cid
       const tid = row.tid
       const sid = sessionStorage.getItem('sid')
-      const term = sessionStorage.getItem('currentTerm')
-      const sct = {
-        cid: cid,
-        tid: tid,
-        sid: sid,
-        term: term
+      const termId = sessionStorage.getItem('currentTermId') ? parseInt(sessionStorage.getItem('currentTermId'), 10) : null
+      if (!termId) {
+        this.$message.warning('请先选择学期')
+        return
       }
+      const sct = { cid, tid, sid, termId }
       const that = this
       axios.post('/SCT/save', sct).then(function (resp) {
         if (resp.data === '选课成功') {

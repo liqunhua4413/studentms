@@ -6,23 +6,37 @@
         style="width: 100%">
       <el-table-column
           fixed
-          prop="tid"
+          prop="teacherNo"
           label="工号"
-          width="150">
+          width="120">
       </el-table-column>
       <el-table-column
           prop="tname"
           label="姓名"
-          width="150">
+          width="120">
+      </el-table-column>
+      <el-table-column
+          prop="role"
+          label="角色"
+          width="100">
+        <template slot-scope="scope">
+          {{ roleLabel(scope.row.role) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+          prop="departmentName"
+          label="所属学院"
+          width="140"
+          show-overflow-tooltip>
       </el-table-column>
       <el-table-column
           prop="password"
           label="密码"
-          width="150">
+          width="120">
       </el-table-column>
       <el-table-column
           label="操作"
-          width="100">
+          width="120">
         <template slot-scope="scope">
           <el-popconfirm
               confirm-button-text='删除'
@@ -52,6 +66,11 @@
 <script>
 export default {
   methods: {
+    roleLabel(role) {
+      if (!role) return '—'
+      const map = { admin: '系统管理员', dean: '院长', teacher: '教师' }
+      return map[role] || role
+    },
     deleteTeacher(row) {
       if (row.tname === 'admin') {
         this.$message({

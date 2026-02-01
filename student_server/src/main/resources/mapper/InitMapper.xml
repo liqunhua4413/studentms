@@ -7,9 +7,14 @@
     <!-- 一键清空测试数据（保留表结构） -->
     <update id="clearTestData">
         SET FOREIGN_KEY_CHECKS = 0;
+        DELETE FROM studentms.grade_change_request;
+        DELETE FROM studentms.grade_change_log;
         DELETE FROM studentms.score;
         DELETE FROM studentms.score_import_record;
         DELETE FROM studentms.operation_log;
+        DELETE FROM studentms.course_open_class;
+        DELETE FROM studentms.course_open;
+        DELETE FROM studentms.training_plan;
         DELETE FROM studentms.student;
         DELETE FROM studentms.teacher WHERE role != 'admin';
         DELETE FROM studentms.class;
@@ -17,18 +22,23 @@
         DELETE FROM studentms.grade_level;
         DELETE FROM studentms.department;
         DELETE FROM studentms.course;
+        DELETE FROM studentms.term;
         SET FOREIGN_KEY_CHECKS = 1;
     </update>
 
-    <!-- 重新插入初始数据 -->
+    <!-- 重新插入初始数据（与 studentms.sql 结构一致） -->
     <update id="insertInitialData">
         SET FOREIGN_KEY_CHECKS = 0;
         
+        DELETE FROM studentms.grade_change_request;
+        DELETE FROM studentms.grade_change_log;
         DELETE FROM studentms.score;
         DELETE FROM studentms.score_import_record;
         DELETE FROM studentms.operation_log;
         DELETE FROM studentms.exam_paper_analysis;
+        DELETE FROM studentms.course_open_class;
         DELETE FROM studentms.course_open;
+        DELETE FROM studentms.training_plan;
         DELETE FROM studentms.student;
         DELETE FROM studentms.teacher;
         DELETE FROM studentms.class;
@@ -36,6 +46,7 @@
         DELETE FROM studentms.grade_level;
         DELETE FROM studentms.department;
         DELETE FROM studentms.course;
+        DELETE FROM studentms.term;
 
         INSERT INTO studentms.department (id, name) VALUES
         (1, '经济管理学院'),
@@ -47,16 +58,17 @@
         (2, '医学检验技术', 2),
         (3, '康复治疗技术', 3);
 
-        INSERT INTO studentms.class (id, name, major_id, department_id) VALUES
-        (1, '1班', 1, 1),
-        (2, '1班', 2, 2),
-        (3, '1班', 3, 3);
-
         INSERT INTO studentms.grade_level (id, name, sort_order) VALUES
         (1, '2022级', 1),
         (2, '2023级', 2),
         (3, '2024级', 3),
         (4, '2025级', 4);
+
+        INSERT INTO studentms.class (id, name, grade_level_id, major_id, department_id) VALUES
+        (1, '1班', 3, 1, 1),
+        (2, '2班', 3, 1, 1),
+        (3, '1班', 3, 2, 2),
+        (4, '1班', 3, 3, 3);
 
         INSERT INTO studentms.teacher (id, teacher_no, tname, password, role, department_id) VALUES
         (1, 'admin', '系统管理员', '123', 'admin', 1),
@@ -67,35 +79,72 @@
         (6, 'T2001', '李老师', '123', 'teacher', 2),
         (7, 'T3001', '王老师', '123', 'teacher', 3);
 
+        INSERT INTO studentms.term (id, name, start_date, end_date, status, remark) VALUES
+        (1, '2024-2025-1', '2024-09-01', '2025-01-15', 1, '2024-2025 学年第一学期'),
+        (2, '2024-2025-2', '2025-02-20', '2025-07-10', 1, '2024-2025 学年第二学期'),
+        (3, '2023-2024-1', '2023-09-01', '2024-01-15', 1, '2023-2024 学年第一学期'),
+        (4, '2023-2024-2', '2024-02-20', '2024-07-10', 1, '2023-2024 学年第二学期');
+
         INSERT INTO studentms.student (id, student_no, sname, password, class_id, grade_level_id, major_id, department_id) VALUES
         (1, 'student', '学生本人', '123', 1, 3, 1, 1),
-        (2, 'S24001', '赵小明', '123', 1, 3, 1, 1),
-        (3, 'S24002', '钱小红', '123', 1, 3, 1, 1),
-        (4, 'S24003', '孙小军', '123', 2, 3, 2, 2),
-        (5, 'S24004', '周小丽', '123', 3, 3, 3, 3);
+        (2, 'S240101', '赵小明', '123', 1, 3, 1, 1),
+        (3, 'S240102', '钱小红', '123', 1, 3, 1, 1),
+        (4, 'S240201', '孙小军', '123', 2, 3, 1, 1),
+        (5, 'S240301', '李医学', '123', 3, 3, 2, 2),
+        (6, 'S240302', '周检验', '123', 3, 3, 2, 2),
+        (7, 'S240401', '吴康复', '123', 4, 3, 3, 3),
+        (8, 'S240402', '郑治疗', '123', 4, 3, 3, 3);
 
-        INSERT INTO studentms.course (id, cname, ccredit, major_id, department_id, category, nature, exam_method, hours) VALUES
-        (1, '基础会计', 3, 1, 1, '必修', '理论', '考试', 48),
-        (2, '经济学基础', 3, 1, 1, '必修', '理论', '考试', 48),
-        (3, '临床检验基础', 4, 2, 2, '必修', '理论', '考试', 64),
-        (4, '康复评定技术', 4, 3, 3, '必修', '理论', '考试', 64);
+        INSERT INTO studentms.course (id, cname, ccredit, department_id, category, exam_method, hours) VALUES
+        (1, '基础会计', 3, 1, '专业课', '考试', 48),
+        (2, '经济学基础', 3, 1, '专业课', '考试', 48),
+        (3, '临床检验基础', 4, 2, '专业课', '考试', 64),
+        (4, '康复评定技术', 4, 3, '专业课', '考试', 64),
+        (5, '大学英语', 4, 1, '公共课', '考试', 64),
+        (6, '马克思主义基本原理', 3, 1, '公共课', '考试', 48);
 
-        INSERT INTO studentms.course_open (course_id, teacher_id, term) VALUES
-        (1, 5, '2024-2025-1'),
-        (2, 5, '2024-2025-1'),
-        (3, 6, '2024-2025-1'),
-        (4, 7, '2024-2025-1');
+        INSERT INTO studentms.training_plan (major_id, course_id, plan_version, course_type, suggested_grade, suggested_term_id, min_credit, status) VALUES
+        (1, 1, '2024版', 'REQUIRED', 1, 1, 3, 1),
+        (1, 2, '2024版', 'REQUIRED', 1, 1, 3, 1),
+        (1, 5, '2024版', 'REQUIRED', 1, 1, 4, 1),
+        (1, 6, '2024版', 'REQUIRED', 1, 1, 3, 1),
+        (2, 3, '2024版', 'REQUIRED', 1, 1, 4, 1),
+        (2, 5, '2024版', 'REQUIRED', 1, 1, 4, 1),
+        (2, 6, '2024版', 'REQUIRED', 1, 1, 3, 1),
+        (3, 4, '2024版', 'REQUIRED', 1, 1, 4, 1),
+        (3, 5, '2024版', 'REQUIRED', 1, 1, 4, 1),
+        (3, 6, '2024版', 'REQUIRED', 1, 1, 3, 1);
 
-        INSERT INTO studentms.score (
-          student_id, course_id, teacher_id, term, 
-          usual_score, mid_score, final_score, grade, status
-        ) VALUES 
-        (1, 1, 5, '2024-2025-1', 85.00, NULL, 90.00, 88, 'PUBLISHED'),
-        (2, 1, 5, '2024-2025-1', 78.00, NULL, 82.00, 81, 'PUBLISHED'),
-        (3, 1, 5, '2024-2025-1', 92.00, NULL, 88.00, 89, 'PUBLISHED'),
-        (1, 2, 5, '2024-2025-1', 90.00, NULL, 85.00, 87, 'PUBLISHED'),
-        (4, 3, 6, '2024-2025-1', 88.00, NULL, 86.00, 87, 'PUBLISHED'),
-        (5, 4, 7, '2024-2025-1', 82.00, NULL, 90.00, 87, 'UPLOADED');
+        INSERT INTO studentms.course_open (id, course_id, teacher_id, term_id) VALUES
+        (1, 1, 5, 1),
+        (2, 2, 5, 1),
+        (3, 3, 6, 1),
+        (4, 4, 7, 1),
+        (5, 5, 5, 1),
+        (6, 6, 5, 1);
+
+        INSERT INTO studentms.course_open_class (course_open_id, class_id) VALUES
+        (1, 1), (1, 2), (2, 1), (2, 2), (3, 3), (4, 4),
+        (5, 1), (5, 2), (5, 3), (5, 4), (6, 1), (6, 2), (6, 3), (6, 4);
+
+        INSERT INTO studentms.score (student_id, course_id, teacher_id, term_id, usual_score, mid_score, final_score, grade, status) VALUES
+        (1, 1, 5, 1, 85.00, 80.00, 90.00, 88.50, 'PUBLISHED'),
+        (2, 1, 5, 1, 78.00, 75.00, 82.00, 80.80, 'PUBLISHED'),
+        (3, 1, 5, 1, 92.00, 90.00, 88.00, 89.20, 'PUBLISHED'),
+        (4, 1, 5, 1, 88.00, 85.00, 90.00, 88.50, 'PUBLISHED'),
+        (1, 2, 5, 1, 90.00, 85.00, 85.00, 86.50, 'PUBLISHED'),
+        (2, 2, 5, 1, 82.00, 78.00, 88.00, 84.80, 'PUBLISHED'),
+        (5, 3, 6, 1, 88.00, 82.00, 86.00, 86.80, 'PUBLISHED'),
+        (6, 3, 6, 1, 75.00, 72.00, 78.00, 76.20, 'PUBLISHED'),
+        (7, 4, 7, 1, 82.00, 80.00, 90.00, 87.20, 'UPLOADED'),
+        (8, 4, 7, 1, 91.00, 88.00, 93.00, 91.20, 'PUBLISHED'),
+        (1, 5, 5, 1, 90.00, 85.00, 88.00, 88.00, 'PUBLISHED'),
+        (5, 5, 5, 1, 85.00, 80.00, 82.00, 82.00, 'PUBLISHED'),
+        (1, 6, 5, 1, 88.00, 82.00, 85.00, 85.00, 'PUBLISHED');
+
+        INSERT INTO studentms.operation_log (operator, operation_type, target_table, content, created_at) VALUES
+        ('系统管理员', '新增', 'score', '成绩批量导入，成功 12 条', NOW()),
+        ('系统管理员', '编辑', 'score', '发布成绩，score_id=1', NOW());
         
         SET FOREIGN_KEY_CHECKS = 1;
     </update>

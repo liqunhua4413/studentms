@@ -35,21 +35,19 @@
 
     <update id="updateById">
         UPDATE studentms.course SET
-                               cname = #{course.cname},
-                               ccredit = #{course.ccredit},
-                               major_id = #{course.majorId},
-                               department_id = #{course.departmentId},
-                               category = #{course.category},
-                               nature = #{course.nature},
-                               exam_method = #{course.examMethod},
-                               hours = #{course.hours}
-        WHERE id = #{course.id};
+            cname = #{course.cname},
+            ccredit = #{course.ccredit},
+            department_id = #{course.departmentId},
+            category = #{course.category},
+            exam_method = #{course.examMethod},
+            hours = #{course.hours}
+        WHERE id = #{course.id}
     </update>
 
     <insert id="insertCourse" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO studentms.course (cname, ccredit, major_id, department_id, category, nature, exam_method, hours) 
-        VALUES (#{course.cname}, #{course.ccredit}, #{course.majorId}, #{course.departmentId}, 
-                #{course.category}, #{course.nature}, #{course.examMethod}, #{course.hours})
+        INSERT INTO studentms.course (cname, ccredit, department_id, category, exam_method, hours) 
+        VALUES (#{course.cname}, #{course.ccredit}, #{course.departmentId}, 
+                #{course.category}, #{course.examMethod}, #{course.hours})
     </insert>
 
     <delete id="deleteById">

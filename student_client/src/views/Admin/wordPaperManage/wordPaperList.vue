@@ -3,6 +3,7 @@
     <el-upload
         class="upload-demo"
         :action="uploadUrl"
+        :http-request="customUpload"
         :data="{uploadBy: uploadBy}"
         :on-success="handleSuccess"
         :on-error="handleError"
@@ -72,6 +73,20 @@ export default {
     }
   },
   methods: {
+    customUpload(options) {
+      const { action, file, data, onSuccess, onError } = options;
+      const formData = new FormData();
+      formData.append('file', file);
+      if (data && data.uploadBy) formData.append('uploadBy', data.uploadBy);
+      this.axios.post('/paper/upload', formData)
+        .then(res => {
+          onSuccess(res.data);
+        })
+        .catch(err => {
+          const msg = (err.response && err.response.data) ? String(err.response.data) : (err.message || '上传失败');
+          onError(new Error(msg));
+        });
+    },
     beforeUpload(file) {
       const isWord = file.type === 'application/msword' || 
                      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';

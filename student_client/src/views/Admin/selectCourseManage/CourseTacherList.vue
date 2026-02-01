@@ -14,12 +14,12 @@
       </el-table-column>
       <el-table-column
           prop="cname"
-          label="课程号"
+          label="课程名称"
           width="150">
       </el-table-column>
       <el-table-column
           prop="tid"
-          label="教师号"
+          label="教师工号"
           width="150">
       </el-table-column>
       <el-table-column
@@ -28,8 +28,13 @@
           width="150">
       </el-table-column>
       <el-table-column
+          prop="termName"
+          label="学期"
+          width="180">
+      </el-table-column>
+      <el-table-column
           label="操作"
-          width="100">
+          width="150">
         <template slot-scope="scope">
           <el-popconfirm
               confirm-button-text='删除'
@@ -41,6 +46,7 @@
           >
             <el-button slot="reference" type="text" size="small">删除</el-button>
           </el-popconfirm>
+          <el-button @click="editor(scope.row)" type="text" size="small">编辑</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -63,13 +69,12 @@ export default {
       const cid = row.cid
       const tid = row.tid
       const sid = sessionStorage.getItem('sid')
-      const term = sessionStorage.getItem('currentTerm')
-      const sct = {
-        cid: cid,
-        tid: tid,
-        sid: sid,
-        term: term
+      const termId = sessionStorage.getItem('currentTermId') ? parseInt(sessionStorage.getItem('currentTermId'), 10) : null
+      if (!termId) {
+        this.$message.warning('请先选择学期')
+        return
       }
+      const sct = { cid, tid, sid, termId }
       const that = this
       axios.post('/SCT/save', sct).then(function (resp) {
         if (resp.data === true) {
@@ -117,6 +122,9 @@ export default {
       let ans = (end < length) ? end : length
       that.tableData = that.tmpList.slice(start, ans)
     },
+    editor(row) {
+      this.$router.push({ path: '/editorCourseTeacher', query: { id: row.id } })
+    }
   },
 
   data() {

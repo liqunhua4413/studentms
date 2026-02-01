@@ -6,18 +6,22 @@
 
     <insert id="save">
         INSERT INTO studentms.score_import_record
-        (file_name, file_path, term, course_id, teacher_id, department_id, operator, status, message, created_at)
+        (file_name, file_path, term_id, course_id, teacher_id, department_id, operator, status, message, created_at)
         VALUES
-        (#{record.fileName}, #{record.filePath}, #{record.term}, #{record.courseId}, #{record.teacherId},
+        (#{record.fileName}, #{record.filePath}, #{record.termId}, #{record.courseId}, #{record.teacherId},
          #{record.departmentId}, #{record.operator}, #{record.status}, #{record.message}, #{record.createdAt})
     </insert>
 
     <select id="findAll" resultType="ScoreImportRecord">
-        SELECT * FROM studentms.score_import_record ORDER BY created_at DESC
+        SELECT id, file_name AS fileName, file_path AS filePath, term_id AS termId, course_id AS courseId,
+               teacher_id AS teacherId, department_id AS departmentId, operator, status, message, created_at AS createdAt
+        FROM studentms.score_import_record ORDER BY created_at DESC
     </select>
 
     <select id="findByDepartmentId" resultType="ScoreImportRecord">
-        SELECT * FROM studentms.score_import_record 
+        SELECT id, file_name AS fileName, file_path AS filePath, term_id AS termId, course_id AS courseId,
+               teacher_id AS teacherId, department_id AS departmentId, operator, status, message, created_at AS createdAt
+        FROM studentms.score_import_record 
         WHERE department_id = #{departmentId}
         ORDER BY created_at DESC
     </select>
@@ -27,7 +31,9 @@
     </delete>
 
     <select id="findById" resultType="ScoreImportRecord">
-        SELECT * FROM studentms.score_import_record WHERE id = #{id}
+        SELECT id, file_name AS fileName, file_path AS filePath, term_id AS termId, course_id AS courseId,
+               teacher_id AS teacherId, department_id AS departmentId, operator, status, message, created_at AS createdAt
+        FROM studentms.score_import_record WHERE id = #{id}
     </select>
 
 </mapper>

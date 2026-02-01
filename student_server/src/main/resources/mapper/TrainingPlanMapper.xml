@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.TrainingPlanMapper">
+
+    <select id="findAll" resultType="TrainingPlan">
+        SELECT tp.id, tp.major_id AS majorId, tp.course_id AS courseId, tp.plan_version AS planVersion,
+               tp.course_type AS courseType, tp.suggested_grade AS suggestedGrade,
+               tp.suggested_term_id AS suggestedTermId, tp.min_credit AS minCredit,
+               tp.max_credit AS maxCredit, tp.max_capacity AS maxCapacity,
+               tp.status, tp.remark,
+               m.name AS majorName, c.cname AS courseName, t.name AS termName
+        FROM studentms.training_plan tp
+        LEFT JOIN studentms.major m ON tp.major_id = m.id
+        LEFT JOIN studentms.course c ON tp.course_id = c.id
+        LEFT JOIN studentms.term t ON tp.suggested_term_id = t.id
+        ORDER BY tp.id DESC
+    </select>
+
+    <select id="findById" resultType="TrainingPlan">
+        SELECT tp.id, tp.major_id AS majorId, tp.course_id AS courseId, tp.plan_version AS planVersion,
+               tp.course_type AS courseType, tp.suggested_grade AS suggestedGrade,
+               tp.suggested_term_id AS suggestedTermId, tp.min_credit AS minCredit,
+               tp.max_credit AS maxCredit, tp.max_capacity AS maxCapacity,
+               tp.status, tp.remark,
+               m.name AS majorName, c.cname AS courseName, t.name AS termName
+        FROM studentms.training_plan tp
+        LEFT JOIN studentms.major m ON tp.major_id = m.id
+        LEFT JOIN studentms.course c ON tp.course_id = c.id
+        LEFT JOIN studentms.term t ON tp.suggested_term_id = t.id
+        WHERE tp.id = #{id}
+    </select>
+
+    <select id="findByMajorAndCourse" resultType="TrainingPlan">
+        SELECT id, major_id AS majorId, course_id AS courseId, plan_version AS planVersion,
+               course_type AS courseType, suggested_grade AS suggestedGrade,
+               suggested_term_id AS suggestedTermId, status
+        FROM studentms.training_plan
+        WHERE major_id = #{majorId} AND course_id = #{courseId} AND status = 1
+        ORDER BY id DESC
+        LIMIT 10
+    </select>
+
+    <select id="findBySearch" resultType="TrainingPlan">
+        SELECT tp.id, tp.major_id AS majorId, tp.course_id AS courseId, tp.plan_version AS planVersion,
+               tp.course_type AS courseType, tp.suggested_grade AS suggestedGrade,
+               tp.suggested_term_id AS suggestedTermId, tp.min_credit AS minCredit,
+               tp.max_credit AS maxCredit, tp.max_capacity AS maxCapacity,
+               tp.status, tp.remark,
+               m.name AS majorName, c.cname AS courseName, t.name AS termName
+        FROM studentms.training_plan tp
+        LEFT JOIN studentms.major m ON tp.major_id = m.id
+        LEFT JOIN studentms.course c ON tp.course_id = c.id
+        LEFT JOIN studentms.term t ON tp.suggested_term_id = t.id
+        <where>
+            <if test="majorId != null">tp.major_id = #{majorId}</if>
+            <if test="courseId != null">AND tp.course_id = #{courseId}</if>
+            <if test="planVersion != null and planVersion != ''">AND tp.plan_version LIKE CONCAT('%', #{planVersion}, '%')</if>
+            <if test="courseType != null and courseType != ''">AND tp.course_type = #{courseType}</if>
+            <if test="status != null">AND tp.status = #{status}</if>
+        </where>
+        ORDER BY tp.id DESC
+    </select>
+
+    <select id="findByMajorCourseVersion" resultType="TrainingPlan">
+        SELECT id, major_id AS majorId, course_id AS courseId, plan_version AS planVersion,
+               course_type AS courseType, status
+        FROM studentms.training_plan
+        WHERE major_id = #{majorId} AND course_id = #{courseId} AND plan_version = #{planVersion}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="tp.id">
+        INSERT INTO studentms.training_plan 
+        (major_id, course_id, plan_version, course_type, suggested_grade, suggested_term_id,
+         min_credit, max_credit, max_capacity, status, remark)
+        VALUES 
+        (#{tp.majorId}, #{tp.courseId}, #{tp.planVersion}, #{tp.courseType}, #{tp.suggestedGrade}, 
+         #{tp.suggestedTermId}, #{tp.minCredit}, #{tp.maxCredit}, #{tp.maxCapacity}, #{tp.status}, #{tp.remark})
+    </insert>
+
+    <update id="updateById">
+        UPDATE studentms.training_plan SET 
+            major_id = #{tp.majorId},
+            course_id = #{tp.courseId},
+            plan_version = #{tp.planVersion},
+            course_type = #{tp.courseType},
+            suggested_grade = #{tp.suggestedGrade},
+            suggested_term_id = #{tp.suggestedTermId},
+            min_credit = #{tp.minCredit},
+            max_credit = #{tp.maxCredit},
+            max_capacity = #{tp.maxCapacity},
+            status = #{tp.status},
+            remark = #{tp.remark}
+        WHERE id = #{tp.id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.training_plan WHERE id = #{id}
+    </delete>
+</mapper>

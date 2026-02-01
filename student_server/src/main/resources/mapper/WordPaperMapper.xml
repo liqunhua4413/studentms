@@ -49,8 +49,15 @@
                epa.upload_time AS uploadTime
         FROM studentms.exam_paper_analysis epa
         INNER JOIN studentms.teacher t ON epa.upload_by = t.tname
-        WHERE t.department_id = #{departmentId}
+        WHERE t.department_id = #{departmentId} AND t.role != 'admin'
         ORDER BY epa.upload_time DESC
+    </select>
+
+    <select id="findByUploadBy" resultType="WordPaper">
+        SELECT id, file_name AS fileName, file_path AS filePath, upload_by AS uploadBy, upload_time AS uploadTime
+        FROM studentms.exam_paper_analysis
+        WHERE upload_by = #{uploadBy}
+        ORDER BY upload_time DESC
     </select>
 
     <insert id="save" useGeneratedKeys="true" keyProperty="id">

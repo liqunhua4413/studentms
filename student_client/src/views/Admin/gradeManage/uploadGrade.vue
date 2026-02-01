@@ -4,78 +4,82 @@
       <div slot="header" class="clearfix">
         <span>成绩上传</span>
       </div>
-      
-      <div style="margin-bottom: 20px;" v-if="userType !== 'dean'">
+      <!-- 权限说明：管理员选学院；院长/教师固定本院 -->
+      <div v-if="userType === 'admin'" style="margin-bottom: 20px;">
         <el-form :inline="true">
           <el-form-item label="选择学院" required>
-            <el-select v-model="selectedDepartmentId" placeholder="请选择学院">
+            <el-select v-model="selectedDepartmentId" placeholder="请选择学院" clearable>
               <el-option
                 v-for="item in departments"
                 :key="item.id"
                 :label="item.name"
-                :value="item.id">
-              </el-option>
+                :value="item.id"
+              />
             </el-select>
           </el-form-item>
         </el-form>
       </div>
-      <div style="margin-bottom: 20px;" v-else>
+      <div v-else style="margin-bottom: 20px;">
         <el-alert
           :title="'当前学院：' + (currentDepartmentName || '未知')"
           type="info"
           :closable="false"
-          show-icon>
-        </el-alert>
+          show-icon
+        />
+        <p class="tips">
+          <span v-if="userType === 'teacher'">教师仅可上传本人任课课程（course_open）。</span>
+          <span v-else-if="userType === 'dean'">院长仅可上传本学院课程（course.department_id）。</span>
+        </p>
       </div>
 
       <el-upload
-          class="upload-demo"
-          ref="upload"
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          :data="{departmentId: selectedDepartmentId}"
-          :on-success="handleSuccess"
-          :on-error="handleError"
-          :before-upload="beforeUpload"
-          :file-list="fileList"
-          :auto-upload="false"
-          :multiple="true"
-          accept=".xlsx,.xls">
+        ref="upload"
+        class="upload-demo"
+        :auto-upload="false"
+        :file-list="fileList"
+        :on-change="onFileChange"
+        :on-remove="onFileRemove"
+        accept=".xlsx,.xls"
+        :limit="1"
+      >
         <el-button slot="trigger" size="small" type="primary">选择文件</el-button>
-        <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
-        <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载成绩单模板</el-button>
+        <el-button size="small" type="success" :loading="uploading" :disabled="!canUpload" @click="submitUpload">
+          上传到服务器
+        </el-button>
+        <el-button size="small" type="info" @click="downloadTemplate">下载成绩单模板</el-button>
         <div slot="tip" class="el-upload__tip">
-          <p>只能上传 Excel 文件（.xlsx, .xls）</p>
-          <p>格式要求：第2行课程元信息，第3行教学信息，第4行表头，第5-42行及第47-73行学生数据</p>
-          <p>请下载模板查看详细格式要求</p>
+          <p>仅支持 Excel（.xlsx / .xls）。上传后成绩<strong>已入库</strong>，状态为<strong>已上传</strong>，等待管理员审核发布后学生可见。</p>
+          <p>上传前会检查学号+课程+学期是否已有成绩；若已存在将拒绝上传并提示提交修改申请。</p>
+          <p>格式要求：第2行课程/教师，第3行学期/班级等，第4行起为学生成绩。</p>
         </div>
       </el-upload>
-      
+
       <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">
         <el-alert
-            :title="uploadResult"
-            type="info"
-            :closable="true"
-            @close="uploadResult=''"
-            show-icon>
-        </el-alert>
+          :title="uploadResult"
+          :type="uploadSuccess ? 'success' : 'error'"
+          :closable="true"
+          show-icon
+          @close="uploadResult = ''"
+        />
       </div>
 
       <div style="margin-top: 40px;">
         <h3>已上传文件列表</h3>
-        <el-table :data="records" style="width: 100%" border stripe>
-          <el-table-column prop="fileName" label="文件名" min-width="200"></el-table-column>
-          <el-table-column prop="term" label="学期" width="150"></el-table-column>
-          <el-table-column prop="operator" label="操作员" width="120"></el-table-column>
-          <el-table-column prop="createdAt" label="上传时间" width="180">
-            <template slot-scope="scope">
-              {{ formatDateTime(scope.row.createdAt) }}
-            </template>
+        <el-table :data="records" border stripe style="width: 100%">
+          <el-table-column prop="fileName" label="文件名" min-width="200" />
+          <el-table-column prop="term" label="学期" width="120" />
+          <el-table-column prop="operator" label="操作人" width="120" />
+          <el-table-column prop="message" label="说明" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="createdAt" label="上传时间" width="160">
+            <template slot-scope="scope">{{ formatDateTime(scope.row.createdAt) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="200">
+          <el-table-column label="操作" width="160" fixed="right">
             <template slot-scope="scope">
               <el-button size="mini" type="primary" @click="downloadRecord(scope.row)">下载</el-button>
-              <el-button size="mini" type="danger" @click="deleteRecord(scope.row)">删除</el-button>
+              <el-button v-if="userType === 'admin'" size="mini" type="danger" @click="deleteRecord(scope.row)">
+                删除
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -85,153 +89,188 @@
 </template>
 
 <script>
+import { formatDateTime } from '@/utils/gradeFormat'
+
 export default {
-  data() {
+  name: 'UploadGrade',
+  data () {
     const userType = sessionStorage.getItem('type') || 'admin'
     const departmentId = sessionStorage.getItem('departmentId')
     return {
-      uploadUrl: '/api/grade/upload',
+      userType,
+      selectedDepartmentId: (userType === 'dean' || userType === 'teacher') && departmentId
+        ? parseInt(departmentId, 10) : null,
+      departments: [],
+      currentDepartmentName: null,
       fileList: [],
       uploadResult: '',
-      selectedDepartmentId: userType === 'dean' && departmentId ? parseInt(departmentId) : null,
-      departments: [],
-      records: [],
-      userType: userType,
-      currentDepartmentName: null,
-      uploadHeaders: {
-        'Operator': encodeURIComponent(sessionStorage.getItem('name') || 'admin'),
-        'UserType': userType
-      }
+      uploadSuccess: false,
+      uploading: false,
+      records: []
     }
   },
-  created() {
-    console.log('UploadGrade initialized, fetching departments...');
-    const userType = sessionStorage.getItem('type') || 'admin'
-    if (userType === 'dean') {
-      // 院长自动使用自己的学院
-      const departmentId = sessionStorage.getItem('departmentId')
-      if (departmentId) {
-        this.selectedDepartmentId = parseInt(departmentId)
-        this.fetchDepartmentName(departmentId)
-      }
-    } else {
-      this.fetchDepartments();
+  computed: {
+    canUpload () {
+      if (!this.selectedDepartmentId) return false
+      if (this.fileList.length === 0) return false
+      const f = this.fileList[0]
+      if (!f || !f.raw) return false
+      const n = (f.name || '').toLowerCase()
+      return n.endsWith('.xlsx') || n.endsWith('.xls')
     }
-    this.fetchRecords();
+  },
+  created () {
+    if (this.userType === 'admin') {
+      this.fetchDepartments()
+    } else if (this.userType === 'dean') {
+      this.fetchDeanCollege()
+    } else {
+      const depId = sessionStorage.getItem('departmentId')
+      if (depId) {
+        this.selectedDepartmentId = parseInt(depId, 10)
+        this.fetchDepartmentName(depId)
+      } else {
+        this.fetchCurrentUserDepartment()
+      }
+    }
+    this.fetchRecords()
   },
   methods: {
-    fetchDepartments() {
+    formatDateTime,
+    fetchDepartments () {
       this.axios.get('/department/findAll').then(resp => {
-        console.log('UploadGrade departments loaded:', resp.data);
-        this.departments = resp.data;
-      }).catch(err => {
-        console.error('加载学院失败:', err);
-        this.$message.error('加载学院列表失败');
-      });
+        this.departments = resp.data || []
+      }).catch(() => {
+        this.$message.error('加载学院列表失败')
+      })
     },
-    fetchRecords() {
-      this.axios.get('/grade/records').then(resp => {
-        console.log('UploadGrade records loaded:', resp.data);
-        // 如果是院长，后端已经过滤了，直接使用
-        this.records = resp.data;
-      }).catch(err => {
-        console.error('加载记录失败:', err);
-      });
-    },
-    fetchDepartmentName(departmentId) {
-      this.axios.get(`/department/findById/${departmentId}`).then(resp => {
-        if (resp.data) {
+    fetchDepartmentName (id) {
+      this.axios.get(`/department/findById/${id}`).then(resp => {
+        if (resp.data && resp.data.name) {
           this.currentDepartmentName = resp.data.name
+          if (!this.selectedDepartmentId) {
+            this.selectedDepartmentId = resp.data.id
+          }
         }
       }).catch(() => {})
     },
-    submitUpload() {
-      if (!this.selectedDepartmentId) {
-        this.$message.warning('请先选择学院');
-        return;
-      }
-      this.$refs.upload.submit();
-    },
-    beforeUpload(file) {
-      if (!this.selectedDepartmentId) {
-        if (this.userType === 'dean') {
-          this.$message.error('无法获取学院信息，请重新登录');
-        } else {
-          this.$message.warning('请先选择学院');
+    fetchCurrentUserDepartment () {
+      const depId = sessionStorage.getItem('departmentId')
+      if (!depId) return
+      this.axios.get('/department/findAll').then(resp => {
+        const depts = resp.data || []
+        const dept = depts.find(d => d.id === parseInt(depId, 10))
+        if (dept) {
+          this.currentDepartmentName = dept.name
+          this.selectedDepartmentId = dept.id
         }
-        return false;
-      }
-      const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-      if (!isExcel) {
-        this.$message.error('只能上传 Excel 文件！');
-        return false;
-      }
-      return true;
+      }).catch(() => {})
     },
-    handleSuccess(response, file) {
-      const msg = typeof response === 'string' ? response : (response.message || '上传成功！');
-      if (msg.indexOf('失败') !== -1 || msg.indexOf('拒绝') !== -1 || msg.indexOf('错误') !== -1) {
-        this.uploadResult = msg;
-        this.$message.error(msg);
-      } else {
-        this.uploadResult = msg;
-        this.$message.success('上传完成！');
-        this.fetchRecords();
+    fetchDeanCollege () {
+      this.axios.get('/dean/college').then(resp => {
+        const d = resp.data
+        if (d && d.collegeId != null) {
+          this.selectedDepartmentId = typeof d.collegeId === 'number' ? d.collegeId : parseInt(d.collegeId, 10)
+          this.currentDepartmentName = d.collegeName || null
+          sessionStorage.setItem('departmentId', String(this.selectedDepartmentId))
+        }
+      }).catch(() => {
+        const depId = sessionStorage.getItem('departmentId')
+        if (depId) {
+          this.selectedDepartmentId = parseInt(depId, 10)
+          this.currentDepartmentName = null
+        }
+      })
+    },
+    fetchRecords () {
+      this.axios.get('/grade/records').then(resp => {
+        this.records = resp.data || []
+      }).catch(() => {})
+    },
+    onFileChange (file, list) {
+      this.fileList = list.slice(-1)
+      const n = (file.name || '').toLowerCase()
+      if (n && !n.endsWith('.xlsx') && !n.endsWith('.xls')) {
+        this.$message.warning('仅支持 .xlsx / .xls 格式')
+        this.fileList = []
       }
     },
-    handleError(err, file) {
-      this.uploadResult = '上传失败：' + (err.message || '未知错误');
-      this.$message.error('上传失败！');
+    onFileRemove () {
+      this.fileList = []
     },
-    downloadTemplate() {
-      this.axios.get('/grade/template', {
-        responseType: 'blob'
-      }).then(resp => {
+    submitUpload () {
+      if (!this.selectedDepartmentId) {
+        this.$message.warning(this.userType === 'admin' ? '请先选择学院' : '无法获取学院信息，请重新登录')
+        return
+      }
+      if (!this.fileList.length || !this.fileList[0].raw) {
+        this.$message.warning('请先选择 Excel 文件')
+        return
+      }
+      const file = this.fileList[0].raw
+      const form = new FormData()
+      form.append('file', file)
+      form.append('departmentId', this.selectedDepartmentId)
+      this.uploading = true
+      this.uploadResult = ''
+      this.axios.post('/grade/upload', form).then(resp => {
+        const msg = typeof resp.data === 'string' ? resp.data : (resp.data?.message || '上传成功')
+        this.uploadSuccess = msg.indexOf('失败') === -1 && msg.indexOf('拒绝') === -1 && msg.indexOf('错误') === -1
+        this.uploadResult = msg
+        if (this.uploadSuccess) {
+          this.$message.success('上传完成')
+          this.fileList = []
+          this.fetchRecords()
+        } else {
+          this.$message.error(msg)
+        }
+      }).catch(err => {
+        const msg = (err.response && err.response.data && err.response.data.message) || err.message || '上传失败'
+        this.uploadResult = msg
+        this.uploadSuccess = false
+        this.$message.error('上传失败')
+      }).finally(() => {
+        this.uploading = false
+      })
+    },
+    downloadTemplate () {
+      this.axios.get('/grade/template', { responseType: 'blob' }).then(resp => {
         const blob = new Blob([resp.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
         const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = '成绩单批量导入模板.xlsx'
-        link.click()
+        const a = document.createElement('a')
+        a.href = url
+        a.download = '成绩单批量导入模板.xlsx'
+        a.click()
         window.URL.revokeObjectURL(url)
-      });
+      }).catch(() => this.$message.error('下载模板失败'))
     },
-    downloadRecord(row) {
-      this.axios.get(`/grade/download/${row.id}`, {
-        responseType: 'blob'
-      }).then(resp => {
+    downloadRecord (row) {
+      this.axios.get(`/grade/download/${row.id}`, { responseType: 'blob' }).then(resp => {
         const url = window.URL.createObjectURL(new Blob([resp.data]))
-        const link = document.createElement('a')
-        link.href = url
-        link.download = row.fileName
-        link.click()
-      });
+        const a = document.createElement('a')
+        a.href = url
+        a.download = row.fileName || 'score.xlsx'
+        a.click()
+        window.URL.revokeObjectURL(url)
+      }).catch(() => this.$message.error('下载失败'))
     },
-    deleteRecord(row) {
-      this.$confirm('此操作将永久删除该导入记录及文件, 是否继续?', '提示', {
+    deleteRecord (row) {
+      this.$confirm('确定删除该导入记录及文件？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.axios.delete(`/grade/record/${row.id}`).then(resp => {
-          if (resp.data) {
-            this.$message.success('删除成功');
-            this.fetchRecords();
-          }
-        });
-      });
-    },
-    formatDateTime(dateStr) {
-      if (!dateStr) return '';
-      const date = new Date(dateStr);
-      return date.toLocaleString();
+        this.axios.delete(`/grade/record/${row.id}`).then(() => {
+          this.$message.success('删除成功')
+          this.fetchRecords()
+        }).catch(() => this.$message.error('删除失败'))
+      }).catch(() => {})
     }
   }
 }
 </script>
 
 <style scoped>
-.upload-demo {
-  margin: 20px 0;
-}
+.tips { margin-top: 8px; color: #606266; font-size: 13px; }
+.upload-demo { margin: 20px 0; }
 </style>

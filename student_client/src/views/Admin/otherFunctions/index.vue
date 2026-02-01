@@ -23,13 +23,13 @@
             <el-col :span="12">
               <el-card shadow="hover">
                 <div slot="header">
-                  <span>生成测试数据</span>
+                  <span>生成初始数据</span>
                 </div>
                 <p style="margin-bottom: 20px;">
-                  此操作将生成测试数据，包括学生、教师、课程、成绩等，用于系统测试。
+                  此操作将按照 mysql/studentms.sql 文件中的初始数据生成系统数据，包括3个学院、3个专业、3个班级、3位院长、3位教师、5个学生、4门课程等。
                 </p>
                 <el-button type="primary" @click="generateTestData" :loading="generating">
-                  <i class="el-icon-plus"></i> 生成测试数据
+                  <i class="el-icon-plus"></i> 生成初始数据
                 </el-button>
               </el-card>
             </el-col>
@@ -86,7 +86,7 @@ export default {
       });
     },
     generateTestData() {
-      this.$confirm('此操作将生成测试数据，是否继续？', '提示', {
+      this.$confirm('此操作将按照 mysql/studentms.sql 文件生成初始数据，是否继续？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'info'
@@ -98,12 +98,12 @@ export default {
           if (resp.data === true || resp.data === 'success') {
             that.$message({
               type: 'success',
-              message: '生成测试数据成功！'
+              message: '生成初始数据成功！'
             });
           } else {
             that.$message({
               type: 'error',
-              message: '生成测试数据失败：' + (resp.data || '未知错误')
+              message: '生成初始数据失败：' + (resp.data || '未知错误')
             });
           }
         }).catch(function (err) {

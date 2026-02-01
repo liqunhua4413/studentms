@@ -21,7 +21,7 @@
           width="120">
       </el-table-column>
       <el-table-column
-          prop="gradeLevel"
+          prop="gradeLevelName"
           label="年级"
           width="100">
       </el-table-column>

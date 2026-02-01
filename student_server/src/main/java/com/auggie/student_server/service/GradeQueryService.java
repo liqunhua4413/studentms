@@ -26,7 +26,7 @@ public class GradeQueryService {
      *
      * @param studentId    可选
      * @param courseId     可选
-     * @param term         可选
+     * @param termId       可选，学期 id
      * @param status       可选，如 PUBLISHED、UPLOADED
      * @param departmentId 强制：院长/教师时必传本院
      * @param teacherId    强制：教师时必传本人 id
@@ -36,11 +36,11 @@ public class GradeQueryService {
      * @param highBound    可选，总分最高分
      * @return 过滤后的 ScoreQueryDTO 列表
      */
-    public List<ScoreQueryDTO> query(Integer studentId, Integer courseId, String term, String status,
+    public List<ScoreQueryDTO> query(Integer studentId, Integer courseId, Integer termId, String status,
                                      Integer departmentId, Integer teacherId,
                                      Integer majorId, Integer classId, Integer gradeLevelId,
                                      Double lowBound, Double highBound) {
-        return scoreMapper.findScoreQueryBySearch(studentId, courseId, term, status, departmentId, teacherId,
+        return scoreMapper.findScoreQueryBySearch(studentId, courseId, termId, status, departmentId, teacherId,
                 majorId, classId, gradeLevelId, lowBound, highBound);
     }
 
@@ -48,10 +48,10 @@ public class GradeQueryService {
      * 学生查询本人成绩。仅 status=PUBLISHED，强制 sid。
      *
      * @param studentId 学生 id
-     * @param term      可选，空则不过滤学期
+     * @param termId    可选，空则不过滤学期
      */
-    public List<ScoreQueryDTO> queryForStudent(Integer studentId, String term) {
-        return scoreMapper.findScoreQueryBySearch(studentId, null, term, ScoreStatus.PUBLISHED, null, null,
+    public List<ScoreQueryDTO> queryForStudent(Integer studentId, Integer termId) {
+        return scoreMapper.findScoreQueryBySearch(studentId, null, termId, ScoreStatus.PUBLISHED, null, null,
                 null, null, null, null, null);
     }
 }

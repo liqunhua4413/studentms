@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.auggie.student_server.mapper.TermMapper">
+
+    <select id="findAll" resultType="Term">
+        SELECT id, name, start_date AS startDate, end_date AS endDate, status, remark
+        FROM studentms.term
+        ORDER BY id DESC
+    </select>
+
+    <select id="findById" resultType="Term">
+        SELECT id, name, start_date AS startDate, end_date AS endDate, status, remark
+        FROM studentms.term
+        WHERE id = #{id}
+    </select>
+
+    <select id="findByName" resultType="Term">
+        SELECT id, name, start_date AS startDate, end_date AS endDate, status, remark
+        FROM studentms.term
+        WHERE name = #{name}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO studentms.term (name, start_date, end_date, status, remark)
+        VALUES (#{name}, #{startDate}, #{endDate}, #{status}, #{remark})
+    </insert>
+
+    <update id="updateById">
+        UPDATE studentms.term SET name = #{name}, start_date = #{startDate}, end_date = #{endDate}, status = #{status}, remark = #{remark} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.term WHERE id = #{id}
+    </delete>
+</mapper>

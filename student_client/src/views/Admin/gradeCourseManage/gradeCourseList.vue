@@ -91,12 +91,15 @@ export default {
     },
     deleteTeacher(row) {
       const that = this
-      console.log(row)
       const sid = row.sid
       const cid = row.cid
       const tid = row.tid
-      const term = row.term
-      axios.get("/SCT/deleteById/" + sid + '/' + cid + '/' + tid + '/' + term).then(function (resp) {
+      const termId = row.termId
+      if (!termId) {
+        that.$message.error('无法获取学期ID')
+        return
+      }
+      that.axios.get("/SCT/deleteById/" + sid + '/' + cid + '/' + tid + '/' + termId).then(function (resp) {
         console.log(resp)
         if (resp.data === true) {
           that.$message({
@@ -136,6 +139,7 @@ export default {
           cid: row.cid,
           tid: row.tid,
           sid: row.sid,
+          termId: row.termId,
           term: row.term
         }
       })

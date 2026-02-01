@@ -68,12 +68,16 @@ export default {
     this.ruleForm.cid = this.$route.query.cid
     this.ruleForm.tid = this.$route.query.tid
     this.ruleForm.sid = this.$route.query.sid
-    this.ruleForm.term = this.$route.query.term
-    axios.get('/SCT/findById/' +
-        this.ruleForm.sid + '/' +
-        this.ruleForm.cid + '/' +
-        this.ruleForm.tid + '/' +
-        this.ruleForm.term).then(function (resp) {
+    const termId = this.$route.query.termId
+    if (!termId) {
+      this.$message.error('缺少学期参数')
+      return
+    }
+    that.axios.get('/SCT/findById/' +
+        that.ruleForm.sid + '/' +
+        that.ruleForm.cid + '/' +
+        that.ruleForm.tid + '/' +
+        termId).then(function (resp) {
       that.ruleForm = resp.data
     })
   },
@@ -86,9 +90,13 @@ export default {
           const sid = that.ruleForm.sid
           const cid = that.ruleForm.cid
           const tid = that.ruleForm.tid
-          const term = that.ruleForm.term
+          const termId = that.$route.query.termId
           const grade = that.ruleForm.grade
-          axios.get("/SCT/updateById/" + sid + '/' + cid + '/' + tid + '/' + term + '/' + grade).then(function (resp) {
+          if (!termId) {
+            that.$message.error('缺少学期参数')
+            return
+          }
+          that.axios.get("/SCT/updateById/" + sid + '/' + cid + '/' + tid + '/' + termId + '/' + grade).then(function (resp) {
             if (resp.data === true) {
               that.$message({
                 showClose: true,

@@ -21,7 +21,7 @@ public class StudentCourseTeacher {
     private Integer studentId;
     private Integer courseId;
     private Integer teacherId;
-    private String term;
+    private Integer termId;
     private Float usualScore;   // 平时成绩
     private Float midScore;     // 期中成绩
     private Float finalScore;   // 期末成绩
@@ -37,8 +37,8 @@ public class StudentCourseTeacher {
     public void setCourseId(Integer courseId) { this.courseId = courseId; }
     public Integer getTeacherId() { return teacherId; }
     public void setTeacherId(Integer teacherId) { this.teacherId = teacherId; }
-    public String getTerm() { return term; }
-    public void setTerm(String term) { this.term = term; }
+    public Integer getTermId() { return termId; }
+    public void setTermId(Integer termId) { this.termId = termId; }
     public Float getUsualScore() { return usualScore; }
     public void setUsualScore(Float usualScore) { this.usualScore = usualScore; }
     public Float getMidScore() { return midScore; }

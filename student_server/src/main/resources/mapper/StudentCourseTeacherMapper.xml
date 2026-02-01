@@ -8,7 +8,7 @@
         FROM studentms.score sct 
         INNER JOIN studentms.teacher t ON sct.teacher_id = t.id
         INNER JOIN studentms.course c ON sct.course_id = c.id
-        WHERE sct.student_id = #{sid} AND sct.term = #{term}
+        WHERE sct.student_id = #{sid} AND sct.term_id = #{termId}
     </select>
 
     <select id="findBySearch" resultType="SCTInfo">
@@ -21,7 +21,8 @@
             s.sname, 
             s.student_no,
             sct.grade, 
-            sct.term,
+            sct.term_id AS termId,
+            tm.name AS term,
             sct.usual_score AS usualScore, 
             sct.mid_score AS midScore, 
             sct.final_score AS finalScore, 
@@ -34,12 +35,12 @@
             d.name AS department_name, 
             gl.name AS grade_level,
             c.category AS course_category, 
-            c.nature AS course_nature, 
             c.exam_method, 
             c.hours, 
             c.ccredit AS credit,
             t.tname as teacher_real_name
         FROM studentms.score sct 
+        LEFT JOIN studentms.term tm ON sct.term_id = tm.id
         LEFT JOIN studentms.student s ON sct.student_id = s.id
         LEFT JOIN studentms.teacher t ON sct.teacher_id = t.id
         LEFT JOIN studentms.course c ON sct.course_id = c.id
@@ -66,8 +67,8 @@
             <if test="cname != null and cname != ''">
                 AND c.cname LIKE CONCAT('%', #{cname}, '%')
             </if>
-            <if test="term != null and term != ''">
-                AND sct.term = #{term}
+            <if test="termId != null">
+                AND sct.term_id = #{termId}
             </if>
             <if test="classId != null">
                 AND s.class_id = #{classId}
@@ -101,14 +102,14 @@
 
     <insert id="batchInsert">
         INSERT INTO studentms.score (
-            student_id, course_id, teacher_id, term, 
-            usual_score, mid_score, final_score, grade, remark
+            student_id, course_id, teacher_id, term_id, 
+            usual_score, mid_score, final_score, grade, remark, status
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
             (
-                #{item.studentId}, #{item.courseId}, #{item.teacherId}, #{item.term}, 
-                #{item.usualScore}, #{item.midScore}, #{item.finalScore}, #{item.grade}, #{item.remark}
+                #{item.studentId}, #{item.courseId}, #{item.teacherId}, #{item.termId}, 
+                #{item.usualScore}, #{item.midScore}, #{item.finalScore}, #{item.grade}, #{item.remark}, 'UPLOADED'
             )
         </foreach>
     </insert>

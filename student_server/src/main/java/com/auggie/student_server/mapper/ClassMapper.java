@@ -19,7 +19,7 @@ import java.util.List;
 public interface ClassMapper {
     List<Class> findAll();
     Class findById(@Param("id") Integer id);
-    List<Class> findBySearch(@Param("name") String name, @Param("majorId") Integer majorId, @Param("departmentId") Integer departmentId);
+    List<Class> findBySearch(@Param("name") String name, @Param("gradeLevelId") Integer gradeLevelId, @Param("majorId") Integer majorId, @Param("departmentId") Integer departmentId);
     List<Class> findByMajorId(@Param("majorId") Integer majorId);
     boolean updateById(@Param("class") Class clazz);
     boolean save(@Param("class") Class clazz);

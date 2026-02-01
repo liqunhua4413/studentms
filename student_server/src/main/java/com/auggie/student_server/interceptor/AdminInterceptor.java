@@ -72,13 +72,15 @@ public class AdminInterceptor implements HandlerInterceptor {
         // 检查权限
         String requestURI = request.getRequestURI();
         
-        // 仅管理员（admin）可操作的路径（基础数据导入、学生/教师导入、系统管理）
+        // 仅管理员（admin）可操作的路径：写操作（增删改、导入、模板），不拦截只读接口（如 findById/findAll）
         String[] adminOnlyPaths = {
-            "/department", "/major", "/class",
+            "/department/add", "/department/deleteById", "/department/update", "/department/import", "/department/template",
+            "/major/add", "/major/deleteById", "/major/update", "/major/import", "/major/template",
+            "/class/add", "/class/deleteById", "/class/update", "/class/import", "/class/template",
             "/grade/reexamination/export",
             "/paper/deleteById",
             "/student/import", "/teacher/import",
-            "/department/import", "/major/import", "/class/import", "/course/import", "/courseTeacher/import",
+            "/course/import", "/courseTeacher/import",
             "/admin/clearAllData", "/admin/generateTestData",
             "/init/clearTestData", "/init/importBaseData"
         };

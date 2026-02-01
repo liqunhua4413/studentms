@@ -18,4 +18,17 @@
         FROM studentms.grade_level
         WHERE name = #{name}
     </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO studentms.grade_level (name, sort_order)
+        VALUES (#{name}, #{sortOrder})
+    </insert>
+
+    <update id="updateById">
+        UPDATE studentms.grade_level SET name = #{name}, sort_order = #{sortOrder} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM studentms.grade_level WHERE id = #{id}
+    </delete>
 </mapper>

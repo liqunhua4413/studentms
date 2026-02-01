@@ -25,13 +25,15 @@ import java.util.Map;
 public class CourseTeacherService {
     @Autowired
     private CourseTeacherMapper courseTeacherMapper;
+    @Autowired
+    private TermService termService;
 
-    public boolean insertCourseTeacher(Integer cid, Integer tid, String term) {
-        return courseTeacherMapper.insertCourseTeacher(cid, tid, term);
+    public boolean insertCourseTeacher(Integer cid, Integer tid, Integer termId) {
+        return courseTeacherMapper.insertCourseTeacher(cid, tid, termId);
     }
 
-    public List<Course> findMyCourse(Integer tid, String term) {
-        return courseTeacherMapper.findMyCourse(tid, term);
+    public List<Course> findMyCourse(Integer tid, Integer termId) {
+        return courseTeacherMapper.findMyCourse(tid, termId);
     }
 
     public List<CourseTeacherInfo> findCourseTeacherInfo(Map<String, String> map) {
@@ -69,17 +71,23 @@ public class CourseTeacherService {
         return courseTeacherMapper.findCourseTeacherInfo(tid, tname, tFuzzy, cid, cname, cFuzzy);
     }
 
-    public List<CourseTeacher> findBySearch(Integer cid, Integer tid, String term) {
-        return courseTeacherMapper.findBySearch(cid, tid, term);
+    public List<CourseTeacher> findBySearch(Integer cid, Integer tid, Integer termId) {
+        return courseTeacherMapper.findBySearch(cid, tid, termId);
     }
 
     public List<CourseTeacher> findBySearch(Map<String, String> map) {
         Integer cid = null;
         Integer tid = null;
-        String  term = null;
+        Integer termId = null;
 
-        if (map.containsKey("term")) {
-            term = map.get("term");
+        if (map.containsKey("termId")) {
+            try { termId = Integer.parseInt(map.get("termId")); } catch (Exception ignored) {}
+        } else if (map.containsKey("term")) {
+            String termStr = map.get("term");
+            if (termStr != null && !termStr.trim().isEmpty()) {
+                com.auggie.student_server.entity.Term t = termService.findByName(termStr.trim());
+                if (t != null) termId = t.getId();
+            }
         }
 
         if (map.containsKey("tid")) {
@@ -98,11 +106,27 @@ public class CourseTeacherService {
             }
         }
         System.out.println("开课表查询：" + map);
-        return courseTeacherMapper.findBySearch(cid, tid, term);
+        return courseTeacherMapper.findBySearch(cid, tid, termId);
     }
 
     public boolean deleteById(CourseTeacher courseTeacher) {
         return courseTeacherMapper.deleteById(courseTeacher);
+    }
+
+    public CourseTeacher findById(Integer id) {
+        return courseTeacherMapper.findById(id);
+    }
+
+    public boolean save(CourseTeacher courseTeacher) {
+        if (courseTeacher == null || courseTeacher.getCourseId() == null || courseTeacher.getTeacherId() == null || courseTeacher.getTermId() == null) {
+            return false;
+        }
+        return courseTeacherMapper.save(courseTeacher) > 0;
+    }
+
+    public boolean updateById(CourseTeacher courseTeacher) {
+        if (courseTeacher == null || courseTeacher.getId() == null) return false;
+        return courseTeacherMapper.updateById(courseTeacher) > 0;
     }
 
     /**
@@ -125,22 +149,30 @@ public class CourseTeacherService {
                 try {
                     Integer cid = getIntValue(row.getCell(0));
                     Integer tid = getIntValue(row.getCell(1));
-                    String term = getStringValue(row.getCell(2));
+                    String termStr = getStringValue(row.getCell(2));
 
-                    if (cid == null || tid == null || term == null || term.isEmpty()) {
+                    if (cid == null || tid == null || termStr == null || termStr.isEmpty()) {
                         failCount++;
                         errorMsg.append("第").append(i + 1).append("行：数据不完整\n");
                         continue;
                     }
 
+                    com.auggie.student_server.entity.Term termEntity = termService.findByName(termStr.trim());
+                    if (termEntity == null) {
+                        failCount++;
+                        errorMsg.append("第").append(i + 1).append("行：学期【").append(termStr).append("】未定义\n");
+                        continue;
+                    }
+                    Integer termId = termEntity.getId();
+
                     // 检查是否已存在
-                    if (courseTeacherMapper.findBySearch(cid, tid, term).size() > 0) {
+                    if (courseTeacherMapper.findBySearch(cid, tid, termId).size() > 0) {
                         failCount++;
                         errorMsg.append("第").append(i + 1).append("行：开课记录已存在\n");
                         continue;
                     }
 
-                    boolean ok = courseTeacherMapper.insertCourseTeacher(cid, tid, term);
+                    boolean ok = courseTeacherMapper.insertCourseTeacher(cid, tid, termId);
                     if (ok) successCount++;
                     else {
                         failCount++;

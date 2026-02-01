@@ -45,7 +45,7 @@
                ol.content, ol.created_at AS createTime
         FROM studentms.operation_log ol
         INNER JOIN studentms.teacher t ON ol.operator = t.tname
-        WHERE t.department_id = #{departmentId}
+        WHERE t.department_id = #{departmentId} AND t.role != 'admin'
         ORDER BY ol.created_at DESC
     </select>
 

@@ -4,6 +4,11 @@
       <el-form-item label="班级名称" prop="name">
         <el-input v-model="ruleForm.name"></el-input>
       </el-form-item>
+      <el-form-item label="年级" prop="gradeLevelId">
+        <el-select v-model="ruleForm.gradeLevelId" placeholder="请选择年级" clearable style="width: 100%">
+          <el-option v-for="item in gradeLevels" :key="item.id" :label="item.name" :value="item.id"></el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item label="所属专业" prop="majorId">
         <el-select v-model="ruleForm.majorId" placeholder="请选择专业" @change="onMajorChange">
           <el-option
@@ -38,9 +43,11 @@ export default {
     return {
       ruleForm: {
         name: null,
+        gradeLevelId: null,
         majorId: null,
         departmentId: null
       },
+      gradeLevels: [],
       majors: [],
       departments: [],
       rules: {
@@ -83,11 +90,14 @@ export default {
   },
   created() {
     const that = this
+    axios.get('/gradeLevel/findAll').then(function (resp) {
+      that.gradeLevels = resp.data || []
+    })
     axios.get('/major/findAll').then(function (resp) {
-      that.majors = resp.data
+      that.majors = resp.data || []
     })
     axios.get('/department/findAll').then(function (resp) {
-      that.departments = resp.data
+      that.departments = resp.data || []
     })
   }
 }

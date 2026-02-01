@@ -1,7 +1,9 @@
 package com.auggie.student_server.service;
 
 import com.auggie.student_server.entity.Class;
+import com.auggie.student_server.entity.GradeLevel;
 import com.auggie.student_server.mapper.ClassMapper;
+import com.auggie.student_server.mapper.GradeLevelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +25,8 @@ import java.io.InputStream;
 public class ClassService {
     @Autowired
     private ClassMapper classMapper;
+    @Autowired
+    private GradeLevelMapper gradeLevelMapper;
 
     public List<Class> findAll() {
         return classMapper.findAll();
@@ -32,8 +36,8 @@ public class ClassService {
         return classMapper.findById(id);
     }
 
-    public List<Class> findBySearch(String name, Integer majorId, Integer departmentId) {
-        return classMapper.findBySearch(name, majorId, departmentId);
+    public List<Class> findBySearch(String name, Integer gradeLevelId, Integer majorId, Integer departmentId) {
+        return classMapper.findBySearch(name, gradeLevelId, majorId, departmentId);
     }
 
     public List<Class> findByMajorId(Integer majorId) {
@@ -54,7 +58,7 @@ public class ClassService {
 
     /**
      * 批量导入班级（Excel）
-     * 模板列顺序：班级名称、专业ID、学院ID
+     * 模板列顺序：班级名称、年级(名称如2024级或ID)、专业ID、学院ID
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -71,8 +75,10 @@ public class ClassService {
                 if (row == null) continue;
                 try {
                     String name = getStringValue(row.getCell(0));
-                    Integer majorId = getIntValue(row.getCell(1));
-                    Integer departmentId = getIntValue(row.getCell(2));
+                    Cell gradeCell = row.getCell(1);
+                    Integer gradeLevelId = parseGradeLevelId(gradeCell);
+                    Integer majorId = getIntValue(row.getCell(2));
+                    Integer departmentId = getIntValue(row.getCell(3));
 
                     if (name == null || name.isEmpty() || majorId == null || departmentId == null) {
                         continue;
@@ -80,6 +86,7 @@ public class ClassService {
 
                     Class clazz = new Class();
                     clazz.setName(name);
+                    clazz.setGradeLevelId(gradeLevelId);
                     clazz.setMajorId(majorId);
                     clazz.setDepartmentId(departmentId);
 
@@ -103,6 +110,17 @@ public class ClassService {
             e.printStackTrace();
             return "班级导入失败：" + e.getMessage();
         }
+    }
+
+    /** 解析年级：数字为ID，字符串为年级名称，查表得ID */
+    private Integer parseGradeLevelId(Cell cell) {
+        if (cell == null) return null;
+        Integer idVal = getIntValue(cell);
+        if (idVal != null && idVal > 0) return idVal;
+        String s = getStringValue(cell);
+        if (s == null || s.trim().isEmpty()) return null;
+        GradeLevel gl = gradeLevelMapper.findByName(s.trim());
+        return gl != null ? gl.getId() : null;
     }
 
     private String getStringValue(Cell cell) {
@@ -148,7 +166,7 @@ public class ClassService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"班级名称", "专业ID", "学院ID"};
+        String[] headers = {"班级名称", "年级(名称或ID)", "专业ID", "学院ID"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -157,8 +175,9 @@ public class ClassService {
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
         exampleRow.createCell(0).setCellValue("计算机1班");
-        exampleRow.createCell(1).setCellValue(1);
+        exampleRow.createCell(1).setCellValue("2024级");
         exampleRow.createCell(2).setCellValue(1);
+        exampleRow.createCell(3).setCellValue(1);
 
         return workbook;
     }

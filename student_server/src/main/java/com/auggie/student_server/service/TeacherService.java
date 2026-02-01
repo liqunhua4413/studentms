@@ -31,22 +31,33 @@ public class TeacherService {
         Integer tid = null;
         String tname = null;
         Integer fuzzy = null;
-        if (map.containsKey("tid")) {
+        Integer departmentId = null;
+        String role = null;
+        if (map.containsKey("tid") && map.get("tid") != null && !map.get("tid").toString().trim().isEmpty()) {
             try {
-                tid = Integer.parseInt(map.get("tid"));
-            }
-            catch (Exception e) {
+                tid = Integer.parseInt(map.get("tid").toString().trim());
+            } catch (Exception e) {
             }
         }
-        if (map.containsKey("tname")) {
-            tname = map.get("tname");
+        if (map.containsKey("tname") && map.get("tname") != null) {
+            tname = map.get("tname").toString().trim();
+            if (tname.isEmpty()) tname = null;
         }
         if (map.containsKey("fuzzy")) {
-            fuzzy = map.get("fuzzy").equals("true") ? 1 : 0;
+            Object f = map.get("fuzzy");
+            fuzzy = Boolean.TRUE.equals(f) || "true".equals(f) || "1".equals(f) ? 1 : 0;
         }
-        System.out.println(map);
-        System.out.println("查询类型：" + tid  + ", " + tname + ", " + fuzzy);
-        return teacherMapper.findBySearch(tid, tname, fuzzy);
+        if (map.containsKey("departmentId") && map.get("departmentId") != null && !map.get("departmentId").toString().trim().isEmpty()) {
+            try {
+                departmentId = Integer.parseInt(map.get("departmentId").toString().trim());
+            } catch (Exception e) {
+            }
+        }
+        if (map.containsKey("role") && map.get("role") != null) {
+            String r = map.get("role").toString().trim();
+            if (!r.isEmpty()) role = r;
+        }
+        return teacherMapper.findBySearchWithDepartment(tid, tname, fuzzy, departmentId, role);
     }
 
     public List<Teacher> findByPage(Integer num, Integer size) {
@@ -71,7 +82,8 @@ public class TeacherService {
     }
 
     public Teacher findById(Integer tid) {
-        return teacherMapper.findById(tid);
+        Teacher t = teacherMapper.findByIdWithDepartment(tid);
+        return t != null ? t : teacherMapper.findById(tid);
     }
 
     public Teacher findByTeacherNo(String teacherNo) {

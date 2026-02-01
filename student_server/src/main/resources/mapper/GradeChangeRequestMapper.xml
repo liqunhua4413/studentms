@@ -71,9 +71,10 @@
                r.before_data AS beforeData, r.after_data AS afterData,
                r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
                r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt,
-               st.student_no AS studentNo, st.sname, c.cname, s.term
+               st.student_no AS studentNo, st.sname, c.cname, tm.name AS term
         FROM studentms.grade_change_request r
         INNER JOIN studentms.score s ON r.score_id = s.id
+        LEFT JOIN studentms.term tm ON s.term_id = tm.id
         INNER JOIN studentms.student st ON s.student_id = st.id
         INNER JOIN studentms.course c ON s.course_id = c.id
         WHERE r.applicant_id = #{applicantId}
@@ -86,9 +87,10 @@
                r.before_data AS beforeData, r.after_data AS afterData,
                r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
                r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt,
-               st.student_no AS studentNo, st.sname, c.cname, s.term
+               st.student_no AS studentNo, st.sname, c.cname, tm.name AS term
         FROM studentms.grade_change_request r
         INNER JOIN studentms.score s ON r.score_id = s.id
+        LEFT JOIN studentms.term tm ON s.term_id = tm.id
         INNER JOIN studentms.student st ON s.student_id = st.id
         INNER JOIN studentms.course c ON s.course_id = c.id
         WHERE r.status = #{status}
@@ -101,9 +103,10 @@
                r.before_data AS beforeData, r.after_data AS afterData,
                r.status, r.dean_approver_id AS deanApproverId, r.admin_approver_id AS adminApproverId,
                r.reject_reason AS rejectReason, r.created_at AS createdAt, r.updated_at AS updatedAt,
-               st.student_no AS studentNo, st.sname, c.cname, s.term
+               st.student_no AS studentNo, st.sname, c.cname, tm.name AS term
         FROM studentms.grade_change_request r
         INNER JOIN studentms.score s ON r.score_id = s.id
+        LEFT JOIN studentms.term tm ON s.term_id = tm.id
         INNER JOIN studentms.student st ON s.student_id = st.id
         INNER JOIN studentms.course c ON s.course_id = c.id
         WHERE r.status IN

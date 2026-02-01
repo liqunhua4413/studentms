@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.auggie.student_server.mapper.CourseTeacherMapper">
     <select id="findBySearch" resultType="CourseTeacher">
-        SELECT id, course_id AS courseId, teacher_id AS teacherId, term FROM studentms.course_open
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term_id AS termId FROM studentms.course_open
         <where>
             <if test="cid != null">
                 course_id = #{cid}
@@ -12,23 +12,28 @@
             <if test="tid != null">
                 AND teacher_id = #{tid}
             </if>
-            <if test="term != null">
-                AND term = #{term}
+            <if test="termId != null">
+                AND term_id = #{termId}
             </if>
         </where>
     </select>
 
+    <!-- 我开设的课程：先从 course_open 按学期、教师筛出开课，再关联 course / training_plan 取课程信息与所属学院 -->
     <select id="findMyCourse" resultType="Course">
-        SELECT c.id, c.cname, c.ccredit, c.major_id AS majorId, c.department_id AS departmentId,
-               c.category, c.nature, c.exam_method AS examMethod, c.hours
-        FROM studentms.course c INNER JOIN studentms.course_open ct ON c.id = ct.course_id
-        WHERE ct.teacher_id = #{tid} AND ct.term = #{term}
+        SELECT c.id, c.cname, c.ccredit, c.department_id AS departmentId,
+               c.category, c.exam_method AS examMethod, c.hours,
+               (SELECT tp.course_type FROM studentms.training_plan tp WHERE tp.course_id = c.id LIMIT 1) AS courseType
+        FROM studentms.course_open ct
+        INNER JOIN studentms.course c ON ct.course_id = c.id
+        WHERE ct.teacher_id = #{tid} AND ct.term_id = #{termId}
     </select>
 
     <select id="findCourseTeacherInfo" resultType="CourseTeacherInfo">
-        SELECT c.id AS course_id, c.cname, t.id AS teacher_id, t.tname, c.ccredit
+        SELECT ct.id, c.id AS course_id, c.cname, t.id AS teacher_id, t.tname, c.ccredit,
+               ct.term_id AS termId, term.name AS termName
         FROM studentms.course c INNER JOIN studentms.course_open ct ON c.id = ct.course_id
                 INNER JOIN studentms.teacher t ON ct.teacher_id = t.id
+                LEFT JOIN studentms.term ON ct.term_id = term.id
         <where>
             <if test="tid != null">
                 t.id = #{tid}
@@ -54,4 +59,19 @@
             </if>
         </where>
     </select>
+
+    <select id="findById" resultType="CourseTeacher">
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term_id AS termId 
+        FROM studentms.course_open WHERE id = #{id}
+    </select>
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO studentms.course_open (course_id, teacher_id, term_id) 
+        VALUES (#{ct.courseId}, #{ct.teacherId}, #{ct.termId})
+    </insert>
+
+    <update id="updateById">
+        UPDATE studentms.course_open SET course_id = #{ct.courseId}, teacher_id = #{ct.teacherId}, term_id = #{ct.termId} 
+        WHERE id = #{ct.id}
+    </update>
 </mapper>

@@ -2,33 +2,28 @@ package com.auggie.student_server.service;
 
 import com.auggie.student_server.entity.CourseTeacherInfo;
 import com.auggie.student_server.entity.SCTInfo;
+import com.auggie.student_server.entity.Term;
 import com.auggie.student_server.entity.StudentCourseTeacher;
 import com.auggie.student_server.mapper.StudentCourseTeacherMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-/**
- * @Auther: auggie
- * @Date: 2022/2/10 20:10
- * @Description: SCTService
- * @Version 1.0.0
- */
 
 @Service
 public class SCTService {
     @Autowired
     private StudentCourseTeacherMapper studentCourseTeacherMapper;
+    @Autowired
+    private TermService termService;
 
-    public List<CourseTeacherInfo> findBySid(Integer sid, String term) {
-        return studentCourseTeacherMapper.findByStudentId(sid, term);
+    public List<CourseTeacherInfo> findBySid(Integer sid, Integer termId) {
+        return studentCourseTeacherMapper.findByStudentId(sid, termId);
     }
 
-    public List<String> findAllTerm() {
-        return studentCourseTeacherMapper.findAllTerm();
+    public List<Term> findAllTerm() {
+        return termService.findAll();
     }
 
     public boolean isSCTExist(StudentCourseTeacher studentCourseTeacher) {
@@ -43,23 +38,24 @@ public class SCTService {
         return studentCourseTeacherMapper.deleteBySCT(studentCourseTeacher);
     }
 
-    public boolean deleteById(Integer sid, Integer cid, Integer tid, String  term) {
+    public boolean deleteById(Integer sid, Integer cid, Integer tid, Integer termId) {
         StudentCourseTeacher studentCourseTeacher = new StudentCourseTeacher();
         studentCourseTeacher.setStudentId(sid);
         studentCourseTeacher.setCourseId(cid);
         studentCourseTeacher.setTeacherId(tid);
-        studentCourseTeacher.setTerm(term);
+        studentCourseTeacher.setTermId(termId);
         return studentCourseTeacherMapper.deleteBySCT(studentCourseTeacher);
     }
 
-    public SCTInfo findByIdWithTerm(Integer sid, Integer cid, Integer tid, String term) {
-        return studentCourseTeacherMapper.findBySearch(
+    public SCTInfo findByIdWithTerm(Integer sid, Integer cid, Integer tid, Integer termId) {
+        List<SCTInfo> list = studentCourseTeacherMapper.findBySearch(
                 sid, null, 0,
                 cid, null, 0,
                 tid, null, 0,
-                null, null, term,
+                null, null, termId,
                 null, null, null,
-                null, null, null, null).get(0);
+                null, null, null, null);
+        return list.isEmpty() ? null : list.get(0);
     }
 
     public boolean updateGrade(StudentCourseTeacher sct) {
@@ -67,8 +63,8 @@ public class SCTService {
     }
 
     public List<SCTInfo> findBySearch(Map<String, Object> map) {
-        Integer sid = null, cid = null, tid = null;
-        String sname = null, cname = null, tname = null, term = null;
+        Integer sid = null, cid = null, tid = null, termId = null;
+        String sname = null, cname = null, tname = null;
         Integer sFuzzy = null, cFuzzy = null, tFuzzy = null;
         Integer lowBound = null, highBound = null;
 
@@ -90,8 +86,12 @@ public class SCTService {
         if (map.containsKey("cname")) {
             cname = (String) map.get("cname");
         }
-        if (map.containsKey("term")) {
-            term = (String) map.get("term");
+        if (map.containsKey("termId")) {
+            termId = getIntFromMap(map, "termId");
+        } else if (map.containsKey("term")) {
+            Object t = map.get("term");
+            if (t instanceof Number) termId = ((Number) t).intValue();
+            else if (t != null) termId = getIntFromMap(map, "term");
         }
         if (map.containsKey("sFuzzy")) {
             Object val = map.get("sFuzzy");
@@ -147,7 +147,7 @@ public class SCTService {
                 sid, sname, sFuzzy,
                 cid, cname, cFuzzy,
                 tid, tname, tFuzzy,
-                lowBound, highBound, term,
+                lowBound, highBound, termId,
                 classId, majorId, departmentId,
                 className, majorName, departmentName, gradeLevelId);
     }

@@ -4,6 +4,7 @@
         class="upload-demo"
         ref="upload"
         :action="uploadUrl"
+        :http-request="customUpload"
         :on-success="handleSuccess"
         :on-error="handleError"
         :before-upload="beforeUpload"
@@ -15,7 +16,7 @@
       <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>
       <el-button style="margin-left: 10px;" size="small" type="info" @click="downloadTemplate">下载模板</el-button>
       <div slot="tip" class="el-upload__tip">
-        模板列顺序：课程名称、学分、所属学院ID、所属专业ID。仅管理员可操作。
+        模板列顺序：课程名称、学分、课程类别、考核方式、学时、所属学院ID。仅管理员可操作。
       </div>
     </el-upload>
     <div v-if="uploadResult" style="margin-top: 20px; white-space: pre-line;">
@@ -40,7 +41,29 @@ export default {
   },
   methods: {
     submitUpload() {
+      const upload = this.$refs.upload;
+      const uploadFiles = upload && upload.uploadFiles;
+      if (!uploadFiles || uploadFiles.length === 0) {
+        this.$message.warning('请先选择文件');
+        return;
+      }
       this.$refs.upload.submit();
+    },
+    customUpload(options) {
+      const { file, onSuccess, onError } = options;
+      const formData = new FormData();
+      formData.append('file', file);
+      this.axios.post('/course/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(res => {
+        const result = typeof res.data === 'string' ? res.data : (res.data?.message || '上传成功！');
+        onSuccess(result);
+      }).catch(err => {
+        const msg = (err.response && err.response.data && err.response.data.message) || err.message || '上传失败';
+        onError(new Error(msg));
+      });
     },
     beforeUpload(file) {
       const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||

@@ -27,22 +27,22 @@ public interface ScoreMapper {
 
     Score findByStudentCourseTerm(@Param("studentId") Integer studentId,
                                   @Param("courseId") Integer courseId,
-                                  @Param("term") String term);
+                                  @Param("termId") Integer termId);
 
     List<Score> findBySearch(@Param("studentId") Integer studentId,
                              @Param("courseId") Integer courseId,
-                             @Param("term") String term,
+                             @Param("termId") Integer termId,
                              @Param("status") String status,
                              @Param("departmentId") Integer departmentId,
                              @Param("teacherId") Integer teacherId);
 
-    List<Integer> findScoreIdsByTermCourse(@Param("term") String term,
+    List<Integer> findScoreIdsByTermCourse(@Param("termId") Integer termId,
                                            @Param("courseId") Integer courseId);
 
     /** 联表查询，用于成绩查询 API；含 status 过滤与权限相关过滤；支持专业、班级、最低分、最高分。 */
     List<ScoreQueryDTO> findScoreQueryBySearch(@Param("studentId") Integer studentId,
                                                @Param("courseId") Integer courseId,
-                                               @Param("term") String term,
+                                               @Param("termId") Integer termId,
                                                @Param("status") String status,
                                                @Param("departmentId") Integer departmentId,
                                                @Param("teacherId") Integer teacherId,
@@ -54,7 +54,7 @@ public interface ScoreMapper {
 
     /** 院长专用查询：按课程所属学院过滤，支持学生维度筛选（学生学院、专业、班级）。 */
     List<ScoreQueryDTO> findScoreQueryForDean(@Param("courseId") Integer courseId,
-                                               @Param("term") String term,
+                                               @Param("termId") Integer termId,
                                                @Param("status") String status,
                                                @Param("courseDepartmentId") Integer courseDepartmentId,
                                                @Param("studentId") Integer studentId,

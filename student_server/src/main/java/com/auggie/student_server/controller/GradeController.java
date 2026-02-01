@@ -9,6 +9,7 @@ import com.auggie.student_server.service.GradeQueryService;
 import com.auggie.student_server.service.GradeService;
 import com.auggie.student_server.service.GradeUploadService;
 import com.auggie.student_server.service.SCTService;
+import com.auggie.student_server.service.TermService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -45,6 +46,8 @@ public class GradeController {
     private TeacherMapper teacherMapper;
     @Autowired
     private DeanCollegeService deanCollegeService;
+    @Autowired
+    private TermService termService;
 
     /**
      * 上传成绩单。权限：admin 全部；teacher 仅任课；dean 仅本院。上传前检查学号+课程+学期是否已有成绩；上传后 status=UPLOADED，写 grade_change_log。
@@ -198,8 +201,7 @@ public class GradeController {
                                            @RequestAttribute(value = "operator", required = false) String operator) {
         Integer studentId = toInt(map.get("studentId"));
         Integer courseId = toInt(map.get("courseId"));
-        String term = map.get("term") != null ? map.get("term").toString().trim() : null;
-        if (term != null && term.isEmpty()) term = null;
+        Integer termId = resolveTermId(map.get("term"));
         String status = map.get("status") != null ? map.get("status").toString().trim() : null;
         if (status != null && status.isEmpty()) status = null;
         Integer majorId = toInt(map.get("majorId"));
@@ -216,7 +218,7 @@ public class GradeController {
         if (queryTeacherId != null && "admin".equals(userType)) {
             teacherId = queryTeacherId;
         }
-        return gradeQueryService.query(studentId, courseId, term, status, deptId, teacherId,
+        return gradeQueryService.query(studentId, courseId, termId, status, deptId, teacherId,
                 majorId, classId, gradeLevelId, lowBound, highBound);
     }
 
@@ -225,8 +227,18 @@ public class GradeController {
      */
     @GetMapping("/query/student")
     public List<ScoreQueryDTO> queryForStudent(@RequestParam(value = "sid") Integer studentId,
-                                               @RequestParam(value = "term", required = false) String term) {
-        return gradeQueryService.queryForStudent(studentId, term);
+                                               @RequestParam(value = "termId", required = false) Integer termId) {
+        return gradeQueryService.queryForStudent(studentId, termId);
+    }
+
+    /** 解析 term 参数：支持 termId(Number) 或 term(String 学期名称) */
+    private Integer resolveTermId(Object termParam) {
+        if (termParam == null) return null;
+        if (termParam instanceof Number) return ((Number) termParam).intValue();
+        String s = termParam.toString().trim();
+        if (s.isEmpty()) return null;
+        com.auggie.student_server.entity.Term t = termService.findByName(s);
+        return t != null ? t.getId() : null;
     }
 
     private static Integer toInt(Object o) {

@@ -36,7 +36,7 @@ public class ClassController {
 
     @PostMapping("/findBySearch")
     public List<Class> findBySearch(@RequestBody Class clazz) {
-        return classService.findBySearch(clazz.getName(), clazz.getMajorId(), clazz.getDepartmentId());
+        return classService.findBySearch(clazz.getName(), clazz.getGradeLevelId(), clazz.getMajorId(), clazz.getDepartmentId());
     }
 
     @GetMapping("/findByMajorId/{majorId}")

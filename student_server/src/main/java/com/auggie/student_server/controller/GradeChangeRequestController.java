@@ -62,11 +62,19 @@ public class GradeChangeRequestController {
 
         Integer applicantId = resolveTeacherId(operator);
         String applicantRole = "admin".equals(userType) ? "admin" : ("dean".equals(userType) ? "dean" : "teacher");
-        if (("teacher".equals(userType) || "dean".equals(userType)) && applicantId == null) {
-            return Map.of("success", false, "message", "无法识别申请人身份，请重新登录");
+
+        // 院长：若按 operator 未解析到 ID，则按学院 ID 查该院院长
+        if ("dean".equals(userType) && applicantId == null && departmentId != null) {
+            Teacher dean = teacherMapper.findDeanByDepartmentId(departmentId);
+            if (dean != null) {
+                applicantId = dean.getId();
+            }
         }
         if ("admin".equals(userType) && applicantId == null) {
             applicantId = 1; // 默认 admin id
+        }
+        if (("teacher".equals(userType) || "dean".equals(userType)) && applicantId == null) {
+            return Map.of("success", false, "message", "无法识别申请人身份，请重新登录");
         }
         String msg = gradeChangeRequestService.submitRequest(
                 scoreId, beforeData, afterData, reason, attachmentPath, attachmentName,
@@ -290,7 +298,11 @@ public class GradeChangeRequestController {
             List<Teacher> admins = teacherMapper.findBySearch(null, "系统管理员", 0);
             if (admins != null && !admins.isEmpty()) return admins.get(0).getId();
         }
+        // 先按姓名精确匹配
         List<Teacher> list = teacherMapper.findBySearch(null, operator, 0);
-        return (list != null && !list.isEmpty()) ? list.get(0).getId() : null;
+        if (list != null && !list.isEmpty()) return list.get(0).getId();
+        // 再按工号查找
+        Teacher t = teacherMapper.findByTeacherNo(operator);
+        return t != null ? t.getId() : null;
     }
 }

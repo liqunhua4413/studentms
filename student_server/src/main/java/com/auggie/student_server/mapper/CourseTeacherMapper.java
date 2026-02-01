@@ -22,17 +22,17 @@ import java.util.List;
 @Mapper
 public interface CourseTeacherMapper {
 
-    @Insert("INSERT INTO studentms.course_open (course_id, teacher_id, term) VALUES (#{cid}, #{tid}, #{term})")
-    public boolean insertCourseTeacher(@Param("cid") Integer cid,
-                                       @Param("tid") Integer tid,
-                                       @Param("term") String term);
+    @Insert("INSERT INTO studentms.course_open (course_id, teacher_id, term_id) VALUES (#{cid}, #{tid}, #{termId})")
+    boolean insertCourseTeacher(@Param("cid") Integer cid,
+                                @Param("tid") Integer tid,
+                                @Param("termId") Integer termId);
 
-    public List<CourseTeacher> findBySearch(@Param("cid") Integer cid,
-                                            @Param("tid") Integer tid,
-                                            @Param("term") String term);
+    List<CourseTeacher> findBySearch(@Param("cid") Integer cid,
+                                     @Param("tid") Integer tid,
+                                     @Param("termId") Integer termId);
 
-    public List<Course> findMyCourse(@Param("tid") Integer tid,
-                                     @Param("term") String term);
+    List<Course> findMyCourse(@Param("tid") Integer tid,
+                              @Param("termId") Integer termId);
 
     public List<CourseTeacherInfo> findCourseTeacherInfo(@Param("tid") Integer tid,
                                                          @Param("tname") String tname,
@@ -43,4 +43,10 @@ public interface CourseTeacherMapper {
 
     @Delete("DELETE FROM studentms.course_open WHERE course_id = #{c.courseId} AND teacher_id = #{c.teacherId}")
     public boolean deleteById(@Param("c") CourseTeacher courseTeacher);
+
+    CourseTeacher findById(@Param("id") Integer id);
+
+    int save(@Param("ct") CourseTeacher courseTeacher);
+
+    int updateById(@Param("ct") CourseTeacher courseTeacher);
 }

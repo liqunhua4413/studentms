@@ -1,7 +1,9 @@
 package com.auggie.student_server.controller;
 
+import com.auggie.student_server.entity.Teacher;
 import com.auggie.student_server.entity.ScoreQueryDTO;
 import com.auggie.student_server.mapper.ScoreMapper;
+import com.auggie.student_server.mapper.TeacherMapper;
 import com.auggie.student_server.service.DeanCollegeService;
 import com.auggie.student_server.service.GradeChangeRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,10 @@ public class DeanGradeController {
     private DeanCollegeService deanCollegeService;
     @Autowired
     private GradeChangeRequestService gradeChangeRequestService;
+    @Autowired
+    private TeacherMapper teacherMapper;
+    @Autowired
+    private com.auggie.student_server.service.TermService termService;
 
     /**
      * 院长成绩查询。强制过滤：course.college_id = 当前院长学院ID
@@ -42,7 +48,14 @@ public class DeanGradeController {
         }
 
         Integer courseId = toInt(params.get("courseId"));
-        String term = toString(params.get("term"));
+        Integer termId = toInt(params.get("termId"));
+        if (termId == null && params.get("term") != null) {
+            String termStr = toString(params.get("term"));
+            if (termStr != null) {
+                com.auggie.student_server.entity.Term t = termService.findByName(termStr);
+                if (t != null) termId = t.getId();
+            }
+        }
         String status = toString(params.get("status"));
         Integer studentId = toInt(params.get("studentId"));
         String studentNo = toString(params.get("studentNo"));
@@ -54,7 +67,7 @@ public class DeanGradeController {
         Double highBound = toDouble(params.get("highBound"));
 
         List<ScoreQueryDTO> results = scoreMapper.findScoreQueryForDean(
-                courseId, term, status, departmentId,
+                courseId, termId, status, departmentId,
                 studentId, studentNo, studentName,
                 studentCollegeId, studentMajorId, studentClassId,
                 lowBound, highBound
@@ -69,15 +82,21 @@ public class DeanGradeController {
     @GetMapping("/list")
     public ResponseEntity<List<ScoreQueryDTO>> listByCourse(
             @RequestParam(value = "courseId") Integer courseId,
-            @RequestParam(value = "term", required = false) String term,
+            @RequestParam(value = "termId", required = false) Integer termIdParam,
+            @RequestParam(value = "term", required = false) String termStr,
             @RequestAttribute(value = "userType", required = false) String userType,
             @RequestAttribute(value = "departmentId", required = false) Integer departmentId) {
         if (!"dean".equalsIgnoreCase(userType) || departmentId == null) {
             return ResponseEntity.status(403).body(List.of());
         }
+        Integer termId = termIdParam;
+        if (termId == null && termStr != null && !termStr.trim().isEmpty()) {
+            com.auggie.student_server.entity.Term t = termService.findByName(termStr.trim());
+            if (t != null) termId = t.getId();
+        }
 
         List<ScoreQueryDTO> results = scoreMapper.findScoreQueryForDean(
-                courseId, term, null, departmentId,
+                courseId, termId, null, departmentId,
                 null, null, null,
                 null, null, null,
                 null, null
@@ -115,16 +134,41 @@ public class DeanGradeController {
             return ResponseEntity.badRequest().body(result);
         }
 
+        // 与 GradeChangeRequestController.submit 一致：先按 operator 解析申请人 ID，院长再按学院兜底
+        Integer applicantId = resolveTeacherId(operator);
+        if (applicantId == null && departmentId != null) {
+            Teacher dean = teacherMapper.findDeanByDepartmentId(departmentId);
+            if (dean != null) applicantId = dean.getId();
+        }
+        if (applicantId == null) {
+            result.put("success", false);
+            result.put("message", "无法识别申请人身份，请重新登录");
+            return ResponseEntity.ok(result);
+        }
+
         // 使用现有的 GradeChangeRequestService，它会校验课程是否属于本学院
         String message = gradeChangeRequestService.submitRequest(
                 scoreId, beforeData, afterData, reason, attachmentPath, attachmentName,
-                null, "dean", departmentId, operator != null ? operator : "unknown"
+                applicantId, "dean", departmentId, operator != null ? operator : "unknown"
         );
 
         boolean success = message != null && (message.contains("已提交") || message.contains("成功"));
         result.put("success", success);
         result.put("message", message != null ? message : "提交失败");
         return ResponseEntity.ok(result);
+    }
+
+    /** 与 GradeChangeRequestController 一致：按 operator 解析教师/院长 ID（先姓名再工号）. */
+    private Integer resolveTeacherId(String operator) {
+        if (operator == null || operator.isEmpty()) return null;
+        if ("admin".equals(operator) || "系统管理员".equals(operator)) {
+            List<Teacher> admins = teacherMapper.findBySearch(null, "系统管理员", 0);
+            if (admins != null && !admins.isEmpty()) return admins.get(0).getId();
+        }
+        List<Teacher> list = teacherMapper.findBySearch(null, operator, 0);
+        if (list != null && !list.isEmpty()) return list.get(0).getId();
+        Teacher t = teacherMapper.findByTeacherNo(operator);
+        return t != null ? t.getId() : null;
     }
 
     private static Integer toInt(Object o) {

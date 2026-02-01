@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * 成绩主表 score。仅存当前有效成绩。
- * 唯一约束：uk_score_student_course_term (student_id, course_id, term)。
+ * 唯一约束：uk_score_student_course_term (student_id, course_id, term_id)。
  * status：UPLOADED 已上传 / PUBLISHED 已发布 / LOCKED 锁定；学生仅可见 PUBLISHED。
  */
 @Data
@@ -22,7 +22,7 @@ public class Score {
     private Integer studentId;
     private Integer courseId;
     private Integer teacherId;
-    private String term;
+    private Integer termId;
     private BigDecimal usualScore;
     private BigDecimal midScore;
     private BigDecimal finalScore;
@@ -42,8 +42,8 @@ public class Score {
     public void setCourseId(Integer courseId) { this.courseId = courseId; }
     public Integer getTeacherId() { return teacherId; }
     public void setTeacherId(Integer teacherId) { this.teacherId = teacherId; }
-    public String getTerm() { return term; }
-    public void setTerm(String term) { this.term = term; }
+    public Integer getTermId() { return termId; }
+    public void setTermId(Integer termId) { this.termId = termId; }
     public BigDecimal getUsualScore() { return usualScore; }
     public void setUsualScore(BigDecimal usualScore) { this.usualScore = usualScore; }
     public BigDecimal getMidScore() { return midScore; }

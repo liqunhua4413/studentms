@@ -18,7 +18,7 @@ public class ScoreImportRecord {
     private Long id;
     private String fileName;
     private String filePath;
-    private String term;
+    private Integer termId;
     private Integer courseId;
     private Integer teacherId;
     private Integer departmentId;
@@ -52,12 +52,12 @@ public class ScoreImportRecord {
         this.filePath = filePath;
     }
 
-    public String getTerm() {
-        return term;
+    public Integer getTermId() {
+        return termId;
     }
 
-    public void setTerm(String term) {
-        this.term = term;
+    public void setTermId(Integer termId) {
+        this.termId = termId;
     }
 
     public Integer getCourseId() {

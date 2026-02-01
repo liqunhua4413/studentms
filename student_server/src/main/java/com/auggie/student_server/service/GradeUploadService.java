@@ -60,6 +60,12 @@ public class GradeUploadService {
     private DepartmentMapper departmentMapper;
     @Autowired
     private ScoreImportRecordMapper scoreImportRecordMapper;
+    @Autowired
+    private com.auggie.student_server.service.TermService termService;
+    @Autowired
+    private com.auggie.student_server.mapper.GradeLevelMapper gradeLevelMapper;
+    @Autowired
+    private com.auggie.student_server.mapper.TrainingPlanMapper trainingPlanMapper;
 
     @Value("${file.upload.path:${user.home}/studentms/uploads}")
     private String uploadPath;
@@ -121,12 +127,26 @@ public class GradeUploadService {
             String row3Text = getMergedCellValue(sheet, row3, 0);
 
             String courseName = extractValue(row2Text, "课程名称：");
+            String courseCategory = extractValue(row2Text, "课程类别：");
+            String courseNature = extractValue(row2Text, "课程性质：");
+            String examMethod = extractValue(row2Text, "考核方式：");
             String teacherName = extractValue(row2Text, "任课教师：");
             String term = extractValue(row3Text, "开课学期：");
+            String creditStr = extractValue(row3Text, "学分：");
+            String hoursStr = extractValue(row3Text, "学时：");
             String fullClassName = extractValue(row3Text, "开课班级：");
 
             if (courseName == null || courseName.trim().isEmpty()) {
                 return "上传失败：成绩单中未提取到课程名称";
+            }
+            if (courseCategory == null || courseCategory.trim().isEmpty()) {
+                return "上传失败：成绩单中未提取到课程类别";
+            }
+            if (courseNature == null || courseNature.trim().isEmpty()) {
+                return "上传失败：成绩单中未提取到课程性质";
+            }
+            if (examMethod == null || examMethod.trim().isEmpty()) {
+                return "上传失败：成绩单中未提取到考核方式";
             }
             if (teacherName == null || teacherName.trim().isEmpty()) {
                 return "上传失败：成绩单中未提取到任课教师";
@@ -134,12 +154,39 @@ public class GradeUploadService {
             if (term == null || term.trim().isEmpty()) {
                 return "上传失败：成绩单中未提取到开课学期";
             }
+            if (creditStr == null || creditStr.trim().isEmpty()) {
+                return "上传失败：成绩单中未提取到学分";
+            }
+            if (hoursStr == null || hoursStr.trim().isEmpty()) {
+                return "上传失败：成绩单中未提取到学时";
+            }
+            com.auggie.student_server.entity.Term termEntity = termService.findByName(term.trim());
+            if (termEntity == null) {
+                return "上传失败：学期【" + term + "】在系统中未定义，请先在基础数据中维护该学期";
+            }
+            Integer termId = termEntity.getId();
 
             List<Course> courses = courseMapper.findBySearch(null, courseName.trim(), 0, null, null);
             if (courses == null || courses.isEmpty()) {
-                return "上传失败：课程【" + courseName + "】不存在，请联系管理员维护基础数据";
+                return "上传失败：课程【" + courseName + "】在系统中未定义，请先在课程管理中维护";
             }
             Course targetCourse = courses.get(0);
+            if (targetCourse.getCategory() != null && !targetCourse.getCategory().trim().isEmpty()
+                    && (courseCategory == null || !targetCourse.getCategory().trim().equals(courseCategory.trim()))) {
+                return "上传失败：课程类别不匹配，期望【" + targetCourse.getCategory() + "】，实际【" + courseCategory + "】";
+            }
+            if (targetCourse.getExamMethod() != null && !targetCourse.getExamMethod().trim().isEmpty()
+                    && (examMethod == null || !targetCourse.getExamMethod().trim().equals(examMethod.trim()))) {
+                return "上传失败：考核方式不匹配，期望【" + targetCourse.getExamMethod() + "】，实际【" + examMethod + "】";
+            }
+            Integer creditNum = parseInteger(creditStr);
+            if (creditNum != null && targetCourse.getCcredit() != null && !creditNum.equals(targetCourse.getCcredit())) {
+                return "上传失败：学分不匹配，期望【" + targetCourse.getCcredit() + "】，实际【" + creditStr + "】";
+            }
+            Integer hoursNum = parseInteger(hoursStr);
+            if (hoursNum != null && targetCourse.getHours() != null && !hoursNum.equals(targetCourse.getHours())) {
+                return "上传失败：学时不匹配，期望【" + targetCourse.getHours() + "】，实际【" + hoursStr + "】";
+            }
 
             List<Teacher> teachers = teacherMapper.findBySearch(null, teacherName.trim(), 0);
             if (teachers == null || teachers.isEmpty()) {
@@ -147,12 +194,16 @@ public class GradeUploadService {
             }
             Integer targetTeacherId = teachers.get(0).getId();
 
+            if (courseOpenMapper.countByTeacherCourseTerm(targetTeacherId, targetCourse.getId(), termId) <= 0) {
+                return "上传失败：该教师【" + teacherName + "】未在开课表中担任该课程【" + courseName + "】该学期【" + term + "】的教学任务，请先在教学管理中维护开课信息";
+            }
+
             /* 权限校验：教师只能上传自己任课课程；院长只能上传本学院课程；管理员全部 */
             if ("teacher".equals(userType)) {
                 if (userTeacherId == null) {
                     return "上传失败：教师身份未识别，请重新登录";
                 }
-                if (courseOpenMapper.countByTeacherCourseTerm(userTeacherId, targetCourse.getId(), term) <= 0) {
+                if (courseOpenMapper.countByTeacherCourseTerm(userTeacherId, targetCourse.getId(), termId) <= 0) {
                     return "上传失败：权限不足，仅可上传本人任课课程（course_open）";
                 }
             } else if ("dean".equals(userType)) {
@@ -175,18 +226,44 @@ public class GradeUploadService {
                 extractedMajorName = fullClassName.replaceAll("\\d{2}级", "").replaceAll("\\d+班$", "").trim();
             }
 
-            List<Major> majorList = majorMapper.findBySearch(extractedMajorName, selectedDepartmentId);
+            List<Major> majorList = majorMapper.findBySearch(extractedMajorName, null);
             if (majorList == null || majorList.isEmpty()) {
-                return "上传失败：专业【" + extractedMajorName + "】在所属学院下未定义";
+                return "上传失败：专业【" + extractedMajorName + "】在系统中未定义";
             }
-            Major targetMajor = majorList.get(0);
+            Major targetMajor = null;
+            for (Major m : majorList) {
+                List<com.auggie.student_server.entity.TrainingPlan> tpCheck = trainingPlanMapper.findByMajorAndCourse(m.getId(), targetCourse.getId());
+                if (tpCheck != null && !tpCheck.isEmpty()) {
+                    targetMajor = m;
+                    break;
+                }
+            }
+            if (targetMajor == null) {
+                return "上传失败：专业【" + extractedMajorName + "】未在培养方案中纳入该课程【" + courseName + "】";
+            }
 
             List<com.auggie.student_server.entity.Class> classList = classMapper.findBySearch(
-                    extractedClassName, targetMajor.getId(), selectedDepartmentId);
+                    extractedClassName, null, targetMajor.getId(), targetMajor.getDepartmentId());
             if (classList == null || classList.isEmpty()) {
                 return "上传失败：班级【" + extractedClassName + "】在对应专业下未定义";
             }
             com.auggie.student_server.entity.Class targetClass = classList.get(0);
+
+            if (extractedGradeLevel != null && !extractedGradeLevel.isEmpty()) {
+                com.auggie.student_server.entity.GradeLevel gl = gradeLevelMapper.findByName(extractedGradeLevel.trim());
+                if (gl == null) {
+                    return "上传失败：年级【" + extractedGradeLevel + "】在系统中未定义，请先在年级学期中导入";
+                }
+            }
+
+            List<com.auggie.student_server.entity.TrainingPlan> tpList = trainingPlanMapper.findByMajorAndCourse(targetMajor.getId(), targetCourse.getId());
+            if (tpList != null && !tpList.isEmpty()) {
+                String expectedNature = mapCourseTypeToDisplay(tpList.get(0).getCourseType());
+                String actualNature = courseNature != null ? courseNature.trim() : "";
+                if (expectedNature != null && !expectedNature.equals(actualNature)) {
+                    return "上传失败：课程性质不匹配（依据培养方案），期望【" + expectedNature + "】，实际【" + courseNature + "】";
+                }
+            }
 
             List<Score> validList = new ArrayList<>();
             List<String> errorReports = new ArrayList<>();
@@ -198,9 +275,9 @@ public class GradeUploadService {
                 String first = getStringValue(row.getCell(0));
                 if (first != null && (first.startsWith("各档成绩百分比") || first.contains("签字"))) break;
 
-                validateAndAdd(row, 0, targetCourse.getId(), targetTeacherId, term, targetMajor, targetClass,
+                validateAndAdd(row, 0, targetCourse.getId(), targetTeacherId, termId, targetMajor, targetClass,
                         extractedGradeLevel, validList, errorReports, i + 1);
-                validateAndAdd(row, 7, targetCourse.getId(), targetTeacherId, term, targetMajor, targetClass,
+                validateAndAdd(row, 7, targetCourse.getId(), targetTeacherId, termId, targetMajor, targetClass,
                         extractedGradeLevel, validList, errorReports, i + 1);
             }
 
@@ -220,7 +297,7 @@ public class GradeUploadService {
             ScoreImportRecord record = new ScoreImportRecord();
             record.setFileName(originalFilename);
             record.setFilePath(savedFilePath.toString());
-            record.setTerm(term);
+            record.setTermId(termId);
             record.setCourseId(targetCourse.getId());
             record.setTeacherId(targetTeacherId);
             record.setDepartmentId(selectedDepartmentId);
@@ -269,7 +346,7 @@ public class GradeUploadService {
             before.setStudentId(s.getStudentId());
             before.setCourseId(s.getCourseId());
             before.setTeacherId(s.getTeacherId());
-            before.setTerm(s.getTerm());
+            before.setTermId(s.getTermId());
             before.setUsualScore(s.getUsualScore());
             before.setMidScore(s.getMidScore());
             before.setFinalScore(s.getFinalScore());
@@ -319,7 +396,7 @@ public class GradeUploadService {
             before.setStudentId(s.getStudentId());
             before.setCourseId(s.getCourseId());
             before.setTeacherId(s.getTeacherId());
-            before.setTerm(s.getTerm());
+            before.setTermId(s.getTermId());
             before.setUsualScore(s.getUsualScore());
             before.setMidScore(s.getMidScore());
             before.setFinalScore(s.getFinalScore());
@@ -444,7 +521,7 @@ public class GradeUploadService {
         }
     }
 
-    private void validateAndAdd(Row row, int startCol, int courseId, int teacherId, String term,
+    private void validateAndAdd(Row row, int startCol, int courseId, int teacherId, Integer termId,
                                Major major, com.auggie.student_server.entity.Class targetClass, String gradeLevel,
                                List<Score> validList, List<String> errorReports, int lineNum) {
         String studentNo = getStringValue(row.getCell(startCol));
@@ -454,13 +531,13 @@ public class GradeUploadService {
             errorReports.add("第" + lineNum + "行：学号【" + studentNo + "】不存在，请先在学生管理中导入该学生");
             return;
         }
-        Score exist = scoreMapper.findByStudentCourseTerm(st.getId(), courseId, term);
+        Score exist = scoreMapper.findByStudentCourseTerm(st.getId(), courseId, termId);
         if (exist != null) {
             errorReports.add("本学期本课程\"" + studentNo + "\"成绩已存在，如需修改请提交修改申请。");
             return;
         }
         boolean alreadyInList = validList.stream().anyMatch(v ->
-                v.getStudentId().equals(st.getId()) && v.getCourseId().equals(courseId) && term.equals(v.getTerm()));
+                v.getStudentId().equals(st.getId()) && v.getCourseId().equals(courseId) && termId.equals(v.getTermId()));
         if (alreadyInList) return;
         BigDecimal usual = toDecimal(getFloatValue(row.getCell(startCol + 2)));
         BigDecimal mid = toDecimal(getFloatValue(row.getCell(startCol + 3)));
@@ -477,7 +554,7 @@ public class GradeUploadService {
         s.setStudentId(st.getId());
         s.setCourseId(courseId);
         s.setTeacherId(teacherId);
-        s.setTerm(term);
+        s.setTermId(termId);
         s.setUsualScore(usual);
         s.setMidScore(mid);
         s.setFinalScore(final_);
@@ -533,6 +610,24 @@ public class GradeUploadService {
         return null;
     }
 
+    private Integer parseInteger(String s) {
+        if (s == null || s.trim().isEmpty()) return null;
+        try {
+            return Integer.parseInt(s.trim().replaceAll("\\.0+$", ""));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 课程性质：training_plan.course_type 与成绩单显示值映射 */
+    private String mapCourseTypeToDisplay(String ct) {
+        if (ct == null) return null;
+        if ("REQUIRED".equalsIgnoreCase(ct)) return "必修";
+        if ("LIMITED".equalsIgnoreCase(ct)) return "限选";
+        if ("ELECTIVE".equalsIgnoreCase(ct)) return "任选";
+        return ct;
+    }
+
     /**
      * 从文本中提取值。成绩单格式：行2「课程名称:基础会计 课程类别:专业课 ...」，行3「开课学期:... 开课班级:24级会计学1班」。
      * 支持全角/半角冒号（：、:），冒号后无空格或有空格均正确截取；使用明显间隔截断，避免误取后续字段。
@@ -550,7 +645,7 @@ public class GradeUploadService {
         if (index == -1) return null;
         int start = index + usedPrefix.length();
         int end = text.length();
-        String[] separators = {"  ", " 课程", " 课程类别", " 教师", " 任课", " 学分", " 学时", " 开课"};
+        String[] separators = {"  ", " 课程", " 课程类别", " 课程性质", " 考核方式", " 教师", " 任课", " 学分", " 学时", " 开课"};
         for (String sep : separators) {
             int sepIndex = text.indexOf(sep, start);
             if (sepIndex != -1 && sepIndex < end) end = sepIndex;

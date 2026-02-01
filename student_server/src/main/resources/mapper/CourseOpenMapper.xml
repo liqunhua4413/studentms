@@ -4,22 +4,22 @@
 
     <select id="countByTeacherCourseTerm" resultType="int">
         SELECT COUNT(*) FROM studentms.course_open
-        WHERE teacher_id = #{teacherId} AND course_id = #{courseId} AND term = #{term}
+        WHERE teacher_id = #{teacherId} AND course_id = #{courseId} AND term_id = #{termId}
     </select>
 
     <select id="findByTeacherTerm" resultType="CourseOpen">
-        SELECT id, course_id AS courseId, teacher_id AS teacherId, term
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term_id AS termId
         FROM studentms.course_open
-        WHERE teacher_id = #{teacherId} AND term = #{term}
+        WHERE teacher_id = #{teacherId} AND term_id = #{termId}
     </select>
 
     <select id="findBySearch" resultType="CourseOpen">
-        SELECT id, course_id AS courseId, teacher_id AS teacherId, term
+        SELECT id, course_id AS courseId, teacher_id AS teacherId, term_id AS termId
         FROM studentms.course_open
         <where>
             <if test="courseId != null">AND course_id = #{courseId}</if>
             <if test="teacherId != null">AND teacher_id = #{teacherId}</if>
-            <if test="term != null and term != ''">AND term = #{term}</if>
+            <if test="termId != null">AND term_id = #{termId}</if>
         </where>
     </select>
 </mapper>

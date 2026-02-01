@@ -71,6 +71,12 @@ export default {
         axios.get('/info/getCurrentTerm').then(resp => {
           sessionStorage.setItem("currentTerm", resp.data)
         })
+        axios.get('/info/getCurrentTermInfo').then(resp => {
+          const t = resp.data
+          if (t && t.id != null) {
+            sessionStorage.setItem("currentTermId", String(t.id))
+          }
+        }).catch(() => {})
         axios.get('/info/getForbidCourseSelection').then(resp => {
           sessionStorage.setItem("ForbidCourseSelection", resp.data)
         })

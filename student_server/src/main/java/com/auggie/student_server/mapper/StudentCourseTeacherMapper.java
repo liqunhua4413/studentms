@@ -20,8 +20,8 @@ import java.util.List;
 @Mapper
 public interface StudentCourseTeacherMapper {
 
-    public List<CourseTeacherInfo> findByStudentId(@Param("sid") Integer sid,
-                                                   @Param("term") String term);
+    List<CourseTeacherInfo> findByStudentId(@Param("sid") Integer sid,
+                                            @Param("termId") Integer termId);
 
     public List<SCTInfo> findBySearch(@Param("sid") Integer sid,
                                       @Param("sname") String sname,
@@ -34,7 +34,7 @@ public interface StudentCourseTeacherMapper {
                                       @Param("tFuzzy") Integer tFuzzy,
                                       @Param("lowBound") Integer lowBound,
                                       @Param("highBound") Integer highBound,
-                                      @Param("term") String term,
+                                      @Param("termId") Integer termId,
                                       @Param("classId") Integer classId,
                                       @Param("majorId") Integer majorId,
                                       @Param("departmentId") Integer departmentId,
@@ -43,14 +43,11 @@ public interface StudentCourseTeacherMapper {
                                       @Param("departmentName") String departmentName,
                                       @Param("gradeLevelId") Integer gradeLevelId);
 
-    @Select("SELECT DISTINCT term FROM studentms.score")
-    public List<String> findAllTerm();
-
-    @Select("SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId, grade, term, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore, remark FROM studentms.score WHERE student_id = #{sct.studentId} AND course_id = #{sct.courseId} AND term = #{sct.term}")
+    @Select("SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId, term_id AS termId, grade, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore, remark FROM studentms.score WHERE student_id = #{sct.studentId} AND course_id = #{sct.courseId} AND term_id = #{sct.termId}")
     public List<StudentCourseTeacher> findBySCT(@Param("sct") StudentCourseTeacher studentCourseTeacher);
 
-    @Insert("INSERT INTO studentms.score (student_id, course_id, teacher_id, term, usual_score, mid_score, final_score, grade, remark) " +
-            "VALUES (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.term}, #{s.usualScore}, #{s.midScore}, #{s.finalScore}, #{s.grade}, #{s.remark})")
+    @Insert("INSERT INTO studentms.score (student_id, course_id, teacher_id, term_id, usual_score, mid_score, final_score, grade, remark, status) " +
+            "VALUES (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.termId}, #{s.usualScore}, #{s.midScore}, #{s.finalScore}, #{s.grade}, #{s.remark}, 'UPLOADED')")
     public boolean insert(@Param("s")StudentCourseTeacher studentCourseTeacher);
 
     @Update("UPDATE studentms.score SET " +
@@ -60,11 +57,11 @@ public interface StudentCourseTeacherMapper {
             "final_score = #{s.finalScore}, " +
             "grade = #{s.grade}, " +
             "remark = #{s.remark} " +
-            "WHERE student_id = #{s.studentId} AND course_id = #{s.courseId} AND term = #{s.term}")
+            "WHERE student_id = #{s.studentId} AND course_id = #{s.courseId} AND term_id = #{s.termId}")
     public boolean updateGrade(@Param("s") StudentCourseTeacher s);
 
     public boolean batchInsert(@Param("list") List<StudentCourseTeacher> list);
 
-    @Delete("DELETE FROM studentms.score WHERE student_id = #{sct.studentId} AND teacher_id = #{sct.teacherId} AND course_id = #{sct.courseId}")
+    @Delete("DELETE FROM studentms.score WHERE student_id = #{sct.studentId} AND course_id = #{sct.courseId} AND term_id = #{sct.termId}")
     public boolean deleteBySCT(@Param("sct") StudentCourseTeacher sct);
 }

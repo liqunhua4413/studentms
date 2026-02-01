@@ -29,8 +29,8 @@
               <el-input v-model.number="ruleForm.highBound"></el-input>
             </el-form-item>
             <el-form-item label="选择学期">
-              <el-select v-model="ruleForm.term" placeholder="请选择学期">
-                <el-option v-for="(item, index) in termList" :key="index" :label="item" :value="item"></el-option>
+              <el-select v-model="ruleForm.termId" placeholder="请选择学期" clearable>
+                <el-option v-for="item in termList" :key="item.id" :label="item.name" :value="item.id"></el-option>
               </el-select>
             </el-form-item>
             <el-form-item>
@@ -91,8 +91,8 @@ export default {
   },
   created() {
     const that = this
-    axios.get('/SCT/findAllTerm').then(function (resp) {
-      that.termList = resp.data
+    that.axios.get('/term/findAll').then(function (resp) {
+      that.termList = resp.data || []
     })
   },
   methods: {

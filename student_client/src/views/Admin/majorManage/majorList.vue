@@ -3,7 +3,7 @@
     <el-table :data="tableData" border style="width: 100%">
       <el-table-column prop="id" label="ID" width="100"></el-table-column>
       <el-table-column prop="name" label="专业名称" width="200"></el-table-column>
-      <el-table-column prop="departmentId" label="学院ID" width="100"></el-table-column>
+      <el-table-column prop="departmentId" label="学院名称" width="180" :formatter="fmtDepartmentName"></el-table-column>
       <el-table-column label="操作" width="200">
         <template slot-scope="scope">
           <el-popconfirm
@@ -68,6 +68,9 @@ export default {
     },
     editor(row) {
       this.$router.push({ path: '/editorMajor', query: { id: row.id } })
+    },
+    fmtDepartmentName(row, column, cellValue) {
+      return this.departmentMap[row.departmentId] != null ? this.departmentMap[row.departmentId] : (cellValue || '-')
     }
   },
   data() {
@@ -76,13 +79,20 @@ export default {
       pageSize: 10,
       total: null,
       ruleForm: null,
-      tmpList: null
+      tmpList: null,
+      departmentMap: {}
     }
   },
   created() {
     if (this.tmpList !== null) this.tmpList = null
     const that = this
     this.ruleForm = this.$route.query.ruleForm
+    axios.get('/department/findAll').then(function (resp) {
+      const list = resp.data || []
+      list.forEach(function (d) {
+        that.departmentMap[d.id] = d.name
+      })
+    })
     if (this.$route.query.ruleForm === undefined || (this.ruleForm && this.ruleForm.name === null)) {
       axios.get('/major/findAll').then(function (resp) {
         that.total = resp.data.length

@@ -18,12 +18,12 @@ public interface CourseOpenMapper {
     /** 校验教师是否任课该课程该学期。返回 >0 表示存在。 */
     int countByTeacherCourseTerm(@Param("teacherId") Integer teacherId,
                                  @Param("courseId") Integer courseId,
-                                 @Param("term") String term);
+                                 @Param("termId") Integer termId);
 
     List<CourseOpen> findByTeacherTerm(@Param("teacherId") Integer teacherId,
-                                       @Param("term") String term);
+                                       @Param("termId") Integer termId);
 
     List<CourseOpen> findBySearch(@Param("courseId") Integer courseId,
                                   @Param("teacherId") Integer teacherId,
-                                  @Param("term") String term);
+                                  @Param("termId") Integer termId);
 }

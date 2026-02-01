@@ -31,18 +31,17 @@ public class CourseTeacherController {
     @Autowired
     private CourseTeacherService courseTeacherService;
 
-    @GetMapping("/insert/{cid}/{tid}/{term}")
-    public boolean insert(@PathVariable Integer cid, @PathVariable Integer tid, @PathVariable String term) {
-        if (courseTeacherService.findBySearch(cid, tid, term).size() != 0) {
+    @GetMapping("/insert/{cid}/{tid}/{termId}")
+    public boolean insert(@PathVariable Integer cid, @PathVariable Integer tid, @PathVariable Integer termId) {
+        if (courseTeacherService.findBySearch(cid, tid, termId).size() != 0) {
             return false;
         }
-        return courseTeacherService.insertCourseTeacher(cid, tid, term);
+        return courseTeacherService.insertCourseTeacher(cid, tid, termId);
     }
 
-    @GetMapping("/findMyCourse/{tid}/{term}")
-    public List<Course> findMyCourse(@PathVariable Integer tid, @PathVariable String term) {
-        System.out.println("查询教师课程：" + tid + " " + term);
-        return courseTeacherService.findMyCourse(tid, term);
+    @GetMapping("/findMyCourse/{tid}/{termId}")
+    public List<Course> findMyCourse(@PathVariable Integer tid, @PathVariable Integer termId) {
+        return courseTeacherService.findMyCourse(tid, termId);
     }
 
     @PostMapping("/findCourseTeacherInfo")
@@ -53,6 +52,21 @@ public class CourseTeacherController {
     @PostMapping("/deleteById")
     public boolean deleteById(@RequestBody CourseTeacher courseTeacher) {
         return courseTeacherService.deleteById(courseTeacher);
+    }
+
+    @GetMapping("/findById/{id}")
+    public CourseTeacher findById(@PathVariable Integer id) {
+        return courseTeacherService.findById(id);
+    }
+
+    @PostMapping("/add")
+    public boolean add(@RequestBody CourseTeacher courseTeacher) {
+        return courseTeacherService.save(courseTeacher);
+    }
+
+    @PostMapping("/update")
+    public boolean update(@RequestBody CourseTeacher courseTeacher) {
+        return courseTeacherService.updateById(courseTeacher);
     }
 
     /**

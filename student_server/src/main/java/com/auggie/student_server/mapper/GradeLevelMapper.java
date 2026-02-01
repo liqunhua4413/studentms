@@ -15,4 +15,10 @@ public interface GradeLevelMapper {
     GradeLevel findById(@Param("id") Integer id);
 
     GradeLevel findByName(@Param("name") String name);
+
+    int insert(GradeLevel gradeLevel);
+
+    int updateById(GradeLevel gradeLevel);
+
+    int deleteById(@Param("id") Integer id);
 }

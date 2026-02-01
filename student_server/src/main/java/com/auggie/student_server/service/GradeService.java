@@ -71,6 +71,8 @@ public class GradeService {
     private MajorMapper majorMapper;
     @Autowired
     private ClassMapper classMapper;
+    @Autowired
+    private TermService termService;
 
     /**
      * 解析 Excel 文件并批量插入成绩（含严格业务校验）
@@ -111,7 +113,7 @@ public class GradeService {
             // 解析第3行：教学信息
             Row row3 = sheet.getRow(2);
             String row3Text = getMergedCellValue(sheet, row3, 0);
-            String term = extractValue(row3Text, "开课学期：");
+            String termStr = extractValue(row3Text, "开课学期：");
             String creditStr = extractValue(row3Text, "学分：");
             String hoursStr = extractValue(row3Text, "学时：");
             String fullClassName = extractValue(row3Text, "开课班级：");
@@ -121,27 +123,30 @@ public class GradeService {
             Integer hours = 0;
             try { if (hoursStr != null) hours = Integer.parseInt(hoursStr); } catch (Exception ignored) {}
             
+            // 解析学期，查找 term_id
+            Integer termId = null;
+            if (termStr != null && !termStr.trim().isEmpty()) {
+                com.auggie.student_server.entity.Term termEntity = termService.findByName(termStr.trim());
+                if (termEntity == null) return "上传失败：学期【" + termStr + "】在系统中未定义，请先在基础数据中维护该学期";
+                termId = termEntity.getId();
+            }
+
             // 校验课程是否存在，不存在则创建
             List<Course> courses = courseMapper.findBySearch(null, courseName != null ? courseName.trim() : "", 0, null, null);
             Course targetCourse;
             if (courses == null || courses.isEmpty()) {
-                // 自动创建课程
                 targetCourse = new Course();
                 targetCourse.setCname(courseName != null ? courseName.trim() : "未知课程");
-                targetCourse.setCcredit(credit.intValue()); // 暂时存为 int，如果需要 float 可修改实体
+                targetCourse.setCcredit(credit.intValue());
                 targetCourse.setCategory(courseCategory);
-                targetCourse.setNature(courseNature);
                 targetCourse.setExamMethod(examMethod);
                 targetCourse.setHours(hours);
                 targetCourse.setDepartmentId(selectedDepartmentId);
-                // 这里可能还需要设置 majorId，如果能从班级信息推断的话
                 courseMapper.insertCourse(targetCourse);
             } else {
                 targetCourse = courses.get(0);
-                // 也可以选择更新课程信息
                 boolean needUpdate = false;
                 if (targetCourse.getCategory() == null) { targetCourse.setCategory(courseCategory); needUpdate = true; }
-                if (targetCourse.getNature() == null) { targetCourse.setNature(courseNature); needUpdate = true; }
                 if (targetCourse.getExamMethod() == null) { targetCourse.setExamMethod(examMethod); needUpdate = true; }
                 if (targetCourse.getHours() == null || targetCourse.getHours() == 0) { targetCourse.setHours(hours); needUpdate = true; }
                 if (needUpdate) courseMapper.updateById(targetCourse);
@@ -166,7 +171,7 @@ public class GradeService {
             if (majorList == null || majorList.isEmpty()) return "上传失败：专业【" + extractedMajorName + "】在所属学院下未定义";
             Major targetMajor = majorList.get(0);
 
-            List<com.auggie.student_server.entity.Class> classList = classMapper.findBySearch(extractedClassName, targetMajor.getId(), selectedDepartmentId);
+            List<com.auggie.student_server.entity.Class> classList = classMapper.findBySearch(extractedClassName, null, targetMajor.getId(), selectedDepartmentId);
             if (classList == null || classList.isEmpty()) return "上传失败：班级【" + extractedClassName + "】在对应专业下未定义";
             com.auggie.student_server.entity.Class targetClass = classList.get(0);
 
@@ -196,8 +201,8 @@ public class GradeService {
                 }
 
                 // 处理左右两列学生 (A-G 和 H-N)
-                validateAndAddStudent(row, 0, targetCourse, targetTeacherId, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
-                validateAndAddStudent(row, 7, targetCourse, targetTeacherId, term, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
+                validateAndAddStudent(row, 0, targetCourse, targetTeacherId, termId, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
+                validateAndAddStudent(row, 7, targetCourse, targetTeacherId, termId, dept, targetMajor, targetClass, extractedGradeLevel, validGradeList, errorReports, i + 1);
             }
 
             // 4. 结果处理
@@ -214,7 +219,7 @@ public class GradeService {
             ScoreImportRecord record = new ScoreImportRecord();
             record.setFileName(originalFilename);
             record.setFilePath(savedFilePath.toString());
-            record.setTerm(term);
+            record.setTermId(termId);
             record.setCourseId(targetCourse.getId());
             record.setDepartmentId(selectedDepartmentId);
             record.setTeacherId(targetTeacherId);
@@ -231,7 +236,7 @@ public class GradeService {
         }
     }
 
-    private void validateAndAddStudent(Row row, int startCol, Course course, Integer teacherId, String term, 
+    private void validateAndAddStudent(Row row, int startCol, Course course, Integer teacherId, Integer termId, 
                                       com.auggie.student_server.entity.Department dept, Major major, 
                                       com.auggie.student_server.entity.Class targetClass, String gradeLevel,
                                       List<StudentCourseTeacher> validList, List<String> errorReports, int lineNum) {
@@ -261,9 +266,9 @@ public class GradeService {
         }
 
         // 2. 成绩唯一性校验 (同一学生+同一课程+同一学期)
-        List<SCTInfo> existing = studentCourseTeacherMapper.findBySearch(student.getId(), null, 0, course.getId(), null, 0, null, null, 0, null, null, term, null, null, null, null, null, null, null);
+        List<SCTInfo> existing = studentCourseTeacherMapper.findBySearch(student.getId(), null, 0, course.getId(), null, 0, null, null, 0, null, null, termId, null, null, null, null, null, null, null);
         if (existing != null && !existing.isEmpty()) {
-            errorReports.add("第" + lineNum + "行：冲突！学生【" + studentName + "】在【" + term + "】学期的【" + course.getCname() + "】成绩已存在");
+            errorReports.add("第" + lineNum + "行：冲突！学生【" + studentName + "】在【" + course.getCname() + "】本学期成绩已存在");
             return;
         }
 
@@ -271,8 +276,8 @@ public class GradeService {
         StudentCourseTeacher sct = new StudentCourseTeacher();
         sct.setStudentId(student.getId());
         sct.setCourseId(course.getId());
-        sct.setTeacherId(teacherId); // 如果找不到教师，这里可能是 null，但至少会尝试设置
-        sct.setTerm(term);
+        sct.setTeacherId(teacherId);
+        sct.setTermId(termId);
         
         // 读取成绩：平时成绩（第3列）、期中成绩（第4列）、期末成绩（第5列）、总成绩（第6列）
         Float usualScore = getFloatValue(row.getCell(startCol + 2));
@@ -389,7 +394,7 @@ public class GradeService {
      * 处理学生行数据
      */
     private void processStudentRow(Sheet sheet, Row row, int startCol, int endCol, 
-                                   Integer courseId, Integer teacherId, String term,
+                                   Integer courseId, Integer teacherId, Integer termId,
                                    List<StudentCourseTeacher> gradeList, StringBuilder errorMsg,
                                    int rowNum) {
         try {
@@ -444,7 +449,7 @@ public class GradeService {
             sct.setMidScore(midGrade);
             sct.setFinalScore(finalGrade);
             sct.setGrade(totalGrade);
-            sct.setTerm(term);
+            sct.setTermId(termId);
 
             gradeList.add(sct);
         } catch (Exception e) {

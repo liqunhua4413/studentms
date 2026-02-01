@@ -35,13 +35,13 @@ public class SCTcontroller {
         return sctService.save(studentCourseTeacher) ? "选课成功" : "选课失败，联系管理员";
     }
 
-    @GetMapping("/findBySid/{sid}/{term}")
-    public List<CourseTeacherInfo> findBySid(@PathVariable Integer sid, @PathVariable String term) {
-        return sctService.findBySid(sid, term);
+    @GetMapping("/findBySid/{sid}/{termId}")
+    public List<CourseTeacherInfo> findBySid(@PathVariable Integer sid, @PathVariable Integer termId) {
+        return sctService.findBySid(sid, termId);
     }
 
     @GetMapping("/findAllTerm")
-    public List<String> findAllTerm() {
+    public List<com.auggie.student_server.entity.Term> findAllTerm() {
         return sctService.findAllTerm();
     }
 
@@ -56,12 +56,12 @@ public class SCTcontroller {
         return sctService.findBySearch(map);
     }
 
-    @GetMapping("/findById/{sid}/{cid}/{tid}/{term}")
+    @GetMapping("/findById/{sid}/{cid}/{tid}/{termId}")
     public SCTInfo findById(@PathVariable Integer sid,
                             @PathVariable Integer cid,
                             @PathVariable Integer tid,
-                            @PathVariable String term) {
-        return sctService.findByIdWithTerm(sid, cid, tid, term);
+                            @PathVariable Integer termId) {
+        return sctService.findByIdWithTerm(sid, cid, tid, termId);
     }
 
     @PostMapping("/update")
@@ -74,12 +74,27 @@ public class SCTcontroller {
         }
     }
 
-    @GetMapping("/deleteById/{sid}/{cid}/{tid}/{term}")
+    /** 通过 URL 参数更新成绩（兼容旧前端） */
+    @GetMapping("/updateById/{sid}/{cid}/{tid}/{termId}/{grade}")
+    public ResponseEntity<?> updateById(
+            @PathVariable Integer sid, @PathVariable Integer cid, @PathVariable Integer tid,
+            @PathVariable Integer termId, @PathVariable Float grade) {
+        StudentCourseTeacher sct = new StudentCourseTeacher();
+        sct.setStudentId(sid);
+        sct.setCourseId(cid);
+        sct.setTeacherId(tid);
+        sct.setTermId(termId);
+        sct.setGrade(grade);
+        boolean result = sctService.updateGrade(sct);
+        return result ? ResponseEntity.ok(true) : ResponseEntity.status(500).body("更新失败");
+    }
+
+    @GetMapping("/deleteById/{sid}/{cid}/{tid}/{termId}")
     public boolean deleteById(@PathVariable Integer sid,
                               @PathVariable Integer cid,
                               @PathVariable Integer tid,
-                              @PathVariable String term) {
-        return sctService.deleteById(sid, cid, tid, term);
+                              @PathVariable Integer termId) {
+        return sctService.deleteById(sid, cid, tid, termId);
     }
 
     @PostMapping("/reexamination")

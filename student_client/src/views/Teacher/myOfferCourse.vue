@@ -6,9 +6,9 @@
         <el-card>
           <el-form :inline="true" style="margin-bottom: 20px;">
             <el-form-item label="选择学期">
-              <el-select v-model="term" placeholder="请选择学期" @change="loadCourses">
-                <el-option label="所有学期" value="all"></el-option>
-                <el-option v-for="(item, index) in termList" :key="index" :label="item" :value="item"></el-option>
+              <el-select v-model="termId" placeholder="请选择学期" @change="loadCourses">
+                <el-option label="所有学期" :value="null"></el-option>
+                <el-option v-for="item in termList" :key="item.id" :label="item.name" :value="item.id"></el-option>
               </el-select>
             </el-form-item>
           </el-form>
@@ -21,16 +21,42 @@
                 fixed
                 prop="id"
                 label="课程号"
-                width="150">
+                width="100">
             </el-table-column>
             <el-table-column
                 prop="cname"
                 label="课程名"
-                width="200">
+                width="180">
             </el-table-column>
             <el-table-column
                 prop="ccredit"
                 label="学分"
+                width="80">
+            </el-table-column>
+            <el-table-column
+                prop="category"
+                label="课程类别"
+                width="120">
+            </el-table-column>
+            <el-table-column
+                prop="courseType"
+                label="课程性质"
+                width="120"
+                :formatter="fmtCourseType">
+            </el-table-column>
+            <el-table-column
+                prop="examMethod"
+                label="考核方式"
+                width="120">
+            </el-table-column>
+            <el-table-column
+                prop="hours"
+                label="学时"
+                width="80">
+            </el-table-column>
+            <el-table-column
+                prop="term"
+                label="学期"
                 width="150">
             </el-table-column>
           </el-table>
@@ -59,6 +85,13 @@ export default {
       let ans = (end < length) ? end : length
       that.tableData = that.tmpList.slice(start, ans)
     },
+    fmtCourseType(row, column, cellValue) {
+      const t = (row.courseType || cellValue || '').toUpperCase()
+      if (t === 'REQUIRED') return '必修'
+      if (t === 'LIMITED') return '限选'
+      if (t === 'ELECTIVE') return '任选'
+      return '-'
+    },
     loadCourses() {
       const that = this
       if (!that.tid) {
@@ -70,21 +103,19 @@ export default {
       }
       
       // 如果选择"所有学期"，需要查询所有学期的课程
-      if (that.term === 'all' || !that.term) {
-        // 获取所有学期
-        that.axios.get('/SCT/findAllTerm').then(function (termResp) {
+      if (!that.termId) {
+        that.axios.get('/term/findAll').then(function (termResp) {
           const allTerms = termResp.data || []
           let allCourses = []
           let promiseList = []
           
-          // 为每个学期查询课程
           allTerms.forEach(t => {
             promiseList.push(
-              that.axios.get('/courseTeacher/findMyCourse/' + that.tid + '/' + t).then(function (resp) {
+              that.axios.get('/courseTeacher/findMyCourse/' + that.tid + '/' + t.id).then(function (resp) {
                 const courses = resp.data || []
-                // 为每个课程添加学期信息
                 courses.forEach(c => {
-                  c.term = t
+                  c.term = t.name
+                  c.termId = t.id
                   allCourses.push(c)
                 })
               })
@@ -102,8 +133,11 @@ export default {
           })
         })
       } else {
+        sessionStorage.setItem('currentTermId', String(that.termId))
+        const t = that.termList.find(x => x.id === that.termId)
+        if (t) sessionStorage.setItem('currentTerm', t.name)
         // 查询指定学期的课程
-        that.axios.get('/courseTeacher/findMyCourse/' + that.tid + '/' + that.term).then(function (resp) {
+        that.axios.get('/courseTeacher/findMyCourse/' + that.tid + '/' + that.termId).then(function (resp) {
           that.tmpList = resp.data || []
           that.total = that.tmpList.length
           let start = 0, end = that.pageSize
@@ -122,18 +156,17 @@ export default {
       total: 0,
       tmpList: [],
       tid: null,
-      term: sessionStorage.getItem("currentTerm") || 'all',
+      termId: sessionStorage.getItem("currentTermId") ? parseInt(sessionStorage.getItem("currentTermId"), 10) : null,
       termList: []
     }
   },
   created() {
     this.tid = sessionStorage.getItem("tid")
-    
-    // 获取所有学期列表
     const that = this
-    this.axios.get('/SCT/findAllTerm').then(function (resp) {
-      that.termList = resp.data || []
-      // 加载课程
+    // 先加载学期列表（保证下拉有选项），再加载课程
+    that.axios.get('/term/findAll').then(function (termResp) {
+      const list = termResp.data
+      that.termList = Array.isArray(list) ? list : []
       that.loadCourses()
     })
   }

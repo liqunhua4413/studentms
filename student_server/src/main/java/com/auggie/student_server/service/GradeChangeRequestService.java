@@ -76,13 +76,16 @@ public class GradeChangeRequestService {
         /* 权限：教师仅本人任课；院长仅本院课程；admin 全部 */
         if ("teacher".equals(applicantRole)) {
             if (applicantId == null) return "提交失败：教师身份未识别";
-            if (courseOpenMapper.countByTeacherCourseTerm(applicantId, s.getCourseId(), s.getTerm()) <= 0) {
+            if (courseOpenMapper.countByTeacherCourseTerm(applicantId, s.getCourseId(), s.getTermId()) <= 0) {
                 return "提交失败：权限不足，仅可申请本人任课课程";
             }
         } else if ("dean".equals(applicantRole)) {
             if (applicantDeptId == null) return "提交失败：院长学院未识别";
             Course course = courseMapper.findByCourseId(s.getCourseId());
-            if (course == null || !applicantDeptId.equals(course.getDepartmentId())) {
+            if (course == null) {
+                return "提交失败：课程信息不存在";
+            }
+            if (!applicantDeptId.equals(course.getDepartmentId())) {
                 return "提交失败：权限不足，仅可申请本学院课程";
             }
         } else if (!"admin".equals(applicantRole)) {
@@ -126,7 +129,14 @@ public class GradeChangeRequestService {
         req.setBeforeData(beforeData);
         req.setAfterData(afterData);
         req.setStatus(GradeChangeRequestStatus.PENDING);
-        gradeChangeRequestMapper.insert(req);
+        
+        try {
+            gradeChangeRequestMapper.insert(req);
+        } catch (Exception e) {
+            System.err.println("插入成绩修改申请失败: " + e.getMessage());
+            e.printStackTrace();
+            return "提交失败：数据库插入错误 - " + e.getMessage();
+        }
 
         // 写入 grade_change_log（REQUEST 操作）
         try {

@@ -24,5 +24,14 @@ public class CourseTeacher {
     private Integer courseId;
     @JsonProperty("tid")
     private Integer teacherId;
-    private String term;
+    private Integer termId;
+
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+    public Integer getCourseId() { return courseId; }
+    public void setCourseId(Integer courseId) { this.courseId = courseId; }
+    public Integer getTeacherId() { return teacherId; }
+    public void setTeacherId(Integer teacherId) { this.teacherId = teacherId; }
+    public Integer getTermId() { return termId; }
+    public void setTermId(Integer termId) { this.termId = termId; }
 }

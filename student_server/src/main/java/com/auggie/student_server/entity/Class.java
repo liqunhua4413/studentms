@@ -19,6 +19,7 @@ import org.apache.ibatis.type.Alias;
 public class Class {
     private Integer id;
     private String name;
+    private Integer gradeLevelId;
     private Integer majorId;
     private Integer departmentId;
 
@@ -27,6 +28,8 @@ public class Class {
     public void setId(Integer id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public Integer getGradeLevelId() { return gradeLevelId; }
+    public void setGradeLevelId(Integer gradeLevelId) { this.gradeLevelId = gradeLevelId; }
     public Integer getMajorId() { return majorId; }
     public void setMajorId(Integer majorId) { this.majorId = majorId; }
     public Integer getDepartmentId() { return departmentId; }

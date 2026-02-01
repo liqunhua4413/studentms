@@ -82,6 +82,7 @@ export default {
           cid: row.cid,
           tid: row.tid,
           sid: row.sid,
+          termId: row.termId,
           term: row.term
         }
       })

@@ -21,10 +21,10 @@ public class Course {
     private Integer id;
     private String cname;
     private Integer ccredit;
-    private Integer majorId;
     private Integer departmentId;
     private String category;
     private String nature;
+    private String courseType;  // 来自培养方案：REQUIRED/LIMITED/ELECTIVE，用于“我开设的课程”课程性质显示
     private String examMethod;
     private Integer hours;
 
@@ -52,14 +52,14 @@ public class Course {
     public void setCname(String cname) { this.cname = cname; }
     public Integer getCcredit() { return ccredit; }
     public void setCcredit(Integer ccredit) { this.ccredit = ccredit; }
-    public Integer getMajorId() { return majorId; }
-    public void setMajorId(Integer majorId) { this.majorId = majorId; }
     public Integer getDepartmentId() { return departmentId; }
     public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     public String getNature() { return nature; }
     public void setNature(String nature) { this.nature = nature; }
+    public String getCourseType() { return courseType; }
+    public void setCourseType(String courseType) { this.courseType = courseType; }
     public String getExamMethod() { return examMethod; }
     public void setExamMethod(String examMethod) { this.examMethod = examMethod; }
     public Integer getHours() { return hours; }

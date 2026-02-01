@@ -4,6 +4,7 @@
         class="upload-demo"
         ref="upload"
         :action="uploadUrl"
+        :http-request="customUpload"
         :on-success="handleSuccess"
         :on-error="handleError"
         :before-upload="beforeUpload"
@@ -40,7 +41,29 @@ export default {
   },
   methods: {
     submitUpload() {
+      const upload = this.$refs.upload;
+      const uploadFiles = upload && upload.uploadFiles;
+      if (!uploadFiles || uploadFiles.length === 0) {
+        this.$message.warning('请先选择文件')
+        return
+      }
       this.$refs.upload.submit();
+    },
+    customUpload(options) {
+      const { file, onSuccess, onError } = options;
+      const formData = new FormData();
+      formData.append('file', file);
+      this.axios.post('/department/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }).then(res => {
+        const result = typeof res.data === 'string' ? res.data : (res.data?.message || '上传成功！');
+        onSuccess(result);
+      }).catch(err => {
+        const msg = (err.response && err.response.data && err.response.data.message) || err.message || '上传失败';
+        onError(new Error(msg));
+      });
     },
     beforeUpload(file) {
       const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||

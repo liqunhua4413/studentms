@@ -21,6 +21,7 @@ public interface WordPaperMapper {
     WordPaper findById(@Param("id") Long id);
     List<WordPaper> findBySearch(@Param("fileName") String fileName, @Param("uploadBy") String uploadBy);
     List<WordPaper> findByDepartmentId(@Param("departmentId") Integer departmentId);
+    List<WordPaper> findByUploadBy(@Param("uploadBy") String uploadBy);
     boolean save(@Param("paper") WordPaper paper);
     boolean deleteById(@Param("id") Long id);
 }

@@ -20,6 +20,8 @@ public class ScoreQueryDTO {
     private Integer studentId;
     private Integer courseId;
     private Integer teacherId;
+    private Integer termId;
+    /** 学期名称，联表 term 得到，用于展示 */
     private String term;
     private BigDecimal usualScore;
     private BigDecimal midScore;

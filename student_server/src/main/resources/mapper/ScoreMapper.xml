@@ -4,21 +4,21 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO studentms.score (
-            student_id, course_id, teacher_id, term,
+            student_id, course_id, teacher_id, term_id,
             usual_score, mid_score, final_score, grade, remark, status
         ) VALUES (
-            #{studentId}, #{courseId}, #{teacherId}, #{term},
+            #{studentId}, #{courseId}, #{teacherId}, #{termId},
             #{usualScore}, #{midScore}, #{finalScore}, #{grade}, #{remark}, #{status}
         )
     </insert>
 
     <insert id="batchInsert">
         INSERT INTO studentms.score (
-            student_id, course_id, teacher_id, term,
+            student_id, course_id, teacher_id, term_id,
             usual_score, mid_score, final_score, grade, remark, status
         ) VALUES
         <foreach collection="list" item="s" separator=",">
-            (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.term},
+            (#{s.studentId}, #{s.courseId}, #{s.teacherId}, #{s.termId},
              #{s.usualScore}, #{s.midScore}, #{s.finalScore}, #{s.grade}, #{s.remark}, #{s.status})
         </foreach>
     </insert>
@@ -37,44 +37,45 @@
 
     <select id="findById" resultType="Score">
         SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId,
-               term, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore,
+               term_id AS termId, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore,
                grade, remark, status, created_at AS createdAt, updated_at AS updatedAt
         FROM studentms.score WHERE id = #{id}
     </select>
 
     <select id="findByStudentCourseTerm" resultType="Score">
         SELECT id, student_id AS studentId, course_id AS courseId, teacher_id AS teacherId,
-               term, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore,
+               term_id AS termId, usual_score AS usualScore, mid_score AS midScore, final_score AS finalScore,
                grade, remark, status, created_at AS createdAt, updated_at AS updatedAt
         FROM studentms.score
-        WHERE student_id = #{studentId} AND course_id = #{courseId} AND term = #{term}
+        WHERE student_id = #{studentId} AND course_id = #{courseId} AND term_id = #{termId}
     </select>
 
     <select id="findBySearch" resultType="Score">
         SELECT s.id, s.student_id AS studentId, s.course_id AS courseId, s.teacher_id AS teacherId,
-               s.term, s.usual_score AS usualScore, s.mid_score AS midScore, s.final_score AS finalScore,
+               s.term_id AS termId, s.usual_score AS usualScore, s.mid_score AS midScore, s.final_score AS finalScore,
                s.grade, s.remark, s.status, s.created_at AS createdAt, s.updated_at AS updatedAt
         FROM studentms.score s
         LEFT JOIN studentms.course c ON s.course_id = c.id
         <where>
             <if test="studentId != null">AND s.student_id = #{studentId}</if>
             <if test="courseId != null">AND s.course_id = #{courseId}</if>
-            <if test="term != null and term != ''">AND s.term = #{term}</if>
+            <if test="termId != null">AND s.term_id = #{termId}</if>
             <if test="status != null and status != ''">AND s.status = #{status}</if>
             <if test="teacherId != null">AND s.teacher_id = #{teacherId}</if>
             <if test="departmentId != null">AND c.department_id = #{departmentId}</if>
         </where>
-        ORDER BY s.term DESC, s.id
+        ORDER BY s.term_id DESC, s.id
     </select>
 
     <select id="findScoreIdsByTermCourse" resultType="int">
         SELECT id FROM studentms.score
-        WHERE term = #{term} AND course_id = #{courseId}
+        WHERE term_id = #{termId} AND course_id = #{courseId}
     </select>
 
     <select id="findScoreQueryBySearch" resultType="ScoreQueryDTO">
         SELECT s.id, s.student_id AS studentId, s.course_id AS courseId, s.teacher_id AS teacherId,
-               s.term, s.usual_score AS usualScore, s.mid_score AS midScore, s.final_score AS finalScore,
+               s.term_id AS termId, tm.name AS term,
+               s.usual_score AS usualScore, s.mid_score AS midScore, s.final_score AS finalScore,
                s.grade, s.remark, s.status,
                s.created_at AS createdAt, s.updated_at AS updatedAt,
                st.student_no AS studentNo, st.sname, c.cname, t.tname, t.tname AS teacherRealName,
@@ -82,6 +83,7 @@
                st.major_id AS majorId, m.name AS majorName, st.class_id AS classId, cls.name AS className,
                st.grade_level_id AS gradeLevelId, gl.name AS gradeLevel, c.ccredit AS credit
         FROM studentms.score s
+        LEFT JOIN studentms.term tm ON s.term_id = tm.id
         LEFT JOIN studentms.student st ON s.student_id = st.id
         LEFT JOIN studentms.course c ON s.course_id = c.id
         LEFT JOIN studentms.teacher t ON s.teacher_id = t.id
@@ -92,7 +94,7 @@
         <where>
             <if test="studentId != null">AND s.student_id = #{studentId}</if>
             <if test="courseId != null">AND s.course_id = #{courseId}</if>
-            <if test="term != null and term != ''">AND s.term = #{term}</if>
+            <if test="termId != null">AND s.term_id = #{termId}</if>
             <if test="status != null and status != ''">AND s.status = #{status}</if>
             <if test="teacherId != null">AND s.teacher_id = #{teacherId}</if>
             <if test="departmentId != null">AND c.department_id = #{departmentId}</if>
@@ -102,12 +104,13 @@
             <if test="lowBound != null">AND s.grade &gt;= #{lowBound}</if>
             <if test="highBound != null">AND s.grade &lt;= #{highBound}</if>
         </where>
-        ORDER BY s.term DESC, s.id
+        ORDER BY s.term_id DESC, s.id
     </select>
 
     <select id="findScoreQueryForDean" resultType="ScoreQueryDTO">
         SELECT s.id, s.student_id AS studentId, s.course_id AS courseId, s.teacher_id AS teacherId,
-               s.term, s.usual_score AS usualScore, s.mid_score AS midScore, s.final_score AS finalScore,
+               s.term_id AS termId, tm.name AS term,
+               s.usual_score AS usualScore, s.mid_score AS midScore, s.final_score AS finalScore,
                s.grade, s.remark, s.status,
                s.created_at AS createdAt, s.updated_at AS updatedAt,
                st.student_no AS studentNo, st.sname, c.cname, t.tname, t.tname AS teacherRealName,
@@ -116,6 +119,7 @@
                st.grade_level_id AS gradeLevelId, gl.name AS gradeLevel, c.ccredit AS credit,
                st.department_id AS studentDepartmentId, sd.name AS studentDepartmentName
         FROM studentms.score s
+        LEFT JOIN studentms.term tm ON s.term_id = tm.id
         LEFT JOIN studentms.student st ON s.student_id = st.id
         LEFT JOIN studentms.course c ON s.course_id = c.id
         LEFT JOIN studentms.teacher t ON s.teacher_id = t.id
@@ -127,7 +131,7 @@
         <where>
             <if test="courseDepartmentId != null">AND c.department_id = #{courseDepartmentId}</if>
             <if test="courseId != null">AND s.course_id = #{courseId}</if>
-            <if test="term != null and term != ''">AND s.term = #{term}</if>
+            <if test="termId != null">AND s.term_id = #{termId}</if>
             <if test="status != null and status != ''">AND s.status = #{status}</if>
             <if test="studentId != null">AND s.student_id = #{studentId}</if>
             <if test="studentNo != null and studentNo != ''">AND st.student_no LIKE CONCAT('%', #{studentNo}, '%')</if>
@@ -138,6 +142,6 @@
             <if test="lowBound != null">AND s.grade &gt;= #{lowBound}</if>
             <if test="highBound != null">AND s.grade &lt;= #{highBound}</if>
         </where>
-        ORDER BY s.term DESC, s.id
+        ORDER BY s.term_id DESC, s.id
     </select>
 </mapper>

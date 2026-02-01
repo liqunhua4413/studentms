@@ -1,165 +1,117 @@
 <template>
   <div>
-    <el-form >
+    <el-form :inline="true">
       <el-form-item label="选择学期">
-        <el-select v-model="term" placeholder="请选择学期">
-          <el-option label="所有学期" value="all"></el-option>
-          <el-option v-for="(item, index) in termList" :key="index" :label="item" :value="item"></el-option>
+        <el-select v-model="termId" placeholder="请选择学期" clearable @change="fetch">
+          <el-option label="所有学期" :value="null" />
+          <el-option v-for="item in termList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="fetch">查询</el-button>
+      </el-form-item>
     </el-form>
-    <el-card>
-      <el-table
-          :data="tableData"
-          border
-          style="width: 100%">
-        <el-table-column
-            prop="cname"
-            label="课程名称"
-            width="180">
+    <el-card v-loading="loading">
+      <el-table :data="paginatedList" border style="width: 100%;">
+        <el-table-column prop="cname" label="课程名称" width="180" />
+        <el-table-column prop="tname" label="教师" width="120">
+          <template slot-scope="scope">{{ scope.row.teacherRealName || scope.row.tname || '—' }}</template>
         </el-table-column>
-        <el-table-column
-            prop="tname"
-            label="教师名称"
-            width="150">
-          <template slot-scope="scope">
-            {{ scope.row.teacherRealName || scope.row.tname }}
-          </template>
+        <el-table-column prop="credit" label="学分" width="90">
+          <template slot-scope="scope">{{ formatScore(scope.row.credit) }}</template>
         </el-table-column>
-        <el-table-column
-            prop="credit"
-            label="学分"
-            width="100">
-          <template slot-scope="scope">
-            {{ scope.row.credit || scope.row.ccredit }}
-          </template>
+        <el-table-column prop="usualScore" label="平时成绩" width="100">
+          <template slot-scope="scope">{{ formatScore(scope.row.usualScore) }}</template>
         </el-table-column>
-        <el-table-column
-            prop="usualScore"
-            label="平时成绩"
-            width="100">
-          <template slot-scope="scope">
-            {{ formatScore(scope.row.usualScore || scope.row.usualGrade) }}
-          </template>
+        <el-table-column prop="midScore" label="期中成绩" width="100">
+          <template slot-scope="scope">{{ formatScore(scope.row.midScore) }}</template>
         </el-table-column>
-        <el-table-column
-            prop="midScore"
-            label="期中成绩"
-            width="100">
-          <template slot-scope="scope">
-            {{ formatScore(scope.row.midScore) }}
-          </template>
+        <el-table-column prop="finalScore" label="期末成绩" width="100">
+          <template slot-scope="scope">{{ formatScore(scope.row.finalScore) }}</template>
         </el-table-column>
-        <el-table-column
-            prop="finalScore"
-            label="期末成绩"
-            width="100">
-          <template slot-scope="scope">
-            {{ formatScore(scope.row.finalScore || scope.row.finalGrade) }}
-          </template>
+        <el-table-column prop="grade" label="总成绩" width="100">
+          <template slot-scope="scope">{{ formatScore(scope.row.grade) }}</template>
         </el-table-column>
-        <el-table-column
-            prop="grade"
-            label="总成绩"
-            width="120">
-          <template slot-scope="scope">
-            {{ formatScore(scope.row.grade || scope.row.totalGrade) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-            prop="term"
-            label="学期"
-            width="150">
-        </el-table-column>
+        <el-table-column prop="term" label="学期" width="120" />
       </el-table>
-      <p>
-        平均成绩：{{ avg.toFixed(2) }}
-      </p>
+      <p style="margin-top: 16px;">平均成绩：{{ formatScore(avg) }}</p>
       <el-pagination
-          background
-          layout="prev, pager, next"
-          :total="total"
-          :page-size="pageSize"
-          @current-change="changePage"
-      >
-      </el-pagination>
+        :current-page="page"
+        :page-size="pageSize"
+        :total="list.length"
+        layout="prev, pager, next"
+        style="margin-top: 12px;"
+        @current-change="page = $event"
+      />
     </el-card>
   </div>
 </template>
 
 <script>
+import { formatScore } from '@/utils/gradeFormat'
+
 export default {
-  methods: {
-    changePage(page) {
-      page = page - 1
-      const that = this
-      let start = page * that.pageSize, end = that.pageSize * (page + 1)
-      let length = that.tmpList.length
-      let ans = (end < length) ? end : length
-      that.tableData = that.tmpList.slice(start, ans)
-    },
-    calculateAvg() {
-        let totalScore = 0
-        this.avg = 0
-        const list = this.tmpList || []
-        let count = 0
-        for (let i = 0; i < list.length; i++) {
-          const grade = list[i].grade || list[i].totalGrade
-          const credit = list[i].credit || list[i].ccredit || 0
-          if (grade != null && grade > 0) {
-            totalScore += credit
-            this.avg += credit * grade
-            count++
-          }
-        }
-        if (totalScore === 0)
-          this.avg = 0
-        else
-          this.avg /= totalScore
-    },
-    formatScore(score) {
-      if (score == null || score === undefined) return '-'
-      return parseFloat(score).toFixed(2)
-    }
-  },
-  data() {
+  name: 'QueryCourseGrade',
+  data () {
+    const tid = sessionStorage.getItem('currentTermId')
     return {
-      tableData: null,
+      termId: tid ? parseInt(tid, 10) : null,
+      termList: [],
+      list: [],
+      page: 1,
       pageSize: 10,
-      total: null,
-      tmpList: null,
-      avg: 0,
-      term: sessionStorage.getItem('currentTerm'),
-      termList: null
+      loading: false
     }
   },
-  created() {
-    const that = this
-    this.axios.get('/SCT/findAllTerm').then(function (resp) {
-      that.termList = resp.data
-    })
-  },
-  watch: {
-    term: {
-      handler(newTerm, oldTerm) {
-        const sid = sessionStorage.getItem('sid')
-        const that = this
-        let url = '/SCT/findBySid/' + sid
-        if (newTerm !== 'all') {
-          url += '/' + newTerm
+  computed: {
+    paginatedList () {
+      const start = (this.page - 1) * this.pageSize
+      return (this.list || []).slice(start, start + this.pageSize)
+    },
+    avg () {
+      const L = this.list || []
+      let sum = 0
+      let cnt = 0
+      for (const row of L) {
+        const g = row.grade != null ? Number(row.grade) : null
+        const c = row.credit != null ? Number(row.credit) : 0
+        if (g != null && !isNaN(g) && c > 0) {
+          sum += g * c
+          cnt += c
         }
-        
-        this.axios.get(url).then(function (resp) {
-            that.tmpList = resp.data || []
-            that.total = that.tmpList.length
-            let start = 0, end = that.pageSize
-            let length = that.tmpList.length
-            let ans = (end < length) ? end : length
-            that.tableData = that.tmpList.slice(start, ans)
-            that.calculateAvg()
-        })
-      },
-      immediate: true
+      }
+      return cnt > 0 ? sum / cnt : 0
+    }
+  },
+  created () {
+    this.axios.get('/term/findAll').then(r => {
+      this.termList = r.data || []
+    }).catch(() => {})
+    this.fetch()
+  },
+  methods: {
+    formatScore,
+    fetch () {
+      const sid = sessionStorage.getItem('sid')
+      if (this.termId) {
+        sessionStorage.setItem('currentTermId', String(this.termId))
+        const t = (this.termList || []).find(x => x.id === this.termId)
+        if (t) sessionStorage.setItem('currentTerm', t.name)
+      }
+      if (!sid) {
+        this.$message.warning('请先登录')
+        return
+      }
+      this.loading = true
+      const params = { sid }
+      if (this.termId) params.termId = this.termId
+      this.axios.get('/grade/query/student', { params }).then(r => {
+        this.list = r.data || []
+        this.page = 1
+      }).catch(() => {
+        this.$message.error('查询失败')
+        this.list = []
+      }).finally(() => { this.loading = false })
     }
   }
 }

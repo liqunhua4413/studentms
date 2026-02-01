@@ -24,6 +24,8 @@ public class Teacher {
     private String password;
     private String role;  // admin / teacher / dean
     private Integer departmentId;
+    /** 所属学院名称，仅查询时关联 department 表填充，不持久化 */
+    private String departmentName;
 
     // 同时提供 id 和 tid 字段的 getter/setter，确保前后端双向兼容
     public Integer getId() {
@@ -55,4 +57,6 @@ public class Teacher {
     public void setRole(String role) { this.role = role; }
     public Integer getDepartmentId() { return departmentId; }
     public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
 }

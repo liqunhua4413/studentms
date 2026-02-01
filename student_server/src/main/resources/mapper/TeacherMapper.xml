@@ -24,8 +24,42 @@
         </where>
     </select>
 
+    <select id="findBySearchWithDepartment" resultType="Teacher">
+        SELECT t.id, t.teacher_no AS teacherNo, t.tname, t.password, t.role, t.department_id AS departmentId,
+               d.name AS departmentName
+        FROM studentms.teacher t
+        LEFT JOIN studentms.department d ON t.department_id = d.id
+        <where>
+            <if test="tid != null">
+                t.id = #{tid}
+            </if>
+            <if test="tname != null and tname != ''">
+                <if test="fuzzy == 0">
+                    AND t.tname = #{tname}
+                </if>
+                <if test="fuzzy == 1">
+                    AND t.tname LIKE CONCAT('%', #{tname}, '%')
+                </if>
+            </if>
+            <if test="departmentId != null">
+                AND t.department_id = #{departmentId}
+            </if>
+            <if test="role != null and role != ''">
+                AND t.role = #{role}
+            </if>
+        </where>
+    </select>
+
     <select id="findById" resultType="Teacher">
         SELECT * FROM studentms.teacher WHERE id = #{tid};
+    </select>
+
+    <select id="findByIdWithDepartment" resultType="Teacher">
+        SELECT t.id, t.teacher_no AS teacherNo, t.tname, t.password, t.role, t.department_id AS departmentId,
+               d.name AS departmentName
+        FROM studentms.teacher t
+        LEFT JOIN studentms.department d ON t.department_id = d.id
+        WHERE t.id = #{tid}
     </select>
 
     <select id="findByTeacherNo" resultType="Teacher">
@@ -35,6 +69,12 @@
     <select id="findDeanByTname" resultType="Teacher">
         SELECT * FROM studentms.teacher
         WHERE tname = #{tname} AND role = 'dean'
+        LIMIT 1
+    </select>
+
+    <select id="findDeanByDepartmentId" resultType="Teacher">
+        SELECT * FROM studentms.teacher
+        WHERE department_id = #{departmentId} AND role = 'dean'
         LIMIT 1
     </select>
 

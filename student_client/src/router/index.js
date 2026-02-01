@@ -37,6 +37,7 @@ import queryCourseGrade from "@/views/Student/courseGrade/queryCourseGrade";
 import queryGradeCourse from "@/views/Admin/gradeCourseManage/queryGradeCourse";
 import editorGradeCourse from "@/views/Admin/gradeCourseManage/editorGradeCourse";
 import teacherGradeCourseManage from "@/views/Teacher/teacherGradeCourseManage/index";
+import teacherQueryGrade from "@/views/Teacher/grade/queryGrade";
 import teacherQueryGradeCourse from "@/views/Teacher/teacherGradeCourseManage/teacherQueryGradeCourse";
 import teacherGradeCourseList from "@/views/Teacher/teacherGradeCourseManage/teacherGradeCourseList";
 import teacherEditorGradeCourse from "@/views/Teacher/teacherGradeCourseManage/teacherEditorGradeCourse";
@@ -60,9 +61,29 @@ import editorClass from "@/views/Admin/classManage/editorClass";
 import queryClass from "@/views/Admin/classManage/queryClass";
 import importClass from "@/views/Admin/classManage/importClass";
 import importCourseTeacher from "@/views/Admin/selectCourseManage/importCourseTeacher";
+import addCourseTeacher from "@/views/Admin/selectCourseManage/addCourseTeacher";
+import editorCourseTeacher from "@/views/Admin/selectCourseManage/editorCourseTeacher";
+import gradeLevelTermManage from "@/views/Admin/gradeLevelTermManage/index";
+import addGradeLevel from "@/views/Admin/gradeLevelTermManage/addGradeLevel";
+import gradeLevelList from "@/views/Admin/gradeLevelTermManage/gradeLevelList";
+import importGradeLevel from "@/views/Admin/gradeLevelTermManage/importGradeLevel";
+import addTerm from "@/views/Admin/gradeLevelTermManage/addTerm";
+import termList from "@/views/Admin/gradeLevelTermManage/termList";
+import importTerm from "@/views/Admin/gradeLevelTermManage/importTerm";
+import editorGradeLevel from "@/views/Admin/gradeLevelTermManage/editorGradeLevel";
+import editorTerm from "@/views/Admin/gradeLevelTermManage/editorTerm";
 import gradeManage from "@/views/Admin/gradeManage/index";
+import trainingPlanManage from "@/views/Admin/trainingPlanManage/index";
+import trainingPlanList from "@/views/Admin/trainingPlanManage/trainingPlanList";
+import addTrainingPlan from "@/views/Admin/trainingPlanManage/addTrainingPlan";
+import editorTrainingPlan from "@/views/Admin/trainingPlanManage/editorTrainingPlan";
+import queryTrainingPlan from "@/views/Admin/trainingPlanManage/queryTrainingPlan";
+import importTrainingPlan from "@/views/Admin/trainingPlanManage/importTrainingPlan";
 import uploadGrade from "@/views/Admin/gradeManage/uploadGrade";
+import publishGrade from "@/views/Admin/gradeManage/publishGrade";
 import queryGrade from "@/views/Admin/gradeManage/queryGrade";
+import ApprovalManage from "@/views/Admin/gradeManage/ApprovalManage";
+import MyGradeChangeRequests from "@/views/Admin/gradeManage/MyGradeChangeRequests";
 import wordPaperManage from "@/views/Admin/wordPaperManage/index";
 import wordPaperList from "@/views/Admin/wordPaperManage/wordPaperList";
 import operationLogManage from "@/views/Admin/operationLogManage/index";
@@ -102,145 +123,6 @@ const routes = [
             name: 'admin 主页',
             component: adminHome,
             meta: {requireAuth: true},
-          }
-        ]
-      },
-      {
-        path: '/studentManage',
-        name: '学生管理',
-        component: studentManage,
-        meta: {requireAuth: true},
-        children: [
-          {
-            path: '/addStudent',
-            name: '添加学生',
-            component: addStudent,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/importStudent',
-            name: '学生批量导入',
-            component: importStudent,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/studentList',
-            name: '学生列表',
-            component: studentList,
-            meta: {requireAuth: true},
-          },
-          {
-            path: '/editorStudent',
-            name: '编辑学生',
-            component: editorStudent,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/queryStudent',
-            name: '搜索',
-            component: queryStudent,
-            meta: {requireAuth: true},
-            children: [
-              {
-                path: '/queryStudent/studentList',
-                component: studentList,
-                meta: {requireAuth: true}
-              }
-            ]
-          }
-        ]
-      },
-      {
-        path: '/teacherManage',
-        name: '教师管理',
-        component: teacherManage,
-        meta: {requireAuth: true},
-        children: [
-          {
-            path: '/addTeacher',
-            name: '添加教师',
-            component: addTeacher,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/importTeacher',
-            name: '教师批量导入',
-            component: importTeacher,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/queryTeacher',
-            name: '教师列表',
-            component: queryTeacher,
-            meta: {requireAuth: true},
-            children: [
-            ]
-          },
-          {
-            path: '/editorTeacher',
-            name: '编辑教师',
-            component: editorTeacher,
-            meta: {requireAuth: true}
-          },
-        ]
-      },
-      {
-        path: '/courseManage',
-        name: '课程管理',
-        component: courseManage,
-        meta: {requireAuth: true},
-        children: [
-          {
-            path: '/addCourse',
-            name: '添加课程',
-            component: addCourse,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/importCourse',
-            name: '课程批量导入',
-            component: importCourse,
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/queryCourse',
-            name: '搜索课程',
-            component: queryCourse,
-            meta: {requireAuth: true},
-            children: [
-              {
-                path: '/courseList',
-                name: '课程列表',
-                component: courseList,
-                meta: {requireAuth: true}
-              },
-            ]
-          },
-          {
-            path: '/editorCourse',
-            name: '编辑课程',
-            component: editorCourse,
-            meta: {requireAuth: true}
-          },
-        ]
-      },
-      {
-        path: '/CourseTeacher',
-        name: '开课表管理',
-        component: CourseTeacherManage,
-        meta: {requireAuth: true},
-        children: [
-          {
-            path: '/queryCourseTeacher',
-            name: '开课管理',
-            component: queryCourseTeacher,
-            meta: {requireAuth: true},
-          },
-          {
-            path: '/importCourseTeacher',
-            name: '批量导入',
-            component: importCourseTeacher,
-            meta: {requireAuth: true}
           }
         ]
       },
@@ -286,6 +168,62 @@ const routes = [
                 meta: {requireAuth: true}
               }
             ]
+          }
+        ]
+      },
+      {
+        path: '/gradeLevelTermManage',
+        name: '年级学期',
+        component: gradeLevelTermManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addGradeLevel',
+            name: '添加年级',
+            component: addGradeLevel,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/gradeLevelList',
+            name: '年级列表',
+            component: gradeLevelList,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importGradeLevel',
+            name: '年级导入',
+            component: importGradeLevel,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/addTerm',
+            name: '添加学期',
+            component: addTerm,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/termList',
+            name: '学期列表',
+            component: termList,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importTerm',
+            name: '学期导入',
+            component: importTerm,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorGradeLevel',
+            name: '编辑年级',
+            component: editorGradeLevel,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorTerm',
+            name: '编辑学期',
+            component: editorTerm,
+            meta: {requireAuth: true}
           }
         ]
       },
@@ -380,6 +318,188 @@ const routes = [
         ]
       },
       {
+        path: '/teacherManage',
+        name: '教师管理',
+        component: teacherManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addTeacher',
+            name: '添加教师',
+            component: addTeacher,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importTeacher',
+            name: '教师批量导入',
+            component: importTeacher,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryTeacher',
+            name: '教师列表',
+            component: queryTeacher,
+            meta: {requireAuth: true},
+            children: []
+          },
+          {
+            path: '/editorTeacher',
+            name: '编辑教师',
+            component: editorTeacher,
+            meta: {requireAuth: true}
+          },
+        ]
+      },
+      {
+        path: '/courseManage',
+        name: '课程管理',
+        component: courseManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addCourse',
+            name: '添加课程',
+            component: addCourse,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importCourse',
+            name: '课程批量导入',
+            component: importCourse,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryCourse',
+            name: '课程列表',
+            component: queryCourse,
+            meta: {requireAuth: true},
+            children: [
+              {
+                path: '/courseList',
+                name: '课程列表',
+                component: courseList,
+                meta: {requireAuth: true}
+              },
+            ]
+          },
+          {
+            path: '/editorCourse',
+            name: '编辑课程',
+            component: editorCourse,
+            meta: {requireAuth: true}
+          },
+        ]
+      },
+      {
+        path: '/trainingPlanManage',
+        name: '培养方案',
+        component: trainingPlanManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addTrainingPlan',
+            name: '添加方案',
+            component: addTrainingPlan,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importTrainingPlan',
+            name: '批量导入',
+            component: importTrainingPlan,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryTrainingPlan',
+            name: '方案列表',
+            component: queryTrainingPlan,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorTrainingPlan',
+            name: '编辑方案',
+            component: editorTrainingPlan,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/CourseTeacher',
+        name: '教学管理',
+        component: CourseTeacherManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addCourseTeacher',
+            name: '添加开课',
+            component: addCourseTeacher,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryCourseTeacher',
+            name: '开课管理',
+            component: queryCourseTeacher,
+            meta: {requireAuth: true},
+          },
+          {
+            path: '/importCourseTeacher',
+            name: '批量导入',
+            component: importCourseTeacher,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/editorCourseTeacher',
+            name: '编辑开课',
+            component: editorCourseTeacher,
+            meta: {requireAuth: true}
+          }
+        ]
+      },
+      {
+        path: '/studentManage',
+        name: '学生管理',
+        component: studentManage,
+        meta: {requireAuth: true},
+        children: [
+          {
+            path: '/addStudent',
+            name: '添加学生',
+            component: addStudent,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/importStudent',
+            name: '学生批量导入',
+            component: importStudent,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/studentList',
+            name: '学生列表',
+            component: studentList,
+            meta: {requireAuth: true},
+          },
+          {
+            path: '/editorStudent',
+            name: '编辑学生',
+            component: editorStudent,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/queryStudent',
+            name: '搜索',
+            component: queryStudent,
+            meta: {requireAuth: true},
+            children: [
+              {
+                path: '/queryStudent/studentList',
+                component: studentList,
+                meta: {requireAuth: true}
+              }
+            ]
+          }
+        ]
+      },
+      {
         path: '/gradeManage',
         name: '成绩管理',
         component: gradeManage,
@@ -392,6 +512,12 @@ const routes = [
             meta: {requireAuth: true}
           },
           {
+            path: '/publishGrade',
+            name: '成绩发布',
+            component: publishGrade,
+            meta: {requireAuth: true}
+          },
+          {
             path: '/queryGrade',
             name: '成绩查询',
             component: queryGrade,
@@ -399,8 +525,20 @@ const routes = [
           },
           {
             path: '/editorGradeCourse',
-            name: '编辑成绩',
+            name: '成绩修改申请',
             component: editorGradeCourse,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/approvalManage',
+            name: '审批管理',
+            component: ApprovalManage,
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/myGradeChangeRequests',
+            name: '我的申请',
+            component: MyGradeChangeRequests,
             meta: {requireAuth: true}
           }
         ]
@@ -473,7 +611,7 @@ const routes = [
       {
         path: '/deanGradeManage',
         name: '成绩管理',
-        component: gradeManage,
+        component: () => import('@/views/Dean/grade/index'),
         meta: {requireAuth: true},
         children: [
           {
@@ -485,7 +623,19 @@ const routes = [
           {
             path: '/deanQueryGrade',
             name: '成绩查询',
-            component: queryGrade,
+            component: () => import('@/views/Dean/grade/queryGrade'),
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/deanEditorGradeCourse',
+            name: '成绩修改申请',
+            component: () => import('@/views/Dean/grade/editorGradeCourse'),
+            meta: {requireAuth: true}
+          },
+          {
+            path: '/deanMyGradeChangeRequests',
+            name: '我的申请',
+            component: () => import('@/views/Dean/grade/MyGradeChangeRequests'),
             meta: {requireAuth: true}
           }
         ]
@@ -493,13 +643,13 @@ const routes = [
       {
         path: '/deanWordPaperManage',
         name: '试卷分析',
-        component: wordPaperManage,
+        component: () => import('@/views/Dean/wordPaper/index'),
         meta: {requireAuth: true},
         children: [
           {
             path: '/deanWordPaperList',
             name: '文件列表',
-            component: wordPaperList,
+            component: () => import('@/views/Dean/wordPaper/wordPaperList'),
             meta: {requireAuth: true}
           }
         ]
@@ -507,13 +657,13 @@ const routes = [
       {
         path: '/deanOperationLogManage',
         name: '操作日志',
-        component: operationLogManage,
+        component: () => import('@/views/Dean/operationLog/index'),
         meta: {requireAuth: true},
         children: [
           {
             path: '/deanOperationLogList',
             name: '日志查看',
-            component: operationLogManage,
+            component: () => import('@/views/Dean/operationLog/index'),
             meta: {requireAuth: true}
           }
         ]
@@ -584,32 +734,26 @@ const routes = [
         children: [
           {
             path: '/teacherQueryGradeCourseManage',
-            name: '成绩管理',
-            component: teacherQueryGradeCourse,
+            name: '成绩查询',
+            component: teacherQueryGrade,
             meta: {requireAuth: true}
           },
           {
             path: '/teacherUploadGrade',
             name: '上传成绩单',
-            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadGrade'),
+            component: uploadGrade,
             meta: {requireAuth: true}
           },
           {
             path: '/teacherUploadWordPaper',
             name: '上传试卷分析',
-            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadWordPaper'),
+            component: () => import('@/views/Teacher/wordPaper/wordPaperList'),
             meta: {requireAuth: true}
           },
           {
-            path: '/teacherUploadRecordList',
-            name: '已上传成绩单',
-            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherUploadRecordList'),
-            meta: {requireAuth: true}
-          },
-          {
-            path: '/teacherWordPaperList',
-            name: '已上传试卷分析',
-            component: () => import('@/views/Teacher/teacherGradeCourseManage/teacherWordPaperList'),
+            path: '/teacherMyGradeChangeRequests',
+            name: '我的申请',
+            component: MyGradeChangeRequests,
             meta: {requireAuth: true}
           }
         ]
@@ -617,13 +761,13 @@ const routes = [
       {
         path: '/teacherOperationLogManage',
         name: '操作日志',
-        component: operationLogManage,
+        component: () => import('@/views/Teacher/operationLog/index'),
         meta: {requireAuth: true},
         children: [
           {
             path: '/teacherOperationLogList',
             name: '日志查看',
-            component: operationLogManage,
+            component: () => import('@/views/Teacher/operationLog/index'),
             meta: {requireAuth: true}
           }
         ]

@@ -42,6 +42,10 @@ public class WordPaperService {
         return wordPaperMapper.findByDepartmentId(departmentId);
     }
 
+    public List<WordPaper> findByUploadBy(String uploadBy) {
+        return wordPaperMapper.findByUploadBy(uploadBy);
+    }
+
     public WordPaper upload(MultipartFile file, String uploadBy) throws IOException {
 
         if (file == null || file.isEmpty()) {

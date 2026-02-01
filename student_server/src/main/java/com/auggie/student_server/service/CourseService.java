@@ -91,8 +91,7 @@ public class CourseService {
 
     /**
      * 批量导入课程（Excel）
-     * 模板列顺序：
-     * 课程名称、学分、课程类别、课程性质、考核方式、学时、所属学院ID、所属专业ID
+     * 模板列顺序：课程名称、学分、课程类别、考核方式、学时、所属学院ID
      */
     public String importFromExcel(MultipartFile file) {
         try {
@@ -111,11 +110,9 @@ public class CourseService {
                     String courseName = getStringValue(row.getCell(0));
                     Integer credit = getIntValue(row.getCell(1));
                     String category = getStringValue(row.getCell(2));
-                    String nature = getStringValue(row.getCell(3));
-                    String examMethod = getStringValue(row.getCell(4));
-                    Integer hours = getIntValue(row.getCell(5));
-                    Integer departmentId = getIntValue(row.getCell(6));
-                    Integer majorId = getIntValue(row.getCell(7));
+                    String examMethod = getStringValue(row.getCell(3));
+                    Integer hours = getIntValue(row.getCell(4));
+                    Integer departmentId = getIntValue(row.getCell(5));
 
                     if (courseName == null || courseName.isEmpty()) {
                         continue;
@@ -125,11 +122,9 @@ public class CourseService {
                     course.setCname(courseName);
                     course.setCcredit(credit);
                     course.setCategory(category);
-                    course.setNature(nature);
                     course.setExamMethod(examMethod);
                     course.setHours(hours);
                     course.setDepartmentId(departmentId);
-                    course.setMajorId(majorId);
 
                     boolean ok = courseMapper.insertCourse(course);
                     if (ok) successCount++;
@@ -196,7 +191,7 @@ public class CourseService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"课程名称", "学分", "课程类别", "课程性质", "考核方式", "学时", "所属学院ID", "所属专业ID"};
+        String[] headers = {"课程名称", "学分", "课程类别", "考核方式", "学时", "所属学院ID"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -204,14 +199,12 @@ public class CourseService {
 
         // 添加示例数据
         Row exampleRow = sheet.createRow(1);
-        exampleRow.createCell(0).setCellValue("高等数学");
+        exampleRow.createCell(0).setCellValue("临床检验基础");
         exampleRow.createCell(1).setCellValue(4);
-        exampleRow.createCell(2).setCellValue("必修");
-        exampleRow.createCell(3).setCellValue("理论");
-        exampleRow.createCell(4).setCellValue("考试");
-        exampleRow.createCell(5).setCellValue(64);
-        exampleRow.createCell(6).setCellValue(1);
-        exampleRow.createCell(7).setCellValue(1);
+        exampleRow.createCell(2).setCellValue("专业课");
+        exampleRow.createCell(3).setCellValue("考试");
+        exampleRow.createCell(4).setCellValue(64);
+        exampleRow.createCell(5).setCellValue(1);
 
         return workbook;
     }

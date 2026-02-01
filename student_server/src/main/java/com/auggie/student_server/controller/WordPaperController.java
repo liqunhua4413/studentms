@@ -63,14 +63,19 @@ public class WordPaperController {
     @GetMapping("/findAll")
     public List<WordPaper> findAll(
             @RequestAttribute(value = "userType", required = false) String userType,
-            @RequestAttribute(value = "departmentId", required = false) Integer departmentId) {
+            @RequestAttribute(value = "departmentId", required = false) Integer departmentId,
+            @RequestAttribute(value = "operator", required = false) String operator) {
         // admin 可以查看所有文件
         if ("admin".equals(userType)) {
             return wordPaperService.findAll();
         }
-        // 如果是院长或教师，只能查看自己学院的文件
-        if (("dean".equals(userType) || "teacher".equals(userType)) && departmentId != null) {
+        // 院长：只能查看本学院的文件（不含系统管理员上传的，已在 findByDepartmentId 中排除 role=admin）
+        if ("dean".equals(userType) && departmentId != null) {
             return wordPaperService.findByDepartmentId(departmentId);
+        }
+        // 教师：只能查看本人上传的文件，不能看到院长或其他人上传的
+        if ("teacher".equals(userType) && operator != null && !operator.isEmpty()) {
+            return wordPaperService.findByUploadBy(operator);
         }
         return wordPaperService.findAll();
     }
@@ -83,7 +88,8 @@ public class WordPaperController {
     @PostMapping("/findBySearch")
     public List<WordPaper> findBySearch(@RequestBody Map<String, String> map,
                                         @RequestAttribute(value = "userType", required = false) String userType,
-                                        @RequestAttribute(value = "departmentId", required = false) Integer departmentId) {
+                                        @RequestAttribute(value = "departmentId", required = false) Integer departmentId,
+                                        @RequestAttribute(value = "operator", required = false) String operator) {
         String fileName = map.get("fileName");
         String uploadBy = map.get("uploadBy");
         
@@ -92,10 +98,9 @@ public class WordPaperController {
             return wordPaperService.findBySearch(fileName, uploadBy);
         }
         
-        // 如果是院长或教师，只能查看自己学院的文件
-        if (("dean".equals(userType) || "teacher".equals(userType)) && departmentId != null) {
+        // 院长：只能查看本学院的文件（已排除 admin 上传）
+        if ("dean".equals(userType) && departmentId != null) {
             List<WordPaper> deptFiles = wordPaperService.findByDepartmentId(departmentId);
-            // 如果指定了文件名或上传者，进行过滤
             if ((fileName != null && !fileName.isEmpty()) || (uploadBy != null && !uploadBy.isEmpty())) {
                 return deptFiles.stream()
                     .filter(file -> {
@@ -111,6 +116,26 @@ public class WordPaperController {
                     .collect(java.util.stream.Collectors.toList());
             }
             return deptFiles;
+        }
+        
+        // 教师：只能查看本人上传的文件
+        if ("teacher".equals(userType) && operator != null && !operator.isEmpty()) {
+            List<WordPaper> myFiles = wordPaperService.findByUploadBy(operator);
+            if ((fileName != null && !fileName.isEmpty()) || (uploadBy != null && !uploadBy.isEmpty())) {
+                return myFiles.stream()
+                    .filter(file -> {
+                        boolean match = true;
+                        if (fileName != null && !fileName.isEmpty()) {
+                            match = match && file.getFileName() != null && file.getFileName().contains(fileName);
+                        }
+                        if (uploadBy != null && !uploadBy.isEmpty()) {
+                            match = match && file.getUploadBy() != null && file.getUploadBy().contains(uploadBy);
+                        }
+                        return match;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            }
+            return myFiles;
         }
         
         return wordPaperService.findBySearch(fileName, uploadBy);
