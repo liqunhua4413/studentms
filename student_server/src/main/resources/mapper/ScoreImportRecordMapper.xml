@@ -23,6 +23,7 @@
                teacher_id AS teacherId, department_id AS departmentId, operator, status, message, created_at AS createdAt
         FROM studentms.score_import_record 
         WHERE department_id = #{departmentId}
+          AND operator != '系统管理员'
         ORDER BY created_at DESC
     </select>
 
